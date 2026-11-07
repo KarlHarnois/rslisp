@@ -7,5 +7,5 @@
   (park (spot) (+ spot 100)))
 
 (defn main ()
-  (let spots (vec 1 2))
+  (local spots (vec 1 2))
   (println (len (collect (map (iter spots) park)))))

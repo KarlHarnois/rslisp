@@ -944,557 +944,558 @@
 
 (defn blocks (total)
   (do
-    (let total (+ total 5))
+    (local total (+ total 5))
     (do
-      (let total (+ total 4))
+      (local total (+ total 4))
       (do
-        (let total (+ total 3))
+        (local total (+ total 3))
         (do
-          (let total (+ total 2))
+          (local total (+ total 2))
           (do
-            (let total (+ total 1))
+            (local total (+ total 1))
             (do
-              (let total (+ total 5))
+              (local total (+ total 5))
               (do
-                (let total (+ total 4))
+                (local total (+ total 4))
                 (do
-                  (let total (+ total 3))
+                  (local total (+ total 3))
                   (do
-                    (let total (+ total 2))
+                    (local total (+ total 2))
                     (do
-                      (let total (+ total 1))
+                      (local total (+ total 1))
                       (do
-                        (let total (+ total 5))
+                        (local total (+ total 5))
                         (do
-                          (let total (+ total 4))
+                          (local total (+ total 4))
                           (do
-                            (let total (+ total 3))
+                            (local total (+ total 3))
                             (do
-                              (let total (+ total 2))
+                              (local total (+ total 2))
                               (do
-                                (let total (+ total 1))
+                                (local total (+ total 1))
                                 (do
-                                  (let total (+ total 5))
+                                  (local total (+ total 5))
                                   (do
-                                    (let total (+ total 4))
+                                    (local total (+ total 4))
                                     (do
-                                      (let total (+ total 3))
+                                      (local total (+ total 3))
                                       (do
-                                        (let total (+ total 2))
+                                        (local total (+ total 2))
                                         (do
-                                          (let total (+ total 1))
+                                          (local total (+ total 1))
                                           (do
-                                            (let total (+ total 5))
+                                            (local total (+ total 5))
                                             (do
-                                              (let total (+ total 4))
+                                              (local total (+ total 4))
                                               (do
-                                                (let total (+ total 3))
+                                                (local total (+ total 3))
                                                 (do
-                                                  (let total (+ total 2))
+                                                  (local total (+ total 2))
                                                   (do
-                                                    (let total (+ total 1))
+                                                    (local total (+ total 1))
                                                     (do
-                                                      (let total (+ total 5))
+                                                      (local total (+ total 5))
                                                       (do
-                                                        (let total (+ total 4))
+                                                        (local total
+                                                          (+ total 4))
                                                         (do
-                                                          (let total
+                                                          (local total
                                                             (+ total 3))
                                                           (do
-                                                            (let total
+                                                            (local total
                                                               (+ total 2))
                                                             (do
-                                                              (let total
+                                                              (local total
                                                                 (+ total 1))
                                                               (do
-                                                                (let total
+                                                                (local total
                                                                   (+ total 5))
                                                                 (do
-                                                                  (let total
+                                                                  (local total
                                                                     (+ total 4))
                                                                   (do
-                                                                    (let total
+                                                                    (local total
                                                                       (+ total
                                                                          3))
                                                                     (do
-                                                                      (let total
+                                                                      (local total
                                                                         (+ total
                                                                            2))
                                                                       (do
-                                                                        (let total
+                                                                        (local total
                                                                           (+ total
                                                                              1))
                                                                         (do
-                                                                          (let total
+                                                                          (local total
                                                                             (+ total
                                                                                5))
                                                                           (do
-                                                                            (let total
+                                                                            (local total
                                                                               (+
                                                                                 total
                                                                                 4))
                                                                             (do
-                                                                              (let total
+                                                                              (local total
                                                                                 (+
                                                                                   total
                                                                                   3))
                                                                               (do
-                                                                                (let total
+                                                                                (local total
                                                                                   (+
                                                                                     total
                                                                                     2))
                                                                                 (do
-                                                                                  (let total
+                                                                                  (local total
                                                                                     (+
                                                                                       total
                                                                                       1))
                                                                                   (do
-                                                                                    (let total
+                                                                                    (local total
                                                                                       (+
                                                                                         total
                                                                                         5))
                                                                                     (do
-                                                                                      (let total
+                                                                                      (local total
                                                                                         (+
                                                                                           total
                                                                                           4))
                                                                                       (do
-                                                                                        (let total
+                                                                                        (local total
                                                                                           (+
                                                                                             total
                                                                                             3))
                                                                                         (do
-                                                                                          (let total
+                                                                                          (local total
                                                                                             (+
                                                                                               total
                                                                                               2))
                                                                                           (do
-                                                                                            (let total
+                                                                                            (local total
                                                                                               (+
                                                                                                 total
                                                                                                 1))
                                                                                             (do
-                                                                                              (let total
+                                                                                              (local total
                                                                                                 (+
                                                                                                   total
                                                                                                   5))
                                                                                               (do
-                                                                                                (let total
+                                                                                                (local total
                                                                                                   (+
                                                                                                     total
                                                                                                     4))
                                                                                                 (do
-                                                                                                  (let total
+                                                                                                  (local total
                                                                                                     (+
                                                                                                       total
                                                                                                       3))
                                                                                                   (do
-                                                                                                    (let total
+                                                                                                    (local total
                                                                                                       (+
                                                                                                         total
                                                                                                         2))
                                                                                                     (do
-                                                                                                      (let total
+                                                                                                      (local total
                                                                                                         (+
                                                                                                           total
                                                                                                           1))
                                                                                                       (do
-                                                                                                        (let total
+                                                                                                        (local total
                                                                                                           (+
                                                                                                             total
                                                                                                             5))
                                                                                                         (do
-                                                                                                          (let total
+                                                                                                          (local total
                                                                                                             (+
                                                                                                               total
                                                                                                               4))
                                                                                                           (do
-                                                                                                            (let total
+                                                                                                            (local total
                                                                                                               (+
                                                                                                                 total
                                                                                                                 3))
                                                                                                             (do
-                                                                                                              (let total
+                                                                                                              (local total
                                                                                                                 (+
                                                                                                                   total
                                                                                                                   2))
                                                                                                               (do
-                                                                                                                (let total
+                                                                                                                (local total
                                                                                                                   (+
                                                                                                                     total
                                                                                                                     1))
                                                                                                                 (do
-                                                                                                                  (let total
+                                                                                                                  (local total
                                                                                                                     (+
                                                                                                                       total
                                                                                                                       5))
                                                                                                                   (do
-                                                                                                                    (let total
+                                                                                                                    (local total
                                                                                                                       (+
                                                                                                                         total
                                                                                                                         4))
                                                                                                                     (do
-                                                                                                                      (let total
+                                                                                                                      (local total
                                                                                                                         (+
                                                                                                                           total
                                                                                                                           3))
                                                                                                                       (do
-                                                                                                                        (let total
+                                                                                                                        (local total
                                                                                                                           (+
                                                                                                                             total
                                                                                                                             2))
                                                                                                                         (do
-                                                                                                                          (let total
+                                                                                                                          (local total
                                                                                                                             (+
                                                                                                                               total
                                                                                                                               1))
                                                                                                                           (do
-                                                                                                                            (let total
+                                                                                                                            (local total
                                                                                                                               (+
                                                                                                                                 total
                                                                                                                                 5))
                                                                                                                             (do
-                                                                                                                              (let total
+                                                                                                                              (local total
                                                                                                                                 (+
                                                                                                                                   total
                                                                                                                                   4))
                                                                                                                               (do
-                                                                                                                                (let total
+                                                                                                                                (local total
                                                                                                                                   (+
                                                                                                                                     total
                                                                                                                                     3))
                                                                                                                                 (do
-                                                                                                                                  (let total
+                                                                                                                                  (local total
                                                                                                                                     (+
                                                                                                                                       total
                                                                                                                                       2))
                                                                                                                                   (do
-                                                                                                                                    (let total
+                                                                                                                                    (local total
                                                                                                                                       (+
                                                                                                                                         total
                                                                                                                                         1))
                                                                                                                                     (do
-                                                                                                                                      (let total
+                                                                                                                                      (local total
                                                                                                                                         (+
                                                                                                                                           total
                                                                                                                                           5))
                                                                                                                                       (do
-                                                                                                                                        (let total
+                                                                                                                                        (local total
                                                                                                                                           (+
                                                                                                                                             total
                                                                                                                                             4))
                                                                                                                                         (do
-                                                                                                                                          (let total
+                                                                                                                                          (local total
                                                                                                                                             (+
                                                                                                                                               total
                                                                                                                                               3))
                                                                                                                                           (do
-                                                                                                                                            (let total
+                                                                                                                                            (local total
                                                                                                                                               (+
                                                                                                                                                 total
                                                                                                                                                 2))
                                                                                                                                             (do
-                                                                                                                                              (let total
+                                                                                                                                              (local total
                                                                                                                                                 (+
                                                                                                                                                   total
                                                                                                                                                   1))
                                                                                                                                               (do
-                                                                                                                                                (let total
+                                                                                                                                                (local total
                                                                                                                                                   (+
                                                                                                                                                     total
                                                                                                                                                     5))
                                                                                                                                                 (do
-                                                                                                                                                  (let total
+                                                                                                                                                  (local total
                                                                                                                                                     (+
                                                                                                                                                       total
                                                                                                                                                       4))
                                                                                                                                                   (do
-                                                                                                                                                    (let total
+                                                                                                                                                    (local total
                                                                                                                                                       (+
                                                                                                                                                         total
                                                                                                                                                         3))
                                                                                                                                                     (do
-                                                                                                                                                      (let total
+                                                                                                                                                      (local total
                                                                                                                                                         (+
                                                                                                                                                           total
                                                                                                                                                           2))
                                                                                                                                                       (do
-                                                                                                                                                        (let total
+                                                                                                                                                        (local total
                                                                                                                                                           (+
                                                                                                                                                             total
                                                                                                                                                             1))
                                                                                                                                                         (do
-                                                                                                                                                          (let total
+                                                                                                                                                          (local total
                                                                                                                                                             (+
                                                                                                                                                               total
                                                                                                                                                               5))
                                                                                                                                                           (do
-                                                                                                                                                            (let total
+                                                                                                                                                            (local total
                                                                                                                                                               (+
                                                                                                                                                                 total
                                                                                                                                                                 4))
                                                                                                                                                             (do
-                                                                                                                                                              (let total
+                                                                                                                                                              (local total
                                                                                                                                                                 (+
                                                                                                                                                                   total
                                                                                                                                                                   3))
                                                                                                                                                               (do
-                                                                                                                                                                (let total
+                                                                                                                                                                (local total
                                                                                                                                                                   (+
                                                                                                                                                                     total
                                                                                                                                                                     2))
                                                                                                                                                                 (do
-                                                                                                                                                                  (let total
+                                                                                                                                                                  (local total
                                                                                                                                                                     (+
                                                                                                                                                                       total
                                                                                                                                                                       1))
                                                                                                                                                                   (do
-                                                                                                                                                                    (let total
+                                                                                                                                                                    (local total
                                                                                                                                                                       (+
                                                                                                                                                                         total
                                                                                                                                                                         5))
                                                                                                                                                                     (do
-                                                                                                                                                                      (let total
+                                                                                                                                                                      (local total
                                                                                                                                                                         (+
                                                                                                                                                                           total
                                                                                                                                                                           4))
                                                                                                                                                                       (do
-                                                                                                                                                                        (let total
+                                                                                                                                                                        (local total
                                                                                                                                                                           (+
                                                                                                                                                                             total
                                                                                                                                                                             3))
                                                                                                                                                                         (do
-                                                                                                                                                                          (let total
+                                                                                                                                                                          (local total
                                                                                                                                                                             (+
                                                                                                                                                                               total
                                                                                                                                                                               2))
                                                                                                                                                                           (do
-                                                                                                                                                                            (let total
+                                                                                                                                                                            (local total
                                                                                                                                                                               (+
                                                                                                                                                                                 total
                                                                                                                                                                                 1))
                                                                                                                                                                             (do
-                                                                                                                                                                              (let total
+                                                                                                                                                                              (local total
                                                                                                                                                                                 (+
                                                                                                                                                                                   total
                                                                                                                                                                                   5))
                                                                                                                                                                               (do
-                                                                                                                                                                                (let total
+                                                                                                                                                                                (local total
                                                                                                                                                                                   (+
                                                                                                                                                                                     total
                                                                                                                                                                                     4))
                                                                                                                                                                                 (do
-                                                                                                                                                                                  (let total
+                                                                                                                                                                                  (local total
                                                                                                                                                                                     (+
                                                                                                                                                                                       total
                                                                                                                                                                                       3))
                                                                                                                                                                                   (do
-                                                                                                                                                                                    (let total
+                                                                                                                                                                                    (local total
                                                                                                                                                                                       (+
                                                                                                                                                                                         total
                                                                                                                                                                                         2))
                                                                                                                                                                                     (do
-                                                                                                                                                                                      (let total
+                                                                                                                                                                                      (local total
                                                                                                                                                                                         (+
                                                                                                                                                                                           total
                                                                                                                                                                                           1))
                                                                                                                                                                                       (do
-                                                                                                                                                                                        (let total
+                                                                                                                                                                                        (local total
                                                                                                                                                                                           (+
                                                                                                                                                                                             total
                                                                                                                                                                                             5))
                                                                                                                                                                                         (do
-                                                                                                                                                                                          (let total
+                                                                                                                                                                                          (local total
                                                                                                                                                                                             (+
                                                                                                                                                                                               total
                                                                                                                                                                                               4))
                                                                                                                                                                                           (do
-                                                                                                                                                                                            (let total
+                                                                                                                                                                                            (local total
                                                                                                                                                                                               (+
                                                                                                                                                                                                 total
                                                                                                                                                                                                 3))
                                                                                                                                                                                             (do
-                                                                                                                                                                                              (let total
+                                                                                                                                                                                              (local total
                                                                                                                                                                                                 (+
                                                                                                                                                                                                   total
                                                                                                                                                                                                   2))
                                                                                                                                                                                               (do
-                                                                                                                                                                                                (let total
+                                                                                                                                                                                                (local total
                                                                                                                                                                                                   (+
                                                                                                                                                                                                     total
                                                                                                                                                                                                     1))
                                                                                                                                                                                                 (do
-                                                                                                                                                                                                  (let total
+                                                                                                                                                                                                  (local total
                                                                                                                                                                                                     (+
                                                                                                                                                                                                       total
                                                                                                                                                                                                       5))
                                                                                                                                                                                                   (do
-                                                                                                                                                                                                    (let total
+                                                                                                                                                                                                    (local total
                                                                                                                                                                                                       (+
                                                                                                                                                                                                         total
                                                                                                                                                                                                         4))
                                                                                                                                                                                                     (do
-                                                                                                                                                                                                      (let total
+                                                                                                                                                                                                      (local total
                                                                                                                                                                                                         (+
                                                                                                                                                                                                           total
                                                                                                                                                                                                           3))
                                                                                                                                                                                                       (do
-                                                                                                                                                                                                        (let total
+                                                                                                                                                                                                        (local total
                                                                                                                                                                                                           (+
                                                                                                                                                                                                             total
                                                                                                                                                                                                             2))
                                                                                                                                                                                                         (do
-                                                                                                                                                                                                          (let total
+                                                                                                                                                                                                          (local total
                                                                                                                                                                                                             (+
                                                                                                                                                                                                               total
                                                                                                                                                                                                               1))
                                                                                                                                                                                                           (do
-                                                                                                                                                                                                            (let total
+                                                                                                                                                                                                            (local total
                                                                                                                                                                                                               (+
                                                                                                                                                                                                                 total
                                                                                                                                                                                                                 5))
                                                                                                                                                                                                             (do
-                                                                                                                                                                                                              (let total
+                                                                                                                                                                                                              (local total
                                                                                                                                                                                                                 (+
                                                                                                                                                                                                                   total
                                                                                                                                                                                                                   4))
                                                                                                                                                                                                               (do
-                                                                                                                                                                                                                (let total
+                                                                                                                                                                                                                (local total
                                                                                                                                                                                                                   (+
                                                                                                                                                                                                                     total
                                                                                                                                                                                                                     3))
                                                                                                                                                                                                                 (do
-                                                                                                                                                                                                                  (let total
+                                                                                                                                                                                                                  (local total
                                                                                                                                                                                                                     (+
                                                                                                                                                                                                                       total
                                                                                                                                                                                                                       2))
                                                                                                                                                                                                                   (do
-                                                                                                                                                                                                                    (let total
+                                                                                                                                                                                                                    (local total
                                                                                                                                                                                                                       (+
                                                                                                                                                                                                                         total
                                                                                                                                                                                                                         1))
                                                                                                                                                                                                                     (do
-                                                                                                                                                                                                                      (let total
+                                                                                                                                                                                                                      (local total
                                                                                                                                                                                                                         (+
                                                                                                                                                                                                                           total
                                                                                                                                                                                                                           5))
                                                                                                                                                                                                                       (do
-                                                                                                                                                                                                                        (let total
+                                                                                                                                                                                                                        (local total
                                                                                                                                                                                                                           (+
                                                                                                                                                                                                                             total
                                                                                                                                                                                                                             4))
                                                                                                                                                                                                                         (do
-                                                                                                                                                                                                                          (let total
+                                                                                                                                                                                                                          (local total
                                                                                                                                                                                                                             (+
                                                                                                                                                                                                                               total
                                                                                                                                                                                                                               3))
                                                                                                                                                                                                                           (do
-                                                                                                                                                                                                                            (let total
+                                                                                                                                                                                                                            (local total
                                                                                                                                                                                                                               (+
                                                                                                                                                                                                                                 total
                                                                                                                                                                                                                                 2))
                                                                                                                                                                                                                             (do
-                                                                                                                                                                                                                              (let total
+                                                                                                                                                                                                                              (local total
                                                                                                                                                                                                                                 (+
                                                                                                                                                                                                                                   total
                                                                                                                                                                                                                                   1))
                                                                                                                                                                                                                               (do
-                                                                                                                                                                                                                                (let total
+                                                                                                                                                                                                                                (local total
                                                                                                                                                                                                                                   (+
                                                                                                                                                                                                                                     total
                                                                                                                                                                                                                                     5))
                                                                                                                                                                                                                                 (do
-                                                                                                                                                                                                                                  (let total
+                                                                                                                                                                                                                                  (local total
                                                                                                                                                                                                                                     (+
                                                                                                                                                                                                                                       total
                                                                                                                                                                                                                                       4))
                                                                                                                                                                                                                                   (do
-                                                                                                                                                                                                                                    (let total
+                                                                                                                                                                                                                                    (local total
                                                                                                                                                                                                                                       (+
                                                                                                                                                                                                                                         total
                                                                                                                                                                                                                                         3))
                                                                                                                                                                                                                                     (do
-                                                                                                                                                                                                                                      (let total
+                                                                                                                                                                                                                                      (local total
                                                                                                                                                                                                                                         (+
                                                                                                                                                                                                                                           total
                                                                                                                                                                                                                                           2))
                                                                                                                                                                                                                                       (do
-                                                                                                                                                                                                                                        (let total
+                                                                                                                                                                                                                                        (local total
                                                                                                                                                                                                                                           (+
                                                                                                                                                                                                                                             total
                                                                                                                                                                                                                                             1))
                                                                                                                                                                                                                                         (do
-                                                                                                                                                                                                                                          (let total
+                                                                                                                                                                                                                                          (local total
                                                                                                                                                                                                                                             (+
                                                                                                                                                                                                                                               total
                                                                                                                                                                                                                                               5))
                                                                                                                                                                                                                                           (do
-                                                                                                                                                                                                                                            (let total
+                                                                                                                                                                                                                                            (local total
                                                                                                                                                                                                                                               (+
                                                                                                                                                                                                                                                 total
                                                                                                                                                                                                                                                 4))
                                                                                                                                                                                                                                             (do
-                                                                                                                                                                                                                                              (let total
+                                                                                                                                                                                                                                              (local total
                                                                                                                                                                                                                                                 (+
                                                                                                                                                                                                                                                   total
                                                                                                                                                                                                                                                   3))
                                                                                                                                                                                                                                               (do
-                                                                                                                                                                                                                                                (let total
+                                                                                                                                                                                                                                                (local total
                                                                                                                                                                                                                                                   (+
                                                                                                                                                                                                                                                     total
                                                                                                                                                                                                                                                     2))
                                                                                                                                                                                                                                                 (do
-                                                                                                                                                                                                                                                  (let total
+                                                                                                                                                                                                                                                  (local total
                                                                                                                                                                                                                                                     (+
                                                                                                                                                                                                                                                       total
                                                                                                                                                                                                                                                       1))
                                                                                                                                                                                                                                                   (do
-                                                                                                                                                                                                                                                    (let total
+                                                                                                                                                                                                                                                    (local total
                                                                                                                                                                                                                                                       (+
                                                                                                                                                                                                                                                         total
                                                                                                                                                                                                                                                         5))
                                                                                                                                                                                                                                                     (do
-                                                                                                                                                                                                                                                      (let total
+                                                                                                                                                                                                                                                      (local total
                                                                                                                                                                                                                                                         (+
                                                                                                                                                                                                                                                           total
                                                                                                                                                                                                                                                           4))
                                                                                                                                                                                                                                                       (do
-                                                                                                                                                                                                                                                        (let total
+                                                                                                                                                                                                                                                        (local total
                                                                                                                                                                                                                                                           (+
                                                                                                                                                                                                                                                             total
                                                                                                                                                                                                                                                             3))
                                                                                                                                                                                                                                                         (do
-                                                                                                                                                                                                                                                          (let total
+                                                                                                                                                                                                                                                          (local total
                                                                                                                                                                                                                                                             (+
                                                                                                                                                                                                                                                               total
                                                                                                                                                                                                                                                               2))
                                                                                                                                                                                                                                                           (do
-                                                                                                                                                                                                                                                            (let total
+                                                                                                                                                                                                                                                            (local total
                                                                                                                                                                                                                                                               (+
                                                                                                                                                                                                                                                                 total
                                                                                                                                                                                                                                                                 1))
                                                                                                                                                                                                                                                             (do
-                                                                                                                                                                                                                                                              (let total
+                                                                                                                                                                                                                                                              (local total
                                                                                                                                                                                                                                                                 (+
                                                                                                                                                                                                                                                                   total
                                                                                                                                                                                                                                                                   5))
                                                                                                                                                                                                                                                               (do
-                                                                                                                                                                                                                                                                (let total
+                                                                                                                                                                                                                                                                (local total
                                                                                                                                                                                                                                                                   (+
                                                                                                                                                                                                                                                                     total
                                                                                                                                                                                                                                                                     4))
                                                                                                                                                                                                                                                                 (do
-                                                                                                                                                                                                                                                                  (let total
+                                                                                                                                                                                                                                                                  (local total
                                                                                                                                                                                                                                                                     (+
                                                                                                                                                                                                                                                                       total
                                                                                                                                                                                                                                                                       3))
                                                                                                                                                                                                                                                                   (do
-                                                                                                                                                                                                                                                                    (let total
+                                                                                                                                                                                                                                                                    (local total
                                                                                                                                                                                                                                                                       (+
                                                                                                                                                                                                                                                                         total
                                                                                                                                                                                                                                                                         2))
                                                                                                                                                                                                                                                                     (do
-                                                                                                                                                                                                                                                                      (let total
+                                                                                                                                                                                                                                                                      (local total
                                                                                                                                                                                                                                                                         (+
                                                                                                                                                                                                                                                                           total
                                                                                                                                                                                                                                                                           1))

@@ -3,7 +3,7 @@
 (def my-or
   (macro (form)
     (list (quote do)
-          (list (quote let)
+          (list (quote local)
                 (quote tmp)
                 (nth form 1))
           (list (quote if)

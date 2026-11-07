@@ -5,7 +5,7 @@
 (defn leaf () (->node :next leaf :label "leaf"))
 
 (defn main ()
-  (let root
+  (local root
     (->node :next (fn () (leaf))
             :label "root"))
   (println (:label root))

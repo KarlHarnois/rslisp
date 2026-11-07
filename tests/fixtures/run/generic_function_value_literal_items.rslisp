@@ -4,5 +4,6 @@
 (defn positive? (x) (> x 0))
 
 (defn main ()
-  (let bytes (the (vec u8) (vec 0 7 12)))
+  (local bytes
+    (the (vec u8) (vec 0 7 12)))
   (println (count (filter (iter bytes) positive?))))

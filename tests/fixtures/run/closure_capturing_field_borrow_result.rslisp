@@ -3,9 +3,9 @@
   :year u16)
 
 (defn main ()
-  (let leaf (->car :make "Nissan" :year 2025))
-  (let label "year")
-  (let year-of
+  (local leaf (->car :make "Nissan" :year 2025))
+  (local label "year")
+  (local year-of
     (fn ((leaf (ref car)))
       (println label)
       (ref (:year leaf))))

@@ -57,7 +57,7 @@
           (if (> (:year v) 2020) label "classic")))
 
 (defn main ()
-  (let leaf (->car "Leaf" 2024))
+  (local leaf (->car "Leaf" 2024))
   (let-pair (labeled name) (label leaf "Nissan")
     (println (:model labeled) " " name))
   (println (newer-model leaf (->car "Golf" 2019)))
@@ -70,8 +70,8 @@
   (println (:model (newest (->car "Golf" 2019) leaf))
            " "
            (:load (newest (->truck 3) (->truck 5))))
-  (let old (->van (str "Golf") 2019))
-  (let new (->van (str "Leaf") 2024))
+  (local old (->van (str "Golf") 2019))
+  (local new (->van (str "Leaf") 2024))
   (println (:model (pick old new)))
-  (let fresh (->van (str "Ioniq") 2025))
+  (local fresh (->van (str "Ioniq") 2025))
   (println (stamp! fresh "fresh")))

@@ -10,7 +10,7 @@
     ((err error) (eprintln error))))
 
 (defn main ()
-  (let path (str "slurp_sources.txt"))
+  (local path (str "slurp_sources.txt"))
   (report (slurp "slurp_sources.txt"))
   (report (slurp path))
   (report (read-source "slurp_sources.txt"))

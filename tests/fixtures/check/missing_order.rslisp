@@ -3,7 +3,7 @@
   :name string)
 
 (defn main ()
-  (let scores
+  (local scores
     (vec (->score 3 (str "Ana"))
          (->score 1 (str "Bo"))))
   (sort! scores)

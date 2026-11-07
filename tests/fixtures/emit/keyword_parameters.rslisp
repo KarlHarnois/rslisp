@@ -29,7 +29,7 @@
   (println (add :x 6 :y 7))
   (println (add :y 7 :x 6))
   (println (add 6 7))
-  (let plus add)
+  (local plus add)
   (println (plus 1 2))
   (println (scale :value 2.0 :factor 1.5))
   (println (greet :name "ana"))

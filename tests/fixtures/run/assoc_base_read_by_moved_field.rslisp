@@ -3,8 +3,8 @@
   :size usize)
 
 (defn main ()
-  (let label (str "abc"))
-  (let updated
+  (local label (str "abc"))
+  (local updated
     (assoc (->named (str "x") (len label))
            :name label))
   (println (:name updated) " " (:size updated)))

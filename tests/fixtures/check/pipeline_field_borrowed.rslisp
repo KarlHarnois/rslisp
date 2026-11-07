@@ -3,5 +3,5 @@
   :label str)
 
 (defn drain (f)
-  (let first (count (:items f)))
+  (local first (count (:items f)))
   (+ first (count (:items f))))

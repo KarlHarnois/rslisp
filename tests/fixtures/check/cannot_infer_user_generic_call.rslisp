@@ -3,5 +3,5 @@
 (defn make () (vec))
 
 (defn main ()
-  (let v (make))
+  (local v (make))
   (println "done"))

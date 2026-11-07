@@ -8,7 +8,7 @@
 
 (defrule case
   ((value clause ...)
-   (do (let subject value) (case-clauses subject clause ...))))
+   (do (local subject value) (case-clauses subject clause ...))))
 
 (defrule case-clauses
   ((subject ((quote else) body ...)) (do body ...))
@@ -41,7 +41,7 @@
                counter)))))
 
 (defmacro defcounter (name start step)
-  (let next-name (symbol name "next-" (symbol-name name)))
+  (local next-name (symbol name "next-" (symbol-name name)))
   (template (do
               (defn (unquote name) () (unquote start))
               (defn (unquote next-name) (value)
@@ -83,8 +83,8 @@
 (defchecks calm? positive? even? small?)
 
 (defn escalate (r)
-  (let limit (:limit r))
-  (let alarms (+ (:alarms r) 1))
+  (local limit (:limit r))
+  (local alarms (+ (:alarms r) 1))
   (if (> (:level r) limit)
     (assoc r :alarms alarms :level limit)
     r))
@@ -113,21 +113,21 @@
 (defcounter rule-1-start 0 1)
 
 (defn rule-1 (seed)
-  (let base
+  (local base
     (-> seed
         (rule-1-start-shift)
         (* 3)
         (+ 0)
         (clamp 0 500)))
-  (let label
+  (local label
     (case (rem base 4)
           (0 "steady")
           (1 "rising")
           (2 "falling")
           (else "noisy")))
-  (let r
+  (local r
     (escalate (->reading :site label :level base :limit 40)))
-  (let hits
+  (local hits
     (tally hits (base 0 1 (sum-of 1 2 1)) calm?))
   (unless-zero hits
                (dotimes (pass (clamp hits 0 2))
@@ -145,21 +145,21 @@
 (defcounter rule-2-start 1 2)
 
 (defn rule-2 (seed)
-  (let base
+  (local base
     (-> seed
         (rule-2-start-shift)
         (* 3)
         (+ 1)
         (clamp 0 500)))
-  (let label
+  (local label
     (case (rem base 4)
           (0 "steady")
           (1 "rising")
           (2 "falling")
           (else "noisy")))
-  (let r
+  (local r
     (escalate (->reading :site label :level base :limit 41)))
-  (let hits
+  (local hits
     (tally hits (base 1 2 (sum-of 1 2 2)) calm?))
   (unless-zero hits
                (dotimes (pass (clamp hits 0 2))
@@ -177,21 +177,21 @@
 (defcounter rule-3-start 2 3)
 
 (defn rule-3 (seed)
-  (let base
+  (local base
     (-> seed
         (rule-3-start-shift)
         (* 3)
         (+ 2)
         (clamp 0 500)))
-  (let label
+  (local label
     (case (rem base 4)
           (0 "steady")
           (1 "rising")
           (2 "falling")
           (else "noisy")))
-  (let r
+  (local r
     (escalate (->reading :site label :level base :limit 42)))
-  (let hits
+  (local hits
     (tally hits (base 2 3 (sum-of 1 2 3)) calm?))
   (unless-zero hits
                (dotimes (pass (clamp hits 0 2))
@@ -209,21 +209,21 @@
 (defcounter rule-4-start 3 4)
 
 (defn rule-4 (seed)
-  (let base
+  (local base
     (-> seed
         (rule-4-start-shift)
         (* 3)
         (+ 3)
         (clamp 0 500)))
-  (let label
+  (local label
     (case (rem base 4)
           (0 "steady")
           (1 "rising")
           (2 "falling")
           (else "noisy")))
-  (let r
+  (local r
     (escalate (->reading :site label :level base :limit 43)))
-  (let hits
+  (local hits
     (tally hits (base 3 4 (sum-of 1 2 4)) calm?))
   (unless-zero hits
                (dotimes (pass (clamp hits 0 2))
@@ -241,21 +241,21 @@
 (defcounter rule-5-start 4 5)
 
 (defn rule-5 (seed)
-  (let base
+  (local base
     (-> seed
         (rule-5-start-shift)
         (* 3)
         (+ 4)
         (clamp 0 500)))
-  (let label
+  (local label
     (case (rem base 4)
           (0 "steady")
           (1 "rising")
           (2 "falling")
           (else "noisy")))
-  (let r
+  (local r
     (escalate (->reading :site label :level base :limit 44)))
-  (let hits
+  (local hits
     (tally hits (base 4 5 (sum-of 1 2 5)) calm?))
   (unless-zero hits
                (dotimes (pass (clamp hits 0 2))
@@ -273,21 +273,21 @@
 (defcounter rule-6-start 5 1)
 
 (defn rule-6 (seed)
-  (let base
+  (local base
     (-> seed
         (rule-6-start-shift)
         (* 3)
         (+ 5)
         (clamp 0 500)))
-  (let label
+  (local label
     (case (rem base 4)
           (0 "steady")
           (1 "rising")
           (2 "falling")
           (else "noisy")))
-  (let r
+  (local r
     (escalate (->reading :site label :level base :limit 45)))
-  (let hits
+  (local hits
     (tally hits (base 5 1 (sum-of 1 2 1)) calm?))
   (unless-zero hits
                (dotimes (pass (clamp hits 0 2))
@@ -305,21 +305,21 @@
 (defcounter rule-7-start 6 2)
 
 (defn rule-7 (seed)
-  (let base
+  (local base
     (-> seed
         (rule-7-start-shift)
         (* 3)
         (+ 6)
         (clamp 0 500)))
-  (let label
+  (local label
     (case (rem base 4)
           (0 "steady")
           (1 "rising")
           (2 "falling")
           (else "noisy")))
-  (let r
+  (local r
     (escalate (->reading :site label :level base :limit 46)))
-  (let hits
+  (local hits
     (tally hits (base 6 2 (sum-of 1 2 2)) calm?))
   (unless-zero hits
                (dotimes (pass (clamp hits 0 2))
@@ -337,21 +337,21 @@
 (defcounter rule-8-start 7 3)
 
 (defn rule-8 (seed)
-  (let base
+  (local base
     (-> seed
         (rule-8-start-shift)
         (* 3)
         (+ 7)
         (clamp 0 500)))
-  (let label
+  (local label
     (case (rem base 4)
           (0 "steady")
           (1 "rising")
           (2 "falling")
           (else "noisy")))
-  (let r
+  (local r
     (escalate (->reading :site label :level base :limit 47)))
-  (let hits
+  (local hits
     (tally hits (base 7 3 (sum-of 1 2 3)) calm?))
   (unless-zero hits
                (dotimes (pass (clamp hits 0 2))
@@ -369,21 +369,21 @@
 (defcounter rule-9-start 8 4)
 
 (defn rule-9 (seed)
-  (let base
+  (local base
     (-> seed
         (rule-9-start-shift)
         (* 3)
         (+ 8)
         (clamp 0 500)))
-  (let label
+  (local label
     (case (rem base 4)
           (0 "steady")
           (1 "rising")
           (2 "falling")
           (else "noisy")))
-  (let r
+  (local r
     (escalate (->reading :site label :level base :limit 48)))
-  (let hits
+  (local hits
     (tally hits (base 8 4 (sum-of 1 2 4)) calm?))
   (unless-zero hits
                (dotimes (pass (clamp hits 0 2))
@@ -401,21 +401,21 @@
 (defcounter rule-10-start 9 5)
 
 (defn rule-10 (seed)
-  (let base
+  (local base
     (-> seed
         (rule-10-start-shift)
         (* 3)
         (+ 9)
         (clamp 0 500)))
-  (let label
+  (local label
     (case (rem base 4)
           (0 "steady")
           (1 "rising")
           (2 "falling")
           (else "noisy")))
-  (let r
+  (local r
     (escalate (->reading :site label :level base :limit 49)))
-  (let hits
+  (local hits
     (tally hits (base 9 5 (sum-of 1 2 5)) calm?))
   (unless-zero hits
                (dotimes (pass (clamp hits 0 2))
@@ -433,21 +433,21 @@
 (defcounter rule-11-start 10 1)
 
 (defn rule-11 (seed)
-  (let base
+  (local base
     (-> seed
         (rule-11-start-shift)
         (* 3)
         (+ 10)
         (clamp 0 500)))
-  (let label
+  (local label
     (case (rem base 4)
           (0 "steady")
           (1 "rising")
           (2 "falling")
           (else "noisy")))
-  (let r
+  (local r
     (escalate (->reading :site label :level base :limit 50)))
-  (let hits
+  (local hits
     (tally hits (base 10 1 (sum-of 1 2 1)) calm?))
   (unless-zero hits
                (dotimes (pass (clamp hits 0 2))
@@ -465,21 +465,21 @@
 (defcounter rule-12-start 11 2)
 
 (defn rule-12 (seed)
-  (let base
+  (local base
     (-> seed
         (rule-12-start-shift)
         (* 3)
         (+ 11)
         (clamp 0 500)))
-  (let label
+  (local label
     (case (rem base 4)
           (0 "steady")
           (1 "rising")
           (2 "falling")
           (else "noisy")))
-  (let r
+  (local r
     (escalate (->reading :site label :level base :limit 51)))
-  (let hits
+  (local hits
     (tally hits (base 11 2 (sum-of 1 2 2)) calm?))
   (unless-zero hits
                (dotimes (pass (clamp hits 0 2))
@@ -497,21 +497,21 @@
 (defcounter rule-13-start 12 3)
 
 (defn rule-13 (seed)
-  (let base
+  (local base
     (-> seed
         (rule-13-start-shift)
         (* 3)
         (+ 12)
         (clamp 0 500)))
-  (let label
+  (local label
     (case (rem base 4)
           (0 "steady")
           (1 "rising")
           (2 "falling")
           (else "noisy")))
-  (let r
+  (local r
     (escalate (->reading :site label :level base :limit 52)))
-  (let hits
+  (local hits
     (tally hits (base 12 3 (sum-of 1 2 3)) calm?))
   (unless-zero hits
                (dotimes (pass (clamp hits 0 2))
@@ -529,21 +529,21 @@
 (defcounter rule-14-start 13 4)
 
 (defn rule-14 (seed)
-  (let base
+  (local base
     (-> seed
         (rule-14-start-shift)
         (* 3)
         (+ 13)
         (clamp 0 500)))
-  (let label
+  (local label
     (case (rem base 4)
           (0 "steady")
           (1 "rising")
           (2 "falling")
           (else "noisy")))
-  (let r
+  (local r
     (escalate (->reading :site label :level base :limit 53)))
-  (let hits
+  (local hits
     (tally hits (base 13 4 (sum-of 1 2 4)) calm?))
   (unless-zero hits
                (dotimes (pass (clamp hits 0 2))
@@ -561,21 +561,21 @@
 (defcounter rule-15-start 14 5)
 
 (defn rule-15 (seed)
-  (let base
+  (local base
     (-> seed
         (rule-15-start-shift)
         (* 3)
         (+ 14)
         (clamp 0 500)))
-  (let label
+  (local label
     (case (rem base 4)
           (0 "steady")
           (1 "rising")
           (2 "falling")
           (else "noisy")))
-  (let r
+  (local r
     (escalate (->reading :site label :level base :limit 54)))
-  (let hits
+  (local hits
     (tally hits (base 14 5 (sum-of 1 2 5)) calm?))
   (unless-zero hits
                (dotimes (pass (clamp hits 0 2))
@@ -593,21 +593,21 @@
 (defcounter rule-16-start 15 1)
 
 (defn rule-16 (seed)
-  (let base
+  (local base
     (-> seed
         (rule-16-start-shift)
         (* 3)
         (+ 15)
         (clamp 0 500)))
-  (let label
+  (local label
     (case (rem base 4)
           (0 "steady")
           (1 "rising")
           (2 "falling")
           (else "noisy")))
-  (let r
+  (local r
     (escalate (->reading :site label :level base :limit 55)))
-  (let hits
+  (local hits
     (tally hits (base 15 1 (sum-of 1 2 1)) calm?))
   (unless-zero hits
                (dotimes (pass (clamp hits 0 2))
@@ -625,21 +625,21 @@
 (defcounter rule-17-start 16 2)
 
 (defn rule-17 (seed)
-  (let base
+  (local base
     (-> seed
         (rule-17-start-shift)
         (* 3)
         (+ 16)
         (clamp 0 500)))
-  (let label
+  (local label
     (case (rem base 4)
           (0 "steady")
           (1 "rising")
           (2 "falling")
           (else "noisy")))
-  (let r
+  (local r
     (escalate (->reading :site label :level base :limit 56)))
-  (let hits
+  (local hits
     (tally hits (base 16 2 (sum-of 1 2 2)) calm?))
   (unless-zero hits
                (dotimes (pass (clamp hits 0 2))
@@ -657,21 +657,21 @@
 (defcounter rule-18-start 17 3)
 
 (defn rule-18 (seed)
-  (let base
+  (local base
     (-> seed
         (rule-18-start-shift)
         (* 3)
         (+ 17)
         (clamp 0 500)))
-  (let label
+  (local label
     (case (rem base 4)
           (0 "steady")
           (1 "rising")
           (2 "falling")
           (else "noisy")))
-  (let r
+  (local r
     (escalate (->reading :site label :level base :limit 57)))
-  (let hits
+  (local hits
     (tally hits (base 17 3 (sum-of 1 2 3)) calm?))
   (unless-zero hits
                (dotimes (pass (clamp hits 0 2))
@@ -689,21 +689,21 @@
 (defcounter rule-19-start 18 4)
 
 (defn rule-19 (seed)
-  (let base
+  (local base
     (-> seed
         (rule-19-start-shift)
         (* 3)
         (+ 18)
         (clamp 0 500)))
-  (let label
+  (local label
     (case (rem base 4)
           (0 "steady")
           (1 "rising")
           (2 "falling")
           (else "noisy")))
-  (let r
+  (local r
     (escalate (->reading :site label :level base :limit 58)))
-  (let hits
+  (local hits
     (tally hits (base 18 4 (sum-of 1 2 4)) calm?))
   (unless-zero hits
                (dotimes (pass (clamp hits 0 2))
@@ -721,21 +721,21 @@
 (defcounter rule-20-start 19 5)
 
 (defn rule-20 (seed)
-  (let base
+  (local base
     (-> seed
         (rule-20-start-shift)
         (* 3)
         (+ 19)
         (clamp 0 500)))
-  (let label
+  (local label
     (case (rem base 4)
           (0 "steady")
           (1 "rising")
           (2 "falling")
           (else "noisy")))
-  (let r
+  (local r
     (escalate (->reading :site label :level base :limit 59)))
-  (let hits
+  (local hits
     (tally hits (base 19 5 (sum-of 1 2 5)) calm?))
   (unless-zero hits
                (dotimes (pass (clamp hits 0 2))
@@ -753,21 +753,21 @@
 (defcounter rule-21-start 20 1)
 
 (defn rule-21 (seed)
-  (let base
+  (local base
     (-> seed
         (rule-21-start-shift)
         (* 3)
         (+ 20)
         (clamp 0 500)))
-  (let label
+  (local label
     (case (rem base 4)
           (0 "steady")
           (1 "rising")
           (2 "falling")
           (else "noisy")))
-  (let r
+  (local r
     (escalate (->reading :site label :level base :limit 60)))
-  (let hits
+  (local hits
     (tally hits (base 20 1 (sum-of 1 2 1)) calm?))
   (unless-zero hits
                (dotimes (pass (clamp hits 0 2))
@@ -785,21 +785,21 @@
 (defcounter rule-22-start 21 2)
 
 (defn rule-22 (seed)
-  (let base
+  (local base
     (-> seed
         (rule-22-start-shift)
         (* 3)
         (+ 21)
         (clamp 0 500)))
-  (let label
+  (local label
     (case (rem base 4)
           (0 "steady")
           (1 "rising")
           (2 "falling")
           (else "noisy")))
-  (let r
+  (local r
     (escalate (->reading :site label :level base :limit 61)))
-  (let hits
+  (local hits
     (tally hits (base 21 2 (sum-of 1 2 2)) calm?))
   (unless-zero hits
                (dotimes (pass (clamp hits 0 2))
@@ -817,21 +817,21 @@
 (defcounter rule-23-start 22 3)
 
 (defn rule-23 (seed)
-  (let base
+  (local base
     (-> seed
         (rule-23-start-shift)
         (* 3)
         (+ 22)
         (clamp 0 500)))
-  (let label
+  (local label
     (case (rem base 4)
           (0 "steady")
           (1 "rising")
           (2 "falling")
           (else "noisy")))
-  (let r
+  (local r
     (escalate (->reading :site label :level base :limit 62)))
-  (let hits
+  (local hits
     (tally hits (base 22 3 (sum-of 1 2 3)) calm?))
   (unless-zero hits
                (dotimes (pass (clamp hits 0 2))
@@ -849,21 +849,21 @@
 (defcounter rule-24-start 23 4)
 
 (defn rule-24 (seed)
-  (let base
+  (local base
     (-> seed
         (rule-24-start-shift)
         (* 3)
         (+ 23)
         (clamp 0 500)))
-  (let label
+  (local label
     (case (rem base 4)
           (0 "steady")
           (1 "rising")
           (2 "falling")
           (else "noisy")))
-  (let r
+  (local r
     (escalate (->reading :site label :level base :limit 63)))
-  (let hits
+  (local hits
     (tally hits (base 23 4 (sum-of 1 2 4)) calm?))
   (unless-zero hits
                (dotimes (pass (clamp hits 0 2))
@@ -881,21 +881,21 @@
 (defcounter rule-25-start 24 5)
 
 (defn rule-25 (seed)
-  (let base
+  (local base
     (-> seed
         (rule-25-start-shift)
         (* 3)
         (+ 24)
         (clamp 0 500)))
-  (let label
+  (local label
     (case (rem base 4)
           (0 "steady")
           (1 "rising")
           (2 "falling")
           (else "noisy")))
-  (let r
+  (local r
     (escalate (->reading :site label :level base :limit 64)))
-  (let hits
+  (local hits
     (tally hits (base 24 5 (sum-of 1 2 5)) calm?))
   (unless-zero hits
                (dotimes (pass (clamp hits 0 2))
@@ -913,21 +913,21 @@
 (defcounter rule-26-start 25 1)
 
 (defn rule-26 (seed)
-  (let base
+  (local base
     (-> seed
         (rule-26-start-shift)
         (* 3)
         (+ 25)
         (clamp 0 500)))
-  (let label
+  (local label
     (case (rem base 4)
           (0 "steady")
           (1 "rising")
           (2 "falling")
           (else "noisy")))
-  (let r
+  (local r
     (escalate (->reading :site label :level base :limit 65)))
-  (let hits
+  (local hits
     (tally hits (base 25 1 (sum-of 1 2 1)) calm?))
   (unless-zero hits
                (dotimes (pass (clamp hits 0 2))
@@ -945,21 +945,21 @@
 (defcounter rule-27-start 26 2)
 
 (defn rule-27 (seed)
-  (let base
+  (local base
     (-> seed
         (rule-27-start-shift)
         (* 3)
         (+ 26)
         (clamp 0 500)))
-  (let label
+  (local label
     (case (rem base 4)
           (0 "steady")
           (1 "rising")
           (2 "falling")
           (else "noisy")))
-  (let r
+  (local r
     (escalate (->reading :site label :level base :limit 66)))
-  (let hits
+  (local hits
     (tally hits (base 26 2 (sum-of 1 2 2)) calm?))
   (unless-zero hits
                (dotimes (pass (clamp hits 0 2))
@@ -977,21 +977,21 @@
 (defcounter rule-28-start 27 3)
 
 (defn rule-28 (seed)
-  (let base
+  (local base
     (-> seed
         (rule-28-start-shift)
         (* 3)
         (+ 27)
         (clamp 0 500)))
-  (let label
+  (local label
     (case (rem base 4)
           (0 "steady")
           (1 "rising")
           (2 "falling")
           (else "noisy")))
-  (let r
+  (local r
     (escalate (->reading :site label :level base :limit 67)))
-  (let hits
+  (local hits
     (tally hits (base 27 3 (sum-of 1 2 3)) calm?))
   (unless-zero hits
                (dotimes (pass (clamp hits 0 2))
@@ -1009,21 +1009,21 @@
 (defcounter rule-29-start 28 4)
 
 (defn rule-29 (seed)
-  (let base
+  (local base
     (-> seed
         (rule-29-start-shift)
         (* 3)
         (+ 28)
         (clamp 0 500)))
-  (let label
+  (local label
     (case (rem base 4)
           (0 "steady")
           (1 "rising")
           (2 "falling")
           (else "noisy")))
-  (let r
+  (local r
     (escalate (->reading :site label :level base :limit 68)))
-  (let hits
+  (local hits
     (tally hits (base 28 4 (sum-of 1 2 4)) calm?))
   (unless-zero hits
                (dotimes (pass (clamp hits 0 2))
@@ -1041,21 +1041,21 @@
 (defcounter rule-30-start 29 5)
 
 (defn rule-30 (seed)
-  (let base
+  (local base
     (-> seed
         (rule-30-start-shift)
         (* 3)
         (+ 29)
         (clamp 0 500)))
-  (let label
+  (local label
     (case (rem base 4)
           (0 "steady")
           (1 "rising")
           (2 "falling")
           (else "noisy")))
-  (let r
+  (local r
     (escalate (->reading :site label :level base :limit 69)))
-  (let hits
+  (local hits
     (tally hits (base 29 5 (sum-of 1 2 5)) calm?))
   (unless-zero hits
                (dotimes (pass (clamp hits 0 2))
@@ -1073,21 +1073,21 @@
 (defcounter rule-31-start 30 1)
 
 (defn rule-31 (seed)
-  (let base
+  (local base
     (-> seed
         (rule-31-start-shift)
         (* 3)
         (+ 30)
         (clamp 0 500)))
-  (let label
+  (local label
     (case (rem base 4)
           (0 "steady")
           (1 "rising")
           (2 "falling")
           (else "noisy")))
-  (let r
+  (local r
     (escalate (->reading :site label :level base :limit 70)))
-  (let hits
+  (local hits
     (tally hits (base 30 1 (sum-of 1 2 1)) calm?))
   (unless-zero hits
                (dotimes (pass (clamp hits 0 2))
@@ -1105,21 +1105,21 @@
 (defcounter rule-32-start 31 2)
 
 (defn rule-32 (seed)
-  (let base
+  (local base
     (-> seed
         (rule-32-start-shift)
         (* 3)
         (+ 31)
         (clamp 0 500)))
-  (let label
+  (local label
     (case (rem base 4)
           (0 "steady")
           (1 "rising")
           (2 "falling")
           (else "noisy")))
-  (let r
+  (local r
     (escalate (->reading :site label :level base :limit 71)))
-  (let hits
+  (local hits
     (tally hits (base 31 2 (sum-of 1 2 2)) calm?))
   (unless-zero hits
                (dotimes (pass (clamp hits 0 2))

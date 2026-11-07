@@ -5,6 +5,6 @@
   :count i64)
 
 (defn main ()
-  (let c (->counter 0))
+  (local c (->counter 0))
   (bump (field c count))
   (println (:count c)))

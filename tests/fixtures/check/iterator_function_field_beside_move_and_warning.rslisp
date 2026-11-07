@@ -11,6 +11,6 @@
   items)
 
 (defn main ()
-  (let years (vec 2019))
-  (let moved (consume years))
+  (local years (vec 2019))
+  (local moved (consume years))
   (println (len years)))

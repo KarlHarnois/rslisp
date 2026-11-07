@@ -1,6 +1,6 @@
 (defn main ()
-  (let deck (->deck :name "The Deck" :cards cards))
-  (let names
+  (local deck (->deck :name "The Deck" :cards cards))
+  (local names
     (collect (map (:cards deck) :name)))
   (prn names))
 

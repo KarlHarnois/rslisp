@@ -9,10 +9,10 @@
   (->person new-name (:age someone)))
 
 (defn main ()
-  (let ada (->person (str "Ada") 36))
+  (local ada (->person (str "Ada") 36))
   (println (:name ada))
   (println (:name ada))
   (println (introduce ada))
-  (let copy (clone (:name ada)))
-  (let renamed (rename ada copy))
+  (local copy (clone (:name ada)))
+  (local renamed (rename ada copy))
   (println (introduce renamed)))

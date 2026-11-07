@@ -6,13 +6,13 @@ input_file: tests/fixtures/run/rustc_error.rslisp
 error[L0501]: use of moved value `first-pair`
  --> run/rustc_error.rslisp:8:19
   |
-7 |   (let moved first-pair)
-  |              ---------- value moved here
+7 |   (local moved first-pair)
+  |                ---------- value moved here
 8 |   (println (:left first-pair)))
   |                   ^^^^^^^^^^ value used here after it moved
   |
 help: clone the value if both places need it
   |
-7 -   (let moved first-pair)
-7 +   (let moved (clone first-pair))
+7 -   (local moved first-pair)
+7 +   (local moved (clone first-pair))
   |

@@ -4,6 +4,6 @@
 (defn flip (b) (+ (neg b) 1))
 
 (defn main ()
-  (let shorts (the (vec i16) (vec 3 7)))
+  (local shorts (the (vec i16) (vec 3 7)))
   (println (flip 5))
   (println (sum (map (iter shorts) flip))))

@@ -2,7 +2,7 @@
   :maker (option (fn () i64)))
 
 (defn main ()
-  (let backup
+  (local backup
     (->spare :maker (some (fn () (+ 4 1)))))
   (match backup
     ((spare (some maker)) (println (maker)))

@@ -3,9 +3,9 @@
   :samples (ref (slice i64)))
 
 (defn main ()
-  (let readings (vec 7 9 4))
-  (let first (->window "morning" readings))
-  (let second first)
+  (local readings (vec 7 9 4))
+  (local first (->window "morning" readings))
+  (local second first)
   (println (:title first)
            " "
            (len (:samples second))))

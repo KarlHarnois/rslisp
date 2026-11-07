@@ -3,6 +3,6 @@
 (defn keep (f) (do))
 
 (defn main ()
-  (let more (vec 1))
-  (let record (fn () (push! more 2)))
+  (local more (vec 1))
+  (local record (fn () (push! more 2)))
   (keep (fn () (record))))

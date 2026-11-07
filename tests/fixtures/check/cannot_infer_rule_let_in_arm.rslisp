@@ -1,4 +1,5 @@
-(defrule hold ((name) (let name (vec))))
+(defrule hold
+  ((name) (local name (vec))))
 
 (defn main ()
   (match (some 1)

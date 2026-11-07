@@ -9,7 +9,7 @@
   (:year (constructor 2025)))
 
 (defn main ()
-  (let make (str "Nissan"))
+  (local make (str "Nissan"))
   (println (measure (fn ()
                       (->car :make (as-str make) :year 2024))))
   (println (measure-model-year (fn (year)

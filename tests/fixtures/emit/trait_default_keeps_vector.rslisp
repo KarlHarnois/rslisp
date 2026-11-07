@@ -22,8 +22,8 @@
 (impl mileage gauge)
 
 (defn main ()
-  (let readings (vec 1200 3400))
-  (let reading-gauge (->gauge 7))
+  (local readings (vec 1200 3400))
+  (local reading-gauge (->gauge 7))
   (record! (->odometer 5) (mut readings))
   (record! (->meter 2) (mut readings))
   (record! reading-gauge (mut readings))

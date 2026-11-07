@@ -5,7 +5,7 @@
 (def it 1)
 
 (defmacro tap (form)
-  (template (let (unquote (nth form 1))
+  (template (local (unquote (nth form 1))
               (unquote form))))
 
 (defn main ()

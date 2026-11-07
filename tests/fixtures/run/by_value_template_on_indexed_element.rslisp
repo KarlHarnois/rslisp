@@ -9,6 +9,6 @@
   (count-items (at rows 0)))
 
 (defn main ()
-  (let rows (vec (vec 1 2 3)))
+  (local rows (vec (vec 1 2 3)))
   (push! rows (vec 4))
   (println (first-row-count rows)))

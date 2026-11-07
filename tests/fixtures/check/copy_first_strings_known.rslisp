@@ -3,7 +3,7 @@
   (push! names (str "x")))
 
 (defn main ()
-  (let names
+  (local names
     (vec (str "Leaf") (str "Civic")))
   (copy-first! (mut names))
   (println (at names 1)))

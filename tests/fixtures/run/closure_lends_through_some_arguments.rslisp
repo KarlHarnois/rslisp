@@ -2,14 +2,15 @@
   (rust "{0}" (where (a b) (fn (a b) a))))
 
 (defn label ((other (ref str)))
-  (let name (str "Ariya"))
+  (local name (str "Ariya"))
   (left other (as-str name)))
 
 (defn main ()
-  (let pick
+  (local pick
     (fn (maybe) (unwrap-or maybe "none")))
-  (let model (fn ((name (ref str))) name))
-  (let again model)
+  (local model
+    (fn ((name (ref str))) name))
+  (local again model)
   (println (pick (some "Leaf")))
   (println (pick none))
   (println (again "Leaf"))

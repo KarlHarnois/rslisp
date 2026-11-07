@@ -1,5 +1,5 @@
 (defn later (values)
-  (let pick
+  (local pick
     (fn ()
       (find values
             (fn (value) (> (deref value) 5)))))

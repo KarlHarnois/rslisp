@@ -8,7 +8,7 @@
 
 (def report-sightings
   (macro (form)
-    (let notes
+    (local notes
       (module-notes (definition-symbol (nth form 1) "notes")
                     (quote sightings)))
     (fail (string "sightings noted: " (len notes)) form)))

@@ -1,7 +1,7 @@
 (defn main ()
-  (let model (str "Leaf"))
-  (let make-getter
+  (local model (str "Leaf"))
+  (local make-getter
     (fn () (fn () (println model))))
-  (let getter (make-getter))
+  (local getter (make-getter))
   (getter)
   (getter))

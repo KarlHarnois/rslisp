@@ -18,7 +18,7 @@
   (apply-once (fn (n) (record n)) year))
 
 (defn main ()
-  (let years (vec 2024))
+  (local years (vec 2024))
   (record-each (fn (year) (push! years year))
                (range 2025 2027))
   (record-through-each-year (fn (year) (push! years year))

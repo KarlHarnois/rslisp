@@ -9,6 +9,6 @@
   (bump! (field t count)))
 
 (defn main ()
-  (let t (->tally 5 (str "fake")))
+  (local t (->tally 5 (str "fake")))
   (bump-count! t)
   (println (:count t)))

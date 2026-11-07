@@ -8,7 +8,7 @@
 
 (def area
   (fn (width height)
-    (let doubled (do width))
+    (local doubled (do width))
     (if doubled height (field origin x))))
 
 (type identity

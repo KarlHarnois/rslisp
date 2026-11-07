@@ -5,5 +5,5 @@
   (defaults :admin? false))
 
 (defn main ()
-  (let ana (->user :name "ana"))
+  (local ana (->user :name "ana"))
   (println (:name ana)))

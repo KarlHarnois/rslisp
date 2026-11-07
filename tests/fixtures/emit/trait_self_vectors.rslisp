@@ -11,6 +11,6 @@
   (pair (c) (vec c c)))
 
 (defn main ()
-  (let leaf (->car 2024))
-  (let others (pair (->car 2019)))
+  (local leaf (->car 2024))
+  (local others (pair (->car 2019)))
   (println (newest leaf others)))

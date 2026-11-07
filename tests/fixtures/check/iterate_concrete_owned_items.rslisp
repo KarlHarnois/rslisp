@@ -4,6 +4,6 @@
 (defn shout-all (models) (count models))
 
 (defn main ()
-  (let models
+  (local models
     (vec (str "Leaf") (str "Ariya")))
   (println (shout-all models)))

@@ -7,7 +7,7 @@
        :name))
 
 (defn main ()
-  (let users
+  (local users
     (vec (->user "Ana" 34) (->user "Bo" 12)))
   (push! users (->user "Cy" 51))
   (println (count (adult-names users)))

@@ -1,5 +1,5 @@
 (defn second-of (reader items) (reader items 1))
 
 (defn main ()
-  (let years (vec 2019 2025))
+  (local years (vec 2019 2025))
   (println (unwrap (second-of get (ref years)))))

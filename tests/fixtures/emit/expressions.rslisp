@@ -11,7 +11,7 @@
   (or (= a 1) (= a 2) (= a 3)))
 
 (defn twice-next (x)
-  (do (let y (+ x 1)) (* y 2)))
+  (do (local y (+ x 1)) (* y 2)))
 
 (defn sum-to (limit)
   (loop ((i 0) (total 0))
@@ -25,7 +25,7 @@
   (str (:count c)))
 
 (defn main ()
-  (let c (->counter 0))
+  (local c (->counter 0))
   (bump! (field c count))
   (println (in-range? 3))
   (println (small? 2))

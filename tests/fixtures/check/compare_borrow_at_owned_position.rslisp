@@ -3,7 +3,7 @@
     (where ((a partial-eq)) (fn (a a) bool))))
 
 (defn main ()
-  (let model (str "Leaf"))
-  (let other (str "Civic"))
-  (let r (ref other))
+  (local model (str "Leaf"))
+  (local other (str "Civic"))
+  (local r (ref other))
   (println (same-owned? (ref model) r)))

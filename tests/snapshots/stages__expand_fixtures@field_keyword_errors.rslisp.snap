@@ -44,9 +44,9 @@ error[L0243]: a field keyword takes one value
    = help: write (:year value)
 
 error[L0244]: a name cannot start with `:`
-  --> expand/field_keyword_errors.rslisp:19:8
+  --> expand/field_keyword_errors.rslisp:19:10
    |
-19 |   (let :year 3)
-   |        ^^^^^ this is a field keyword
+19 |   (local :year 3)
+   |          ^^^^^ this is a field keyword
    |
    = help: names starting with `:` read struct fields; choose another name

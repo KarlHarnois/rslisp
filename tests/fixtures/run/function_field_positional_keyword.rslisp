@@ -7,5 +7,5 @@
   :label str)
 
 (defn main ()
-  (let chosen (->sorter :name "by name"))
+  (local chosen (->sorter :name "by name"))
   (println (:label chosen)))

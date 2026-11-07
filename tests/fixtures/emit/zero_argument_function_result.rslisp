@@ -8,6 +8,6 @@
   (fn () (->car :make "Nissan" :model "Leaf")))
 
 (defn main ()
-  (let make (leaf-maker))
-  (let leaf (make))
+  (local make (leaf-maker))
+  (local leaf (make))
   (println (:make leaf) " " (:model leaf)))

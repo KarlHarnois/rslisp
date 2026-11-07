@@ -50,7 +50,7 @@
   (fn ((ref matrix) (ref matrix)) matrix))
 
 (defn multiply (left right)
-  (let n (size left))
+  (local n (size left))
   (->matrix (collect (map (range 0 n)
                           (fn (row)
                             (collect (map
@@ -73,7 +73,7 @@
   (fn ((ref matrix)) matrix))
 
 (defn transpose (m)
-  (let n (size m))
+  (local n (size m))
   (->matrix (collect (map (range 0 n)
                           (fn (row)
                             (collect (map (range 0 n)
@@ -84,7 +84,7 @@
   (fn ((ref matrix) usize) matrix))
 
 (defn minor (m skipped)
-  (let n (size m))
+  (local n (size m))
   (->matrix (collect (map (range 1 n)
                           (fn (row)
                             (collect (map
@@ -117,7 +117,7 @@
     (option (vec f64))))
 
 (defn solve (m targets)
-  (let whole (determinant m))
+  (local whole (determinant m))
   (if (< (magnitude whole) 0.000001)
     none
     (some (collect (map (range 0 (size m))
@@ -131,7 +131,7 @@
     matrix))
 
 (defn replace-column (m replaced targets)
-  (let n (size m))
+  (local n (size m))
   (->matrix (collect (map (range 0 n)
                           (fn (row)
                             (collect (map (range 0 n)

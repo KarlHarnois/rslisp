@@ -10,7 +10,7 @@
   (add-car! cars second))
 
 (defn main ()
-  (let cars (vec))
+  (local cars (vec))
   (add-pair! (mut cars)
              (->car :make "Nissan" :model "Leaf" :year 2023)
              (->car :make "Nissan" :model "Ariya" :year 2024))

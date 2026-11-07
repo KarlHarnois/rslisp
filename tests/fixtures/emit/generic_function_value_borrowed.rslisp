@@ -4,6 +4,6 @@
 (defn apply-two (f a b) (f a b))
 
 (defn main ()
-  (let name (str "Leaf"))
-  (let count 3)
+  (local name (str "Leaf"))
+  (local count 3)
   (println (apply-two label (as-str name) count)))

@@ -19,7 +19,7 @@
     (tree/leaf 0)))
 
 (defn main ()
-  (let tree
+  (local tree
     (tree/node (tree/node tree/leaf 7 tree/leaf) 2 tree/leaf))
   (println (left-value! (mut tree)))
   (prn tree))

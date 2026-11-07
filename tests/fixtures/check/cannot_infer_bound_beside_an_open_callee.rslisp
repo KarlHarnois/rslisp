@@ -6,7 +6,7 @@
     (where ((a named)) (fn ((ref a)) bool))))
 
 (defn main ()
-  (let run
+  (local run
     (fn (g v w)
       (if true (g (named? (ref v)) w) (+ v 1))))
   (println "done"))

@@ -7,6 +7,6 @@
   (ok (try (parse text))))
 
 (defn main ()
-  (let (parsed (result i64 _))
+  (local (parsed (result i64 _))
     (read-number "2"))
   (println (unwrap-ok parsed)))

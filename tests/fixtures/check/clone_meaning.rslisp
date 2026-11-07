@@ -1,5 +1,5 @@
 (defn twice! (stack)
-  (let copy stack)
+  (local copy stack)
   (push! copy 1)
   (len stack))
 

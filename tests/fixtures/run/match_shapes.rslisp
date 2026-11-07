@@ -27,7 +27,7 @@
 
 (defn wait (s)
   (match s
-    ((circle _) (let ignored 0))
+    ((circle _) (local ignored 0))
     ((rect _ _) (do))
     ((labeled _ _) (do))
     (point (do))))

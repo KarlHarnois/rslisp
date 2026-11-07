@@ -44,7 +44,7 @@
   "Builds a vector from its elements, which all have one type.
 
   `(vec)` is empty. `vec` is also the type `(vec a)`, Rust's `Vec<A>`."
-  (let count (len elements))
+  (local count (len elements))
   (if (empty? elements)
     (list (quote rust)
           "Vec::new()"

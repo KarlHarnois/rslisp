@@ -54,7 +54,7 @@
   (ref (confirms false)))
 
 (defn settled ()
-  (ref (do (println "settling") (let year 2019))))
+  (ref (do (println "settling") (local year 2019))))
 
 (defn main ()
   (prn (sum))

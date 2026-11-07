@@ -19,11 +19,11 @@
 (def deftest
   (macro (form)
     (check-test-shape form)
-    (let name (nth form 1))
-    (let body (rest (rest form)))
-    (let documented (docstring-before-body? body))
-    (let forms (if documented (rest body) body))
-    (let function
+    (local name (nth form 1))
+    (local body (rest (rest form)))
+    (local documented (docstring-before-body? body))
+    (local forms (if documented (rest body) body))
+    (local function
       (symbol (quote test) "test-" (symbol-name name)))
     (template (do
                 (def (unquote function)
@@ -70,10 +70,10 @@
 
 (def note-test
   (macro (form)
-    (let name (nth form 2))
-    (let key
+    (local name (nth form 2))
+    (local key
       (symbol (quote test) "test " (symbol-name name)))
-    (let module (definition-symbol (nth form 1) "tests"))
+    (local module (definition-symbol (nth form 1) "tests"))
     (check-new-test name (module-notes module key))
     (add-module-note key name)
     (add-module-note (quote tests) (rest form))
@@ -112,10 +112,10 @@
 (def assert
   (macro (form)
     (check-assert-shape form)
-    (let checked (nth form 1))
-    (let written
+    (local checked (nth form 1))
+    (local written
       (list (form-location form) (string form)))
-    (let message
+    (local message
       (map-list deferred-message (rest (rest form))))
     (if (equality? checked)
       (equal-assertion (equal-check message)
@@ -211,8 +211,8 @@
 (def run-tests
   (macro (form)
     (check-run-tests-shape form)
-    (let marker (nth form 2))
-    (let notes (program-tests (program-modules)))
+    (local marker (nth form 2))
+    (local notes (program-tests (program-modules)))
     (template (do
                 (splice (untested-records marker (untested-option form) notes))
                 (start-run (unquote marker)
@@ -278,7 +278,7 @@
 
 (def test-run
   (fn (marker module-note)
-    (let note (rest module-note))
+    (local note (rest module-note))
     (template (run-test (unquote marker)
                         (unquote (test-full-name module-note))
                         (unquote (note-summary note))
@@ -297,7 +297,7 @@
 
 (def untested-record
   (fn (marker module exports written)
-    (let untested (unwritten exports written))
+    (local untested (unwritten exports written))
     (list (template (note-untested (unquote marker)
                                    (unquote (symbol-name module))
                                    (unquote (len exports))

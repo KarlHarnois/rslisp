@@ -18,7 +18,7 @@
   (model-of (c) (:model c)))
 
 (defn main ()
-  (let leaf (->car "Leaf" 2024))
+  (local leaf (->car "Leaf" 2024))
   (println (:model (newer leaf (->car "Golf" 2019))))
   (println (:model (relabel "Nissan" leaf)))
   (println (badge 2030 leaf))

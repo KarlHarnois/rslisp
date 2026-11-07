@@ -18,25 +18,25 @@
   empty)
 
 (defn grouped (year)
-  (let make (str "Nissan"))
+  (local make (str "Nissan"))
   (new car
     (make (as-str make))
     (year year)))
 
 (defn pinned ()
-  (let origin (->point 0 0))
+  (local origin (->point 0 0))
   (->pin :at (ref origin)))
 
 (defn titled (year)
-  (let title (str "Leaf"))
+  (local title (str "Leaf"))
   (badge/titled (as-str title) year))
 
 (defn held ()
-  (let make (str "Nissan"))
+  (local make (str "Nissan"))
   (new holder (held (as-str make))))
 
 (defn stamped (year)
-  (let make (str "Nissan"))
+  (local make (str "Nissan"))
   (plaque/engraved (as-str make) year))
 
 (defn main ()

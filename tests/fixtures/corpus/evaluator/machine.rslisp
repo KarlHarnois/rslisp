@@ -19,7 +19,7 @@
   (match (get statements index)
     ((some (binding name value))
      (do
-       (let result
+       (local result
          (try (evaluate value (ref names))))
        (execute-from statements
                      (+ index 1)
@@ -51,7 +51,7 @@
        (evaluate then names)))
     ((call function arguments)
      (do
-       (let values
+       (local values
          (try (evaluate-all arguments names 0 (vec))))
        (apply-function function values)))))
 
@@ -76,8 +76,8 @@
   (match (get arguments index)
     ((some argument)
      (do
-       (let value (try (evaluate argument names)))
-       (let growing values)
+       (local value (try (evaluate argument names)))
+       (local growing values)
        (push! growing value)
        (evaluate-all arguments names (+ index 1) growing)))
     (none (ok values))))

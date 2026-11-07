@@ -2,8 +2,9 @@
   :key (fn (i64) i64))
 
 (defn main ()
-  (let bonus 3)
-  (let make
+  (local bonus 3)
+  (local make
     (fn (key) (->sorter :key key)))
-  (let chosen (make (fn (n) (+ n bonus))))
+  (local chosen
+    (make (fn (n) (+ n bonus))))
   (println ((:key chosen) 2)))

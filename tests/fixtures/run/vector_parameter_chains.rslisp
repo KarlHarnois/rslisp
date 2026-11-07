@@ -52,7 +52,7 @@
       (at spare 0))))
 
 (defn main ()
-  (let leaf-years (vec 2011 2017))
+  (local leaf-years (vec 2011 2017))
   (record-decade! (mut leaf-years) 2019)
   (println (len leaf-years) " " (year-span leaf-years))
   (println (added-years leaf-years 0))
@@ -61,7 +61,7 @@
   (println (<= (len leaf-years) (year-capacity leaf-years))
            " "
            (counted-years leaf-years))
-  (let count-years year-count)
+  (local count-years year-count)
   (println (count-years (ref leaf-years)))
-  (let spare-years (vec 2000))
+  (local spare-years (vec 2000))
   (println (alternate-oldest leaf-years spare-years 1)))

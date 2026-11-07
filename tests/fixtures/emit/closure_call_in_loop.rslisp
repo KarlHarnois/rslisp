@@ -22,14 +22,15 @@
 
 (defn move! (source target observe)
   (loop ()
-    (let next (take source))
+    (local next (take source))
     (match next
       ((some item) (do (observe item) (put target item) (recur)))
       (none (do)))))
 
 (defn main ()
-  (let source (new queue (items (vec 1))))
-  (let target (new queue (items (vec))))
+  (local source
+    (new queue (items (vec 1))))
+  (local target (new queue (items (vec))))
   (move! (mut source)
          (mut target)
          (fn (item) (println item))))

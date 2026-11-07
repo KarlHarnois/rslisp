@@ -23,7 +23,7 @@
   string literal is a `(ref str)`, so a `string` key takes `(str \"name\")`,
   and a `(ref str)` key takes a literal or `(as-str name)`. A map adds a
   missing key."
-  (let arguments (prepend key more))
+  (local arguments (prepend key more))
   (if (keyword? key)
     (struct-update value arguments)
     (if (whole-pairs? arguments)
@@ -66,9 +66,9 @@
 
 (def unpaired-key-error
   (fn (value arguments)
-    (let message
+    (local message
       "a collection update takes keys and values in pairs")
-    (let unpaired-key
+    (local unpaired-key
       (nth arguments (number-sub (len arguments) 1)))
     (if (every-field-group? arguments)
       (fail message
@@ -131,10 +131,10 @@
   `(str \"name\")`, and a `(ref str)` key takes a literal or `(as-str name)`.
 
   A path of only index or map key steps moves the collection."
-  (let root (read-root value))
+  (local root (read-root value))
   (if (bound-root? root value step)
     (list (quote do)
-          (list (quote let) (quote base) root)
+          (list (quote local) (quote base) root)
           (path-update (rebased-read value root) step item))
     (path-update value step item)))
 
@@ -173,7 +173,7 @@
 
 (def path-update
   (fn (base path item)
-    (let fields (keyword-steps path))
+    (local fields (keyword-steps path))
     (if (empty? fields)
       (list (quote assoc-at) base path item)
       (if (keyword? (first path))
@@ -183,12 +183,12 @@
 
 (def field-step
   (fn (base key path item)
-    (let field
+    (local field
       (symbol (quote base) (keyword-name key)))
     (if (empty? path)
       (list (quote assoc) base key item)
       (list (quote do)
-            (list (quote let)
+            (list (quote local)
                   field
                   (path-update (list key base) path item))
             (list (quote assoc) base key field)))))

@@ -1,4 +1,5 @@
 (defn main ()
-  (let (value (result i64 string)) (ok 1))
-  (let text (str "moved"))
+  (local (value (result i64 string))
+    (ok 1))
+  (local text (str "moved"))
   (println (unwrap-ok (then-ok value (fn (ignored) (ok text))))))

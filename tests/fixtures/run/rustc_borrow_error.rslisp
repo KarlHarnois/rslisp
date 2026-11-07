@@ -3,7 +3,7 @@
   :age i64)
 
 (defn dangling-name ()
-  (let someone (->person (str "Grace") 85))
+  (local someone (->person (str "Grace") 85))
   (:name someone))
 
 (defn main () (println (dangling-name)))

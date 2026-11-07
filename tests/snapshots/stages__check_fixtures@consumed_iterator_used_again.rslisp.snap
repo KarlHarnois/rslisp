@@ -6,8 +6,8 @@ input_file: tests/fixtures/check/consumed_iterator_used_again.rslisp
 error[L0501]: use of moved value `values`
  --> check/consumed_iterator_used_again.rslisp:3:9
   |
-2 |   (let total (count values))
-  |                     ------ value moved here
+2 |   (local total (count values))
+  |                       ------ value moved here
 3 |   (any? values (fn (value) (> value 50))))
   |         ^^^^^^ value used here after it moved
   |

@@ -12,5 +12,5 @@
   (pick (someone _) (field someone name)))
 
 (defn main ()
-  (let h (new holder (name (str "hi"))))
+  (local h (new holder (name (str "hi"))))
   (println (label h)))

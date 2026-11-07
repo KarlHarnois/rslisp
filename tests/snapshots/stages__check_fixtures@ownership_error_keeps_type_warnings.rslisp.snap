@@ -14,13 +14,13 @@ warning[L0434]: unreachable `match` arm
 error[L0501]: use of moved value `model`
   --> check/ownership_error_keeps_type_warnings.rslisp:12:12
    |
-11 |   (let parked model)
-   |               ----- value moved here
+11 |   (local parked model)
+   |                 ----- value moved here
 12 |   (println model parked (describe charge/full)))
    |            ^^^^^ value used here after it moved
    |
 help: clone the value if both places need it
    |
-11 -   (let parked model)
-11 +   (let parked (clone model))
+11 -   (local parked model)
+11 +   (local parked (clone model))
    |

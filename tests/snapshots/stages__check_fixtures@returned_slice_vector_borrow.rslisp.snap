@@ -9,8 +9,8 @@ error[L0510]: cannot return a borrow of a local value
 2 |   :chunks (vec (slice u8)))
   |           ---------------- declared as a borrow here
 ...
-5 |   (let bytes (vec 1 2 3))
-  |        ----- this local is dropped when the function returns
+5 |   (local bytes (vec 1 2 3))
+  |          ----- this local is dropped when the function returns
 6 |   (->archive :chunks (vec (ref bytes))))
   |                      ^^^^^^^^^^^^^^^^^ this borrows a local value
   |

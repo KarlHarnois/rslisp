@@ -6,5 +6,5 @@
   (ref (:year leaf)))
 
 (defn main ()
-  (let leaf (->car :make "Nissan" :year 2025))
+  (local leaf (->car :make "Nissan" :year 2025))
   (println (year-of (ref leaf))))

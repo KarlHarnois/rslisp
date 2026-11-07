@@ -13,7 +13,7 @@
   (fn ((ref (ref i64))) bool))
 
 (defn recent? (y)
-  (let (year i64) (deref y))
+  (local (year i64) (deref y))
   (> year 2020))
 
 (type report-signed
@@ -45,11 +45,11 @@
                           (fn (c) (= wanted (deref c)))))))
 
 (defn main ()
-  (let years (vec 2019 2021 2024))
+  (local years (vec 2019 2021 2024))
   (report-signed years)
   (report-years years 2020)
-  (let leaf (->car (str "Nissan") 2024))
-  (let cars
+  (local leaf (->car (str "Nissan") 2024))
+  (local cars
     (vec (clone leaf)
          (->car (str "Honda") 2019)))
   (println (count (filter (iter cars)

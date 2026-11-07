@@ -16,10 +16,10 @@
   (restock (lot constructor) (constructor)))
 
 (defn main ()
-  (let model (str "Leaf"))
-  (let lot (->depot 2024))
-  (let built (build ->car lot))
-  (let restocked
+  (local model (str "Leaf"))
+  (local lot (->depot 2024))
+  (local built (build ->car lot))
+  (local restocked
     (restock lot
              (fn ()
                (->car :make (as-str model) :year 2025))))

@@ -47,18 +47,18 @@
 
 (def keyword-function
   (fn (name parameters body)
-    (let declared (declared-forms parameters))
-    (let binders (parameter-binders declared))
-    (let names (map-list binder-name binders))
+    (local declared (declared-forms parameters))
+    (local binders (parameter-binders declared))
+    (local names (map-list binder-name binders))
     (check-distinct-parameters (parameter-keywords declared))
-    (let defaults
+    (local defaults
       (default-bindings (default-pairs parameters)
                         (parameter-definition name)
                         names))
-    (let signature
+    (local signature
       (call-signature name names defaults
                       (map-list binder-type binders)))
-    (let positional
+    (local positional
       (symbol (quote function) (symbol-name name)))
     (template (do
                 (def (unquote positional)
@@ -160,7 +160,7 @@
 
 (def parameter-binder
   (fn (keyword more)
-    (let name (parameter-name keyword))
+    (local name (parameter-name keyword))
     (if (type-missing? more)
       name
       (list name (first more)))))
@@ -173,7 +173,7 @@
 
 (def declared-name
   (fn (keyword noun)
-    (let trimmed (keyword-trim-end keyword))
+    (local trimmed (keyword-trim-end keyword))
     (if (keyword? trimmed)
       (named-declaration keyword trimmed noun)
       (fail (string "a " noun " name cannot be only `:`")
@@ -234,7 +234,7 @@
 
 (def check-declared-once
   (fn (keyword later-keywords)
-    (let repeated (find-keyword keyword later-keywords))
+    (local repeated (find-keyword keyword later-keywords))
     (if (empty? repeated)
       keyword
       (fail (string "`" (keyword-name keyword) "` is declared twice")
@@ -273,7 +273,7 @@
 
 (def default-binding
   (fn (pairs owner names given-keys)
-    (let key (first pairs))
+    (local key (first pairs))
     (check-default-key key owner names given-keys)
     (check-default-value pairs)
     (check-single-default key (pair-keys (drop 2 pairs)))
@@ -297,14 +297,14 @@
 
 (def unknown-key-error
   (fn (key owner names given-keys)
-    (let noun (definition-noun owner))
-    (let name (definition-name owner))
-    (let spelling (definition-spelling owner))
-    (let code (definition-code owner))
-    (let closest
+    (local noun (definition-noun owner))
+    (local name (definition-name owner))
+    (local spelling (definition-spelling owner))
+    (local code (definition-code owner))
+    (local closest
       (closest-name (keyword-field key)
                     (names-without-argument names given-keys)))
-    (let message
+    (local message
       (string "`" name "` has no " noun " `"
               (symbol-name (spelling (keyword-field key)))
               "`"))
@@ -334,7 +334,7 @@
 
 (def check-single-default
   (fn (key later-keys)
-    (let repeated (find-keyword key later-keys))
+    (local repeated (find-keyword key later-keys))
     (if (empty? repeated)
       key
       (fail (string "`" (keyword-name key) "` has two defaults")
@@ -349,7 +349,7 @@
 
 (def joined-nonempty-names
   (fn (names quote-mark)
-    (let quoted
+    (local quoted
       (string quote-mark (symbol-name (first names)) quote-mark))
     (if (empty? (rest names))
       quoted
@@ -416,7 +416,7 @@
 
 (def valid-call-by-name?
   (fn (arguments signature)
-    (let keys (pair-keys arguments))
+    (local keys (pair-keys arguments))
     (if (keys-name-distinct? keys (signature-names signature))
       (empty? (names-without-argument (required-names signature) keys))
       false)))
@@ -517,14 +517,14 @@
 
 (def keyword-call
   (fn (form positional signature)
-    (let owner
+    (local owner
       (parameter-definition (signature-name signature)))
     (read-call form positional signature owner
                (fn (form) (named-call form positional signature owner)))))
 
 (def read-call
   (fn (form positional signature owner by-name)
-    (let arguments (rest form))
+    (local arguments (rest form))
     (if (reads-by-name? arguments signature)
       (by-name form)
       (if (value-eq (len arguments)
@@ -534,7 +534,7 @@
 
 (def call-arity-error
   (fn (form signature owner)
-    (let noun (definition-noun owner))
+    (local noun (definition-noun owner))
     (fail (string "`"
                   (symbol-name (first form))
                   "` takes "
@@ -549,8 +549,8 @@
 
 (def named-call
   (fn (form positional signature owner)
-    (let pairs (rest form))
-    (let keys (pair-keys pairs))
+    (local pairs (rest form))
+    (local keys (pair-keys pairs))
     (check-call-keys keys keys signature owner)
     (check-required-parameters form keys signature)
     (if (needs-temporaries? pairs (signature-names signature))
@@ -580,7 +580,7 @@
 
 (def check-given-once
   (fn (key later-keys signature)
-    (let repeated (find-keyword key later-keys))
+    (local repeated (find-keyword key later-keys))
     (if (empty? repeated)
       key
       (fail (string "`"
@@ -599,7 +599,7 @@
 
 (def check-required-parameters
   (fn (form keys signature)
-    (let missing
+    (local missing
       (names-without-argument (required-names signature) keys))
     (if (empty? missing)
       missing
@@ -622,7 +622,7 @@
 
 (def argument-for
   (fn (name pairs defaults)
-    (let given (pair-of name pairs))
+    (local given (pair-of name pairs))
     (if (empty? given)
       (nth (default-of name defaults) 1)
       (nth given 1))))
@@ -661,7 +661,7 @@
 
 (def call-through-temporaries
   (fn (pairs positional signature)
-    (let call
+    (local call
       (prepend positional
                (positional-arguments (bound-pairs pairs) signature)))
     (prepend (quote do)
@@ -689,7 +689,7 @@
     (if (empty? pairs)
       (list)
       (if (list? (nth pairs 1))
-        (prepend (list (quote let)
+        (prepend (list (quote local)
                        (temporary (first pairs))
                        (nth pairs 1))
                  (temporary-bindings (drop 2 pairs)))
@@ -703,7 +703,7 @@
 
 (defrule the
   ((type-expression value)
-   (do (let (result type-expression) value) result)))
+   (do (local (result type-expression) value) result)))
 
 (defrule comment
   "Keeps forms in the source that never expand, check or run.
@@ -731,7 +731,7 @@
 
 (defrule let-try
   ((((name value) ...) body ...)
-   (do (let name (try value)) ... body ...)))
+   (do (local name (try value)) ... body ...)))
 
 (header-shape (let-try bindings))
 

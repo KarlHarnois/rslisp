@@ -1,5 +1,5 @@
 (defn main ()
-  (let make "Nissan")
+  (local make "Nissan")
   (println (> "Honda" (ref make)))
   (println (> (ref make) "Honda"))
   (println (< "Honda" (ref make)))

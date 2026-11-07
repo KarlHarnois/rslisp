@@ -7,7 +7,7 @@
        :age))
 
 (defn main ()
-  (let users
+  (local users
     (vec (->user (str "Ana") 34)
          (->user (str "Ben") 12)))
   (for-each (adult-ages (iter users))

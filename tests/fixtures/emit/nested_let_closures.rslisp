@@ -1,12 +1,12 @@
 (defn main ()
-  (let calls (vec 0))
-  (let outer
+  (local calls (vec 0))
+  (local outer
     (fn ()
       (do
-        (let middle
+        (local middle
           (fn ()
             (do
-              (let inner (fn () (push! calls 1)))
+              (local inner (fn () (push! calls 1)))
               (inner))))
         (middle))))
   (outer)

@@ -8,7 +8,7 @@
   (match p ((pair-user/of a _) a)))
 
 (defn main ()
-  (let p (make (str "left") 2))
+  (local p (make (str "left") 2))
   (println (first-of p))
   (match (make 3 (str "right"))
     ((pair-user/of n text) (println (str n text)))))

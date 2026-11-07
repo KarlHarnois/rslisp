@@ -1,8 +1,8 @@
 (defn main ()
-  (let text (str "fake"))
-  (let consume (fn (ignored) text))
+  (local text (str "fake"))
+  (local consume (fn (ignored) text))
   (map (iter (vec 1 2)) consume)
-  (let other (str "other"))
+  (local other (str "other"))
   (map (iter (vec 1 2))
        (if true
          (fn (ignored) other)

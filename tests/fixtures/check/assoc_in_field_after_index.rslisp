@@ -8,7 +8,7 @@
   :bays (vec car))
 
 (defn main ()
-  (let garage
+  (local garage
     (->garage (str "North")
               (vec (->car "Honda" (str "Civic") 2019))))
   (assoc-in garage (:bays 0 :make) "Nissan"))

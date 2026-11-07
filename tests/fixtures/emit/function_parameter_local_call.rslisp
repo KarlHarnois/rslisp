@@ -3,7 +3,7 @@
     (ref str)))
 
 (defn apply (pick text)
-  (let owned (str "Leaf"))
+  (local owned (str "Leaf"))
   (if (= (pick (as-str owned)) "Leaf")
     (pick text)
     text))

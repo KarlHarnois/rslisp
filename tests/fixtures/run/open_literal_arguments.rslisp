@@ -42,9 +42,9 @@
             (+ total (weight-of item)))))
 
 (defn main ()
-  (let several?
+  (local several?
     (> (len (command-line-args)) 5))
-  (let odometer (the i64 2024))
+  (local odometer (the i64 2024))
   (let-pair (left right) (twice 3000000000)
     (println left " " right))
   (prn (twice 2.5))
@@ -64,13 +64,13 @@
     ((some miles) (prn miles))
     (none (do)))
   (shown 3000000000)
-  (let add-one (fn (n) (+ n 1)))
+  (local add-one (fn (n) (+ n 1)))
   (println (add-one (first-of 1 3000000000)))
   (println (apply-to 3000000000 same))
-  (let pass same)
+  (local pass same)
   (println (apply-to 3000000000 pass))
   (println (unwrap-ok ((fn ((text (ref str)))
-                         (let (code i64)
+                         (local (code i64)
                            (try (first-of (parse text) 3000000000)))
                          (ok code))
                        "7")))

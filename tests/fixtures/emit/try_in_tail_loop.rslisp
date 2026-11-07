@@ -3,5 +3,5 @@
                         (if (< attempt 1)
                           (recur (+ attempt 1))
                           (do
-                            (let (value i64) (try (parse "7")))
+                            (local (value i64) (try (parse "7")))
                             (ok value)))))))

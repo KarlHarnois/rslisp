@@ -10,5 +10,6 @@
 (defn main ()
   (println (new point (x 1) (y 2)))
   (println (str (new point (x 3) (y 4))))
-  (let text (str (new point (x 5) (y 6))))
+  (local text
+    (str (new point (x 5) (y 6))))
   (println text))

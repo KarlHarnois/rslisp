@@ -64,9 +64,9 @@ mod tests {
     impl DefinitionFixture {
         const NESTED_LAMBDAS: &str = "
             (defn main ()
-              (let model \"Leaf\")
-              (let describe (fn (make)
-                (let label (fn (year) year))
+              (local model \"Leaf\")
+              (local describe (fn (make)
+                (local label (fn (year) year))
                 (label 2024)))
               (describe \"Nissan\"))";
 

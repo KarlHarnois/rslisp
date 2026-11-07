@@ -9,4 +9,4 @@ error[L0404]: `(box circle)` does not implement `shape`
 14 |   (println (total (vec (box (new circle (radius 1.0)))))))
    |                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ this needs `shape`
    |
-   = help: write the type `(box shape)` where the box is made, such as `(let (shapes (vec (box shape))) ...)`
+   = help: write the type `(box shape)` where the box is made, such as `(local (shapes (vec (box shape))) ...)`

@@ -9,8 +9,8 @@ error[L0510]: cannot return a borrow of a local value
 3 |   :scores (slice i64))
   |           ----------- declared as a borrow here
 ...
-6 |   (let scores (vec 3 1 2))
-  |        ------ this local is dropped when the function returns
+6 |   (local scores (vec 3 1 2))
+  |          ------ this local is dropped when the function returns
 7 |   (->report :title title :scores (ref scores)))
   |                                  ^^^^^^^^^^^^ this borrows a local value
   |

@@ -32,15 +32,15 @@ error[L0208]: `def` can only appear at module level
 7 | (def nested (fn () (def inner 1)))
   |                    ^^^^^^^^^^^^^ not allowed inside an expression
   |
-  = help: use `let` to bind a name inside a body
+  = help: use `local` to bind a name inside a body
 
-error[L0227]: `let` can only appear directly in a body
+error[L0227]: `local` can only appear directly in a body
  --> expand/name_errors.rslisp:9:12
   |
-9 | (def loose (let x 1))
-  |            ^^^^^^^^^ not allowed here
+9 | (def loose (local x 1))
+  |            ^^^^^^^^^^^ not allowed here
   |
-  = help: wrap the `let` and the code that uses it in `(do ...)`
+  = help: wrap the `local` and the code that uses it in `(do ...)`
 
 error[L0210]: malformed `if`
   --> expand/name_errors.rslisp:11:14

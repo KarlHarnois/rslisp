@@ -555,7 +555,7 @@ impl TypeProblems {
             Label::new(span, format!("this needs `{trait_name}`")),
         )
         .with_help(format!(
-            "write the type `(box {trait_name})` where the box is made, such as `(let (shapes (vec (box {trait_name}))) ...)`"
+            "write the type `(box {trait_name})` where the box is made, such as `(local (shapes (vec (box {trait_name}))) ...)`"
         ))
     }
 
@@ -1036,7 +1036,7 @@ impl TypeProblems {
             Label::new(span, format!("this `{struct_name}` is borrowed")),
         )
         .with_help(format!(
-            "bind an owned `{struct_name}` first, as in `(let owned (clone base))`, and update `owned`"
+            "bind an owned `{struct_name}` first, as in `(local owned (clone base))`, and update `owned`"
         ))
     }
 

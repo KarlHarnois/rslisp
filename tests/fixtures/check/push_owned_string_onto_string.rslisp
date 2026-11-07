@@ -1,5 +1,5 @@
 (defn main ()
-  (let message (str "a"))
-  (let suffix (str "b"))
+  (local message (str "a"))
+  (local suffix (str "b"))
   (push! (mut message) suffix)
   (println message))

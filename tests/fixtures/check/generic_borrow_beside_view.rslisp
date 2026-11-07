@@ -5,17 +5,17 @@
 (defn later? (a b) (> a b))
 
 (defn view-first ()
-  (let make "Nissan")
+  (local make "Nissan")
   (later? (ref make) "Honda"))
 
 (defn view-last ()
-  (let make "Nissan")
+  (local make "Nissan")
   (later? "Honda" (ref make)))
 
 (defn string-first ()
-  (let model (str "Leaf"))
+  (local model (str "Leaf"))
   (later? (ref model) "Civic"))
 
 (defn char-last ()
-  (let grade (char "b"))
+  (local grade (char "b"))
   (later? (char "a") (ref grade)))

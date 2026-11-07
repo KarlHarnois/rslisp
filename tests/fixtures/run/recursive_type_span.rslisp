@@ -9,6 +9,6 @@
   (node (cell tree)))
 
 (defn main ()
-  (let t
+  (local t
     (tree/node (cell-new (tree/leaf 1))))
   (println 1))

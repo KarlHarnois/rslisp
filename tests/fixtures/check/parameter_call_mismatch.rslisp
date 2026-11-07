@@ -1,5 +1,5 @@
 (defn main ()
-  (let xs (cards))
+  (local xs (cards))
   (-> xs (build-deck) (prn)))
 
 (defn build-deck (make)

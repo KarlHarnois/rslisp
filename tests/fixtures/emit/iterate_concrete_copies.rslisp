@@ -17,9 +17,9 @@
                  (fn (value) (> value 50)))))
 
 (defn main ()
-  (let scores (vec 70 40 90))
+  (local scores (vec 70 40 90))
   (println (total scores))
-  (let (names (vec (ref str)))
+  (local (names (vec (ref str)))
     (vec "Leaf" "Ariya" "Bolt"))
   (println (count-long names))
   (println (count-big scores)))

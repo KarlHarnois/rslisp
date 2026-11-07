@@ -5,10 +5,10 @@
 (type describe (fn ((fn () car)) unit))
 
 (defn describe (make)
-  (let built (make))
+  (local built (make))
   (println (:make built) " " (:model built)))
 
 (defn main ()
-  (let model (str "Leaf"))
+  (local model (str "Leaf"))
   (describe (fn ()
               (->car :make "Nissan" :model (as-str model)))))

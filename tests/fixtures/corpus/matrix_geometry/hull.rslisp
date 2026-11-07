@@ -6,11 +6,11 @@
   (fn ((ref (vec point))) (vec point)))
 
 (defn convex-hull (points)
-  (let ordered (clone points))
+  (local ordered (clone points))
   (sort! ordered compare-points)
-  (let lower (chain-of (ref ordered)))
+  (local lower (chain-of (ref ordered)))
   (reverse! ordered)
-  (let upper (chain-of (ref ordered)))
+  (local upper (chain-of (ref ordered)))
   (join-chains lower upper))
 
 (type compare-points
@@ -39,16 +39,16 @@
 (defn push-turning (chain p)
   (if (turns-clockwise? (ref chain) p)
     (do
-      (let trimmed chain)
+      (local trimmed chain)
       (pop! trimmed)
       (push-turning trimmed p))
-    (do (let growing chain) (push! growing p) growing)))
+    (do (local growing chain) (push! growing p) growing)))
 
 (type turns-clockwise?
   (fn ((ref (vec point)) point) bool))
 
 (defn turns-clockwise? (chain p)
-  (let count (len chain))
+  (local count (len chain))
   (and (>= count 2)
        (<= (cross (at chain (- count 2))
                   (at chain (- count 1))
@@ -60,9 +60,9 @@
     (vec point)))
 
 (defn join-chains (lower upper)
-  (let joined lower)
+  (local joined lower)
   (pop! joined)
-  (let rest upper)
+  (local rest upper)
   (pop! rest)
   (for-each (iter rest)
             (fn (p) (push! joined (deref p))))

@@ -30,8 +30,8 @@
   (if (>= position (len tokens))
     (ok statements)
     (do
-      (let parsed (try (parse-statement tokens position)))
-      (let after
+      (local parsed (try (parse-statement tokens position)))
+      (local after
         (try (skip-separator tokens (:next parsed))))
       (let-fields (parsed-statement (statement _)) parsed
         (parse-statements tokens after
@@ -55,7 +55,7 @@
   (if (name-at? tokens position "let")
     (parse-binding tokens (+ position 1))
     (do
-      (let value (try (parse-expression tokens position)))
+      (local value (try (parse-expression tokens position)))
       (let-fields (parsed (node next)) value
         (ok (->parsed-statement (statement/show node) next))))))
 
@@ -64,9 +64,9 @@
     (result parsed-statement string)))
 
 (defn parse-binding (tokens position)
-  (let name (try (expect-name tokens position)))
+  (local name (try (expect-name tokens position)))
   (try (expect-symbol tokens (+ position 1) "="))
-  (let value
+  (local value
     (try (parse-expression tokens (+ position 2))))
   (let-fields (parsed (node next)) value
     (ok (->parsed-statement (statement/binding name node) next))))
@@ -85,14 +85,14 @@
     (result parsed string)))
 
 (defn parse-choice (tokens position)
-  (let test (try (parse-expression tokens position)))
+  (local test (try (parse-expression tokens position)))
   (try (expect-keyword tokens (:next test) "then"))
-  (let then
+  (local then
     (try (parse-expression tokens (+ (:next test) 1))))
   (try (expect-keyword tokens (:next then) "else"))
-  (let otherwise
+  (local otherwise
     (try (parse-expression tokens (+ (:next then) 1))))
-  (let next (:next otherwise))
+  (local next (:next otherwise))
   (let-fields (parsed (test-node _)) test
     (let-fields (parsed (then-node _)) then
       (let-fields (parsed (otherwise-node _)) otherwise
@@ -104,11 +104,11 @@
     (result parsed string)))
 
 (defn parse-comparison (tokens position)
-  (let left (try (parse-sum tokens position)))
+  (local left (try (parse-sum tokens position)))
   (match (operator-at tokens (:next left) comparison-operators)
     ((some operator)
      (do
-       (let right
+       (local right
          (try (parse-sum tokens (+ (:next left) 1))))
        (ok (combine operator left right))))
     (none (ok left))))
@@ -118,7 +118,7 @@
     (result parsed string)))
 
 (defn parse-sum (tokens position)
-  (let left (try (parse-product tokens position)))
+  (local left (try (parse-product tokens position)))
   (parse-sums tokens left))
 
 (type parse-sums
@@ -129,7 +129,7 @@
   (match (operator-at tokens (:next left) (vec "+" "-"))
     ((some operator)
      (do
-       (let right
+       (local right
          (try (parse-product tokens (+ (:next left) 1))))
        (parse-sums tokens (combine operator left right))))
     (none (ok left))))
@@ -139,7 +139,7 @@
     (result parsed string)))
 
 (defn parse-product (tokens position)
-  (let left (try (parse-unary tokens position)))
+  (local left (try (parse-unary tokens position)))
   (parse-products tokens left))
 
 (type parse-products
@@ -150,7 +150,7 @@
   (match (operator-at tokens (:next left) (vec "*" "/" "%"))
     ((some operator)
      (do
-       (let right
+       (local right
          (try (parse-unary tokens (+ (:next left) 1))))
        (parse-products tokens (combine operator left right))))
     (none (ok left))))
@@ -162,7 +162,7 @@
 (defn parse-unary (tokens position)
   (if (symbol-at? tokens position "-")
     (do
-      (let inner
+      (local inner
         (try (parse-unary tokens (+ position 1))))
       (let-fields (parsed (node next)) inner
         (ok (->parsed (expr/negate node) next))))
@@ -190,7 +190,7 @@
     (result parsed string)))
 
 (defn parse-name (tokens position text)
-  (let next (+ position 1))
+  (local next (+ position 1))
   (if (symbol-at? tokens next "(")
     (parse-arguments tokens (+ next 1) text (vec))
     (ok (->parsed (expr/variable text) next))))
@@ -205,9 +205,9 @@
   (if (symbol-at? tokens position ")")
     (ok (->parsed (expr/call function arguments) (+ position 1)))
     (do
-      (let argument (try (parse-expression tokens position)))
-      (let next (:next argument))
-      (let after (try (skip-argument-separator tokens next)))
+      (local argument (try (parse-expression tokens position)))
+      (local next (:next argument))
+      (local after (try (skip-argument-separator tokens next)))
       (let-fields (parsed (node _)) argument
         (parse-arguments tokens after function
                          (append arguments node))))))
@@ -227,7 +227,7 @@
     (result parsed string)))
 
 (defn parse-group (tokens position)
-  (let inner (try (parse-expression tokens position)))
+  (local inner (try (parse-expression tokens position)))
   (try (expect-symbol tokens (:next inner) ")"))
   (let-fields (parsed (node next)) inner
     (ok (->parsed node (+ next 1)))))

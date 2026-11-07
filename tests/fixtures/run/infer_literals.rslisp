@@ -15,10 +15,10 @@
 
 (defn main ()
   (println (infer 1) " " (infer 1.5))
-  (let x 1)
+  (local x 1)
   (println (infer x))
   (the u8 x)
-  (let open-port (port))
+  (local open-port (port))
   (println (infer open-port))
   (listen open-port)
   (increment 2)

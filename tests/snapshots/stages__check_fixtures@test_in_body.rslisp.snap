@@ -10,4 +10,4 @@ error[L0208]: `deftest` can only appear at module level
 5 | |     (assert (= (tally 1) 2)))
   | |_____________________________^ not allowed inside an expression
   |
-  = help: use `let` to bind a name inside a body
+  = help: use `local` to bind a name inside a body

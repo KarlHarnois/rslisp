@@ -10,6 +10,6 @@
   :score u32)
 
 (defn main ()
-  (let first-hire (->employee (str "Ada") 91))
-  (let second-hire (->employee (str "Bram") 78))
+  (local first-hire (->employee (str "Ada") 91))
+  (local second-hire (->employee (str "Bram") 78))
   (println (same-record? first-hire second-hire)))

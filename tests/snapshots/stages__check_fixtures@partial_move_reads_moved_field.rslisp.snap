@@ -6,14 +6,14 @@ input_file: tests/fixtures/check/partial_move_reads_moved_field.rslisp
 error[L0501]: use of moved value `(:badge g)`
   --> check/partial_move_reads_moved_field.rslisp:18:27
    |
-13 |   (let b (assoc (:badge g) :size 14))
-   |                 ---------- value moved here
+13 |   (local b (assoc (:badge g) :size 14))
+   |                   ---------- value moved here
 ...
 18 |            (:text (:badge g))))
    |                           ^ value used here after it moved
    |
 help: clone the value if both places need it
    |
-13 -   (let b (assoc (:badge g) :size 14))
-13 +   (let b (assoc (clone (:badge g)) :size 14))
+13 -   (local b (assoc (:badge g) :size 14))
+13 +   (local b (assoc (clone (:badge g)) :size 14))
    |

@@ -1,4 +1,4 @@
 (defn mut-first ()
-  (let year 2024)
-  (let floor 2000)
+  (local year 2024)
+  (local floor 2000)
   (> (mut year) (ref floor)))

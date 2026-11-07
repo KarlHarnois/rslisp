@@ -8,5 +8,5 @@
          (if (> (:year c) (:year other)) c other)))
 
 (defn main ()
-  (let leaf (->car "Leaf" 2024))
+  (local leaf (->car "Leaf" 2024))
   (println (:model (newer leaf (->car "Golf" 2019)))))

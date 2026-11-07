@@ -1,4 +1,5 @@
 (defn main ()
-  (let year 2024)
-  (let apply (fn (action) (action year)))
+  (local year 2024)
+  (local apply
+    (fn (action) (action year)))
   (apply (fn (n) (println n))))

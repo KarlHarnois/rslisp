@@ -1,3 +1,4 @@
 (defn main ()
-  (let names (vec (str "ana") (str "bo")))
+  (local names
+    (vec (str "ana") (str "bo")))
   (println (sum names)))

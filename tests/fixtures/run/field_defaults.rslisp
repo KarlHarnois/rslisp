@@ -15,13 +15,13 @@
   (defaults :items (vec)))
 
 (defn main ()
-  (let ana (->user :name "ana" :email "ana@example.org"))
-  (let root
+  (local ana (->user :name "ana" :email "ana@example.org"))
+  (local root
     (->user :name "root" :email "root@example.org" :admin? true))
-  (let sam (->user "sam" "sam@example.org" false))
-  (let owned (->client :host "localhost"))
-  (let first-basket (->basket :owner "ana"))
-  (let second-basket (->basket :owner "sam"))
+  (local sam (->user "sam" "sam@example.org" false))
+  (local owned (->client :host "localhost"))
+  (local first-basket (->basket :owner "ana"))
+  (local second-basket (->basket :owner "sam"))
   (push! (:items first-basket) 7)
   (println (:admin? ana))
   (println (:admin? root))

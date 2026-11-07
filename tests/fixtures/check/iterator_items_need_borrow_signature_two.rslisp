@@ -7,9 +7,9 @@
      (count (filter right (fn (u) (> (:age u) 17))))))
 
 (defn main ()
-  (let users
+  (local users
     (vec (->user (str "Ana") 34)
          (->user (str "Ben") 12)))
-  (let others
+  (local others
     (vec (->user (str "Cid") 40)))
   (println (adult-count users others)))

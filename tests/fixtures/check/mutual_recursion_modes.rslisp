@@ -5,6 +5,6 @@
   (count-down items (- n 1)))
 
 (defn main ()
-  (let items (vec 1 2 3))
+  (local items (vec 1 2 3))
   (println (count-down items 3))
   (println (len items)))

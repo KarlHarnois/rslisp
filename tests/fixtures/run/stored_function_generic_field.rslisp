@@ -6,11 +6,12 @@
   (new holder (:value f) (:label "wrapped")))
 
 (defn main ()
-  (let offset 3)
-  (let direct
+  (local offset 3)
+  (local direct
     (new holder
       (:value (fn (x) (+ x offset)))
       (:label "direct")))
-  (let held (wrap (fn (x) (+ x offset))))
-  (let peek (:value direct))
+  (local held
+    (wrap (fn (x) (+ x offset))))
+  (local peek (:value direct))
   (println (:label held) (:label direct)))

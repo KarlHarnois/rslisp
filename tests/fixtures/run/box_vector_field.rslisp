@@ -2,6 +2,6 @@
   :models (box (vec str)))
 
 (defn main ()
-  (let car
+  (local car
     (->car :models (box (vec "Leaf" "Ariya"))))
   (prn (:models car)))

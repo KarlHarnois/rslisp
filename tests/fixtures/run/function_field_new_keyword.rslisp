@@ -7,8 +7,8 @@
   :label str)
 
 (defn main ()
-  (let by-name
+  (local by-name
     (new sorter (:key :name) (:label "by name")))
-  (let by-name-again
+  (local by-name-again
     (->sorter :key :name :label "by name again"))
   (println (:label by-name) ", " (:label by-name-again)))

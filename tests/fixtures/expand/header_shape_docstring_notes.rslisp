@@ -25,7 +25,7 @@
 (header-shape (spaced-defn name parameters) :one-per-line)
 
 (defmacro docstring-form-notes (part)
-  (let notes
+  (local notes
     (module-notes (definition-symbol (quote documented-defn) "notes")
                   (quote docstring-forms)))
   (if (value-eq part (quote count))

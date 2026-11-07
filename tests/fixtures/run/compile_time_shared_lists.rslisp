@@ -2,12 +2,12 @@
 
 (def print-branches
   (macro (form)
-    (let base (list 1 2))
-    (let longer (concat base (list 3)))
-    (let other (concat base (list 4)))
-    (let grown
+    (local base (list 1 2))
+    (local longer (concat base (list 3)))
+    (local other (concat base (list 4)))
+    (local grown
       (concat (rest longer) (list 5)))
-    (let shorter (take 1 longer))
+    (local shorter (take 1 longer))
     (concat (list (quote println))
             base
             (list " ")

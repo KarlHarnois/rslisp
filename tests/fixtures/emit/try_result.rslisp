@@ -3,8 +3,8 @@
     (result i64 (parse-error i64))))
 
 (defn parse-add (left right)
-  (let left-number (try (parse left)))
-  (let right-number (try (parse right)))
+  (local left-number (try (parse left)))
+  (local right-number (try (parse right)))
   (ok (+ left-number right-number)))
 
 (defn main ()

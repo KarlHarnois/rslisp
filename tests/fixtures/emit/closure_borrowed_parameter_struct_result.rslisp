@@ -3,8 +3,8 @@
   :year i64)
 
 (defn main ()
-  (let build
+  (local build
     (fn ((make (ref str)))
       (->car make 2025)))
-  (let leaf (build "Nissan"))
+  (local leaf (build "Nissan"))
   (println (:make leaf) " " (:year leaf)))

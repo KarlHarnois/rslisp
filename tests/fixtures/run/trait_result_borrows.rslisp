@@ -53,13 +53,13 @@
 
 (impl valet car
   (park (c name)
-        (let held (some c))
+        (local held (some c))
         (match (some (:model c))
           ((some m) (match held ((some d) name) ((none) name)))
           ((none) name))))
 
 (defn main ()
-  (let leaf (->car "Leaf" 2024))
+  (local leaf (->car "Leaf" 2024))
   (println (echo leaf "Nissan"))
   (println (relay (->truck 3) "hauler"))
   (println (show (->car "Leaf" 2024) "Nissan")

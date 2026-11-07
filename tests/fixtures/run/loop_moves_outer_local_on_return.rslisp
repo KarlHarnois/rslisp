@@ -3,8 +3,8 @@
   :spots u16)
 
 (defn main ()
-  (let g (->garage (str "karl") 2))
-  (let kept
+  (local g (->garage (str "karl") 2))
+  (local kept
     (loop ((i 0))
       (if (< i (:spots g)) (recur (+ i 1)) g)))
   (println (:owner kept) " " (:spots kept)))

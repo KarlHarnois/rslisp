@@ -5,5 +5,5 @@
 (defn touch! (value) (do))
 
 (defn main ()
-  (let counter (counter/value 1))
+  (local counter (counter/value 1))
   (touch! (mut counter)))

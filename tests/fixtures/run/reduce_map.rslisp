@@ -1,5 +1,5 @@
 (defn main ()
-  (let m (sorted-map "a" 1 "b" 2))
+  (local m (sorted-map "a" 1 "b" 2))
   (println (reduce m 0
                    (fn (total entry)
                      (let-pair (_ value) entry

@@ -5,8 +5,8 @@
   (= (:name a) (:name b)))
 
 (defn main ()
-  (let ana (->person (str "Ana")))
-  (let bo (->person (str "Bo")))
+  (local ana (->person (str "Ana")))
+  (local bo (->person (str "Bo")))
   (println (same-name? ana bo))
   (println (< (:name ana) (:name bo)))
   (println (not= (:name ana) (:name bo))))

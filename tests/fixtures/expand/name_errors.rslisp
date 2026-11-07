@@ -6,7 +6,7 @@
 
 (def nested (fn () (def inner 1)))
 
-(def loose (let x 1))
+(def loose (local x 1))
 
 (def mistake (if width))
 

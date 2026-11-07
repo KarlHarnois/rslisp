@@ -22,13 +22,13 @@
 (defn main ()
   (println (twice inc 1))
   (println (twice (fn (n) (* n 2)) 1))
-  (let calls (vec 1))
+  (local calls (vec 1))
   (println (twice (fn (n) (do (push! calls n) (+ n 1)))
                   1))
   (println (len calls))
   (println (around inc (fn (n) (* n 10)) 1))
   (println (both-positive? (fn (n) (> n 0)) 1))
-  (let record
+  (local record
     (fn (n) (do (push! calls n) (+ n 1))))
   (println (record (record 1)))
   (println (len calls)))

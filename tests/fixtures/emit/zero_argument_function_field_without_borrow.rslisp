@@ -5,7 +5,7 @@
 (defn seven () 7)
 
 (defn main ()
-  (let tally (->counter :next seven :label "seven"))
+  (local tally (->counter :next seven :label "seven"))
   (println (:label tally)
            ": "
            ((:next tally))))

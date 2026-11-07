@@ -17,10 +17,10 @@
 (defn new? (c) (> (:year c) 2020))
 
 (defn main ()
-  (let numbers (vec 1 2 3 4))
-  (let words
+  (local numbers (vec 1 2 3 4))
+  (local words
     (vec (str "kiwi") (str "fig")))
-  (let cars
+  (local cars
     (vec (->car (str "Leaf") 2023)
          (->car (str "Civic") 2015)))
   (println (sum (map (iter numbers) double)))

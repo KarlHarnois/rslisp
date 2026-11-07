@@ -8,6 +8,6 @@
         (result target (parse-error-for target))))))
 
 (defn main ()
-  (let (value (result i64 (parse-error-for i64)))
+  (local (value (result i64 (parse-error-for i64)))
     (parse-int "2"))
   (println (unwrap-ok value)))

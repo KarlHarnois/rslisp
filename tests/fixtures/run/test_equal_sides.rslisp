@@ -30,14 +30,14 @@
   (assert (= (noisy-count) 2)))
 
 (deftest sides-stay-usable
-  (let names (vec (str "a")))
-  (let others (vec (str "a")))
+  (local names (vec (str "a")))
+  (local others (vec (str "a")))
   (assert (= names others))
   (assert (= (len names) 1))
   (assert (= others names) "still equal"))
 
 (deftest a-field-side-stays-usable
-  (let crate (->box-of :label (str "a") :count 1))
+  (local crate (->box-of :label (str "a") :count 1))
   (assert (= (:label crate) "a"))
   (assert (= (:count crate) 1))
   (println (:label crate)))
@@ -46,7 +46,7 @@
   (assert (= (sqrt 4.0) 2)))
 
 (deftest string-beside-a-view
-  (let name (str "a"))
+  (local name (str "a"))
   (assert (= name (as-str name))))
 
 (deftest borrowed-item-beside-a-literal
@@ -54,14 +54,14 @@
             (fn (item) (assert (= (deref item) 1)))))
 
 (deftest deref-side-reports-both-sides
-  (let number 1)
-  (let borrowed (ref number))
+  (local number 1)
+  (local borrowed (ref number))
   (assert (= (deref borrowed) 2)))
 
 (deftest deref-of-a-reference-to-a-reference
-  (let number 1)
-  (let inner (ref number))
-  (let outer (ref inner))
+  (local number 1)
+  (local inner (ref number))
+  (local outer (ref inner))
   (assert (= (deref outer) inner)))
 
 (defn noisy-reference (name number)
@@ -75,22 +75,22 @@
   (template (deref (unquote reference))))
 
 (deftest runs-left-then-a-right-deref
-  (let number 1)
+  (local number 1)
   (assert (= (deref (noisy-reference "left" (ref number)))
              (deref (noisy-reference "right" (ref number))))))
 
 (deftest runs-a-plain-left-then-a-right-deref
-  (let number 2)
+  (local number 2)
   (assert (= (noisy-count)
              (deref (noisy-reference "right" (ref number))))))
 
 (deftest runs-a-left-deref-then-a-plain-right
-  (let number 2)
+  (local number 2)
   (assert (= (deref (noisy-reference "left" (ref number)))
              (noisy-count))))
 
 (deftest deref-from-a-macro
-  (let number 1)
+  (local number 1)
   (assert (= (read-through (ref number)) 2)))
 
 (deftest called-closure-side

@@ -547,7 +547,7 @@ mod tests {
             (defn oldest-year (years) (at years 0))
             (defn next-year (year) (+ year 1))
             (defn main ()
-              (let years (vec 2011))
+              (local years (vec 2011))
               (record-twice! (mut years) 2019)
               (println (oldest-year years) (next-year 2024)))";
 
@@ -566,8 +566,8 @@ mod tests {
                 (push! history (+ (:offset o) (at readings 0)))))
             (defn log-first! (o readings history) (copy-first! o readings history))
             (defn main ()
-              (let readings (vec 1200))
-              (let history (vec 0))
+              (local readings (vec 1200))
+              (local history (vec 0))
               (log-first! (->odometer 10) readings (mut history)))";
 
         fn new(source: &str) -> Self {

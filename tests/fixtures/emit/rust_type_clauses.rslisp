@@ -13,9 +13,9 @@
       (result f32 (error-of f32)))))
 
 (defn main ()
-  (let (number (result i64 (error-of i64)))
+  (local (number (result i64 (error-of i64)))
     (read-number "2"))
   (println (unwrap-ok number))
-  (let (float (result f32 (error-of f32)))
+  (local (float (result f32 (error-of f32)))
     (read-float "2.5"))
   (println (unwrap-ok float)))

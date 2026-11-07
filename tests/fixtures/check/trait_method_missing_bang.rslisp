@@ -8,6 +8,6 @@
        (push! (mut (field b items)) value)))
 
 (defn main ()
-  (let b (new bag (items (vec))))
+  (local b (new bag (items (vec))))
   (put (mut b) 1)
   (println (len (field b items))))

@@ -8,7 +8,7 @@
   (rust "std::cmp::Ordering::Less" (fn () ordering)))
 
 (defn main ()
-  (let order (compare))
+  (local order (compare))
   (println (match order
              (less "less")
              (equal "equal")

@@ -17,7 +17,7 @@
   (->lot (->garage (->badge (str "open") (->point 0 0)))))
 
 (defn main ()
-  (let moved
+  (local moved
     (assoc-in (:badge (:garage (build-lot)))
               (:at :x)
               4))

@@ -6,6 +6,6 @@
   (vec (str "Leaf") (str "Ariya")))
 
 (defn main ()
-  (let grid (vec (vec 1 2) (vec 3 4 5)))
+  (local grid (vec (vec 1 2) (vec 3 4 5)))
   (println (sum (map (iter grid) width)))
   (println (count (filter (iter (models)) long?))))

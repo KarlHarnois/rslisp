@@ -13,7 +13,7 @@
   (set! (at cars name) car))
 
 (defn main ()
-  (let cars
+  (local cars
     (hash-map "leaf"
               (->car :make "Nissan" :model "Leaf" :year 2023)))
   (replace-car! (mut cars)

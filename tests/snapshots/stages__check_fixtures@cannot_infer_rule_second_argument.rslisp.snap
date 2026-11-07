@@ -4,9 +4,9 @@ expression: reports.report(path)
 input_file: tests/fixtures/check/cannot_infer_rule_second_argument.rslisp
 ---
 error[L0407]: type annotations needed
- --> check/cannot_infer_rule_second_argument.rslisp:5:13
+ --> check/cannot_infer_rule_second_argument.rslisp:5:15
   |
-5 |   (let held (with-open (+ 1 2)))
-  |             ^^^^^^^^^^^^^^^^^^^ cannot infer the type of this value
+5 |   (local held (with-open (+ 1 2)))
+  |               ^^^^^^^^^^^^^^^^^^^ cannot infer the type of this value
   |
   = help: write the type with `the`, as in `(the (vec i64) (vec))`, or add a `type` signature

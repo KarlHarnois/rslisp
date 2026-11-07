@@ -3,7 +3,7 @@
         (at (at grid 0) 0)))
 
 (defn main ()
-  (let grid
+  (local grid
     (vec (vec (str "Leaf"))
          (vec (str "Ariya"))))
   (copy-corner! (mut grid))

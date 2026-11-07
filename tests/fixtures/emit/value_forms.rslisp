@@ -15,10 +15,10 @@
 
 (defn doubler ()
   (fn (value)
-    (let doubled (* value 2))
+    (local doubled (* value 2))
     doubled))
 
-(defn ends-with-let () (let unused 1))
+(defn ends-with-let () (local unused 1))
 
 (defn main ()
   (println (apply-to-four sqrt))

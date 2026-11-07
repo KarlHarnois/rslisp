@@ -6,7 +6,7 @@
   (if (= (:count state) limit)
     (:count state)
     (do
-      (let next
+      (local next
         (->counter :label (str "c")
                    :count (+ (:count state) 1)))
       (count-up limit next))))

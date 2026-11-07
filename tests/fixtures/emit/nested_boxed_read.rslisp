@@ -14,7 +14,7 @@
     (tree/leaf 0)))
 
 (defn main ()
-  (let tree
+  (local tree
     (tree/node (tree/node tree/leaf 2 tree/leaf)
                1
                (tree/node tree/leaf 3 tree/leaf)))

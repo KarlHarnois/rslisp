@@ -8,8 +8,8 @@
 (defn year-of (constructor) (measure constructor))
 
 (defn main ()
-  (let model (str "Nissan"))
-  (let borrowing
+  (local model (str "Nissan"))
+  (local borrowing
     (fn (make year)
       (->car :make (as-str model)
              :year (if (= make "Leaf") year 0))))

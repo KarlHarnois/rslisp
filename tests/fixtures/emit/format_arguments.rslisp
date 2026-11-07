@@ -1,5 +1,5 @@
 (defn main ()
-  (let name (str "Ada"))
+  (local name (str "Ada"))
   (println name)
   (println (str "hello " name))
   (print 1)

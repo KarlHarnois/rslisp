@@ -1,6 +1,6 @@
 (defn counted-first (years)
   (at (do
-        (let count (len years))
+        (local count (len years))
         (println count)
         years)
       0))
@@ -16,7 +16,7 @@
       0))
 
 (defn main ()
-  (let years (vec 2019 2021))
+  (local years (vec 2019 2021))
   (prn (counted-first years))
   (prn (first-by-length years))
   (prn (noted-first years))

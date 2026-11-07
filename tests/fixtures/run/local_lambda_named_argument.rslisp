@@ -1,4 +1,5 @@
 (defn main ()
-  (let shout (fn (n) (println n)))
-  (let apply (fn (action) (action 2024)))
+  (local shout (fn (n) (println n)))
+  (local apply
+    (fn (action) (action 2024)))
   (apply shout))

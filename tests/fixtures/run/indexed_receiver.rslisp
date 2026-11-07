@@ -37,13 +37,13 @@
   (label (at cars 0)))
 
 (defn main ()
-  (let names
+  (local names
     (vec (str " Leaf ") (str "Ariya")))
   (push! names (str "Sakura"))
-  (let grid
+  (local grid
     (vec (vec (str "Leaf") (str "Ariya"))))
   (push! grid (vec (str "Kicks")))
-  (let cars
+  (local cars
     (vec (->car (str "Leaf") 240)))
   (push! cars (->car (str "Ariya") 300))
   (println (shout-first names))

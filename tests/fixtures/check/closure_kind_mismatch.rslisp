@@ -1,4 +1,4 @@
 (defn main ()
-  (let text (str "fake"))
+  (local text (str "fake"))
   (map (iter (vec 1 2))
        (fn (ignored) text)))

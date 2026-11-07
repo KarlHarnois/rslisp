@@ -5,17 +5,17 @@
 (defn later? (a b) (> a b))
 
 (defn literal-first ()
-  (let model "Leaf")
+  (local model "Leaf")
   (later? 2020 (ref model)))
 
 (defn literal-last ()
-  (let model "Leaf")
+  (local model "Leaf")
   (later? (ref model) 2020))
 
 (defn string-literal-first ()
-  (let model (str "Leaf"))
+  (local model (str "Leaf"))
   (later? 2020 (ref model)))
 
 (defn vector-literal-first ()
-  (let years (vec 2019 2024))
+  (local years (vec 2019 2024))
   (later? 2020 (ref years)))

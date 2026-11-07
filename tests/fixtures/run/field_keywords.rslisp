@@ -9,16 +9,16 @@
   :tags (vec string))
 
 (defn main ()
-  (let leaf (->car "Nissan" "Leaf" 2024 true))
-  (let civic (->car "Honda" "Civic" 2019 false))
-  (let cars (vec leaf civic))
+  (local leaf (->car "Nissan" "Leaf" 2024 true))
+  (local civic (->car "Honda" "Civic" 2019 false))
+  (local cars (vec leaf civic))
   (println (:year leaf))
   (prn (collect (map (iter cars) :year)))
-  (let users
+  (local users
     (vec (->user "ana" (vec (str "admin")))
          (->user "bo" (vec))))
   (prn (collect (map users :name)))
-  (let someone
+  (local someone
     (->user "cy"
             (vec (str "ops") (str "dev"))))
   (println (len (:tags someone)))

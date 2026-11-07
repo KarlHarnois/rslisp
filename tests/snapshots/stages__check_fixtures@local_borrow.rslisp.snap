@@ -6,8 +6,8 @@ input_file: tests/fixtures/check/local_borrow.rslisp
 error[L0510]: cannot return a borrow of a local value
  --> check/local_borrow.rslisp:5:3
   |
-4 |   (let text (str "hi"))
-  |        ---- this local is dropped when the function returns
+4 |   (local text (str "hi"))
+  |          ---- this local is dropped when the function returns
 5 |   (ref text))
   |   ^^^^^^^^^^ this borrows a local value
   |
@@ -16,8 +16,8 @@ error[L0510]: cannot return a borrow of a local value
 error[L0510]: cannot return a borrow of a local value
  --> check/local_borrow.rslisp:9:12
   |
-8 |   (let text (str "hi"))
-  |        ---- this local is dropped when the function returns
+8 |   (local text (str "hi"))
+  |          ---- this local is dropped when the function returns
 9 |   (if flag (ref text) (ref text)))
   |            ^^^^^^^^^^ this borrows a local value
   |
@@ -26,8 +26,8 @@ error[L0510]: cannot return a borrow of a local value
 error[L0510]: cannot return a borrow of a local value
   --> check/local_borrow.rslisp:13:7
    |
-12 |   (let text (str "hi"))
-   |        ---- this local is dropped when the function returns
+12 |   (local text (str "hi"))
+   |          ---- this local is dropped when the function returns
 13 |   (do (ref text)))
    |       ^^^^^^^^^^ this borrows a local value
    |
@@ -36,8 +36,8 @@ error[L0510]: cannot return a borrow of a local value
 error[L0510]: cannot return a borrow of a local value
   --> check/local_borrow.rslisp:20:10
    |
-18 |   (let text (str "hi"))
-   |        ---- this local is dropped when the function returns
+18 |   (local text (str "hi"))
+   |          ---- this local is dropped when the function returns
 19 |   (match value
 20 |     (yes (ref text))
    |          ^^^^^^^^^^ this borrows a local value

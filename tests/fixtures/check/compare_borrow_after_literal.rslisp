@@ -1,7 +1,7 @@
 (defn year-last ()
-  (let year 2024)
+  (local year 2024)
   (> 2020 (ref year)))
 
 (defn char-last ()
-  (let grade (char "b"))
+  (local grade (char "b"))
   (> (char "a") (ref grade)))

@@ -7,19 +7,19 @@
 (defn count-doors () 4)
 
 (defn main ()
-  (let base 4)
-  (let chosen
+  (local base 4)
+  (local chosen
     (->spare :maker (if (> base 2)
                       (fn () (+ 4 1))
                       count-doors)))
-  (let matched
+  (local matched
     (->backup :maker (some (match base
                              (4 count-doors)
                              (_ (fn () (+ 2 1)))))))
-  (let made
+  (local made
     (->spare :maker (do (println "making") (fn () (+ 6 1)))))
-  (let pick (:maker chosen))
-  (let build (:maker made))
+  (local pick (:maker chosen))
+  (local build (:maker made))
   (println (pick))
   (println (build))
   (match matched

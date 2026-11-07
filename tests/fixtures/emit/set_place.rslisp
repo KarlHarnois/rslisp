@@ -9,21 +9,21 @@
   (set! (field cell label) label))
 
 (defn main ()
-  (let grid (vec))
+  (local grid (vec))
   (push! grid (vec false false))
   (push! grid (vec false false))
   (set! (at (at grid 1) 0) true)
-  (let alive
+  (local alive
     (match (get grid 1)
       ((some row) (at row 0))
       (none false)))
   (println alive)
-  (let cell (->cell false (str "seed")))
+  (local cell (->cell false (str "seed")))
   (revive! cell)
   (rename! cell (str "grown"))
   (println (:alive cell) " " (:label cell))
-  (let total 0)
-  (let add!
+  (local total 0)
+  (local add!
     (fn (n)
       (do
         (set! total (if (> n total) n total)))))

@@ -3,7 +3,7 @@
 (defn shout (word) (println word))
 
 (defn from-local ()
-  (let name (str "x"))
+  (local name (str "x"))
   (shout name))
 
 (defn from-call () (shout (str "y")))

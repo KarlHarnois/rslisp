@@ -3,7 +3,7 @@
   :year u16)
 
 (defn build (year)
-  (let make (str "Nissan"))
+  (local make (str "Nissan"))
   (->car :make (as-str make) :year year))
 
 (defn main ()

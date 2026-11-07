@@ -5,6 +5,6 @@
 (defn describe-error (reason value) (str value))
 
 (defn main ()
-  (let (answer (result i64 parse-int-error))
+  (local (answer (result i64 parse-int-error))
     (parse "oops"))
   (println (describe-error (unwrap-err answer) 7)))

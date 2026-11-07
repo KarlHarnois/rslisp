@@ -10,7 +10,7 @@
 (defn first (a b) a)
 
 (defn build ((make (ref str)) year)
-  (let other (str "Leaf"))
+  (local other (str "Leaf"))
   (->car :make (first make (as-str other)) :year year))
 
 (defn main ()

@@ -8,8 +8,8 @@
 
 (defmacro assert-eq (expected actual)
   (template (do
-              (let expected-value (unquote expected))
-              (let actual-value (unquote actual))
+              (local expected-value (unquote expected))
+              (local actual-value (unquote actual))
               (unless (= expected-value actual-value)
                 (println (str "assertion failed: "
                               (unquote (string expected))
@@ -24,9 +24,9 @@
              (fn (index) body ...))))
 
 (defmacro case (value clauses ...)
-  (let subject (quote case-value))
+  (local subject (quote case-value))
   (template (do
-              (let (unquote subject) (unquote value))
+              (local (unquote subject) (unquote value))
               (cond
                 (splice (map-list (fn (clause) (case-clause subject clause))
                                   clauses))))))
@@ -45,7 +45,7 @@
          (same-binding? (first clause) (quote else)))))
 
 (defmacro defenum (name variants ...)
-  (let count-name (symbol name (symbol-name name) "-count"))
+  (local count-name (symbol name (symbol-name name) "-count"))
   (template (do
               (def (unquote count-name)
                 (unquote (len variants)))
@@ -60,15 +60,15 @@
 
 (def variant-definitions
   (fn (variant index)
-    (let predicate (symbol variant (symbol-name variant) "?"))
+    (local predicate (symbol variant (symbol-name variant) "?"))
     (list (template (def (unquote variant) (unquote index)))
           (template (defn (unquote predicate) (value)
                       (= value (unquote variant)))))))
 
 (defmacro defrecord (name fields ...)
-  (let left (quote left))
-  (let right (quote right))
-  (let record (quote record))
+  (local left (quote left))
+  (local right (quote right))
+  (local record (quote record))
   (template
     (do
       (defstruct (unquote name)
@@ -98,7 +98,7 @@
 
 (def field-equality
   (fn (field left right)
-    (let read (read-keyword field))
+    (local read (read-keyword field))
     (template ((unquote (equality-for field))
                ((unquote read) (unquote left))
                ((unquote read) (unquote right))))))
@@ -111,7 +111,7 @@
 
 (def text-field?
   (fn (field)
-    (let field-type (nth field 1))
+    (local field-type (nth field 1))
     (and (symbol? field-type)
          (value-eq (symbol-name field-type) "string"))))
 
@@ -129,7 +129,7 @@
 (defrule if-some
   (((name option) then else)
    (do
-     (let option-value option)
+     (local option-value option)
      (if (some? option-value)
-       (do (let name (unwrap option-value)) then)
+       (do (local name (unwrap option-value)) then)
        else))))

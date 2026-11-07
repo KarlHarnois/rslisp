@@ -21,7 +21,7 @@
 
 (defn let-used-before ()
   (println shift)
-  (let shift 1))
+  (local shift 1))
 
 (defn main ()
   (println (used-once)
@@ -59,13 +59,13 @@
 (defn misplaced-struct ()
   (defstruct point
     :x i64)
-  (let origin (->point :x 0))
+  (local origin (->point :x 0))
   (println (:x (the point origin))))
 
 (defn malformed-struct () (struct))
 
 (defn do-without-definition ()
-  (do (let hidden 1) hidden)
+  (do (local hidden 1) hidden)
   hidden)
 
 (def compile-time-struct

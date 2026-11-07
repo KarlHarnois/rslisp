@@ -2,7 +2,7 @@
   (if (> (len a) (len b)) a b))
 
 (defn announce ((make (ref str)))
-  (let model (str "Leaf"))
+  (local model (str "Leaf"))
   (println (longer make (as-str model))))
 
 (defn main ()

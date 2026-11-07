@@ -3,5 +3,5 @@
   (* width height))
 
 (defn main ()
-  (let measure area)
+  (local measure area)
   (println (area (missing-width) 2)))

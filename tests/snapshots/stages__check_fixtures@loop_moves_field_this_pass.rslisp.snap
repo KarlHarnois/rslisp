@@ -6,13 +6,13 @@ input_file: tests/fixtures/check/loop_moves_field_this_pass.rslisp
 error[L0501]: use of moved value `(:tag g)`
   --> check/loop_moves_field_this_pass.rslisp:22:41
    |
-21 |                  (let renamed (assoc (:tag g) :size 2))
-   |                                      -------- value moved here
+21 |                  (local renamed (assoc (:tag g) :size 2))
+   |                                        -------- value moved here
 22 |                  (println (:label (:tag g)))
    |                                         ^ value used here after it moved
    |
 help: clone the value if both places need it
    |
-21 -                  (let renamed (assoc (:tag g) :size 2))
-21 +                  (let renamed (assoc (clone (:tag g)) :size 2))
+21 -                  (local renamed (assoc (:tag g) :size 2))
+21 +                  (local renamed (assoc (clone (:tag g)) :size 2))
    |

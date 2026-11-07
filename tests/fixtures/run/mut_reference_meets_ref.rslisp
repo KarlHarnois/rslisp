@@ -16,7 +16,7 @@
   (println (some? (get balances "alice"))))
 
 (defn main ()
-  (let balances (sorted-map (str "alice") 10))
+  (local balances (sorted-map (str "alice") 10))
   (credit! (mut balances) (str "alice") 25)
   (println (known? balances (str "alice")))
   (println (unwrap (get balances "alice"))))

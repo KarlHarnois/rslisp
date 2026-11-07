@@ -2,7 +2,7 @@
   (fn ((vec i64)) (result i64 string)))
 
 (defn first-even (numbers)
-  (let found
+  (local found
     (find (copied numbers)
           (fn (n) (= (rem n 2) 0))))
   (ok-or found (str "no even number")))

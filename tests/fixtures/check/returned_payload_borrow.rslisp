@@ -1,7 +1,7 @@
 (enum label (named str) blank)
 
 (defn build ()
-  (let text (str "Leaf"))
+  (local text (str "Leaf"))
   (label/named (as-str text)))
 
 (defn main ()

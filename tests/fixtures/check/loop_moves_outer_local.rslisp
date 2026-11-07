@@ -7,10 +7,10 @@
   :badge badge)
 
 (defn main ()
-  (let g
+  (local g
     (->garage (str "karl")
               (->badge (str "Leaf") 12)))
   (println (loop ((i 0))
              (if (< i 2)
-               (do (let b g) (recur (+ i 1)))
+               (do (local b g) (recur (+ i 1)))
                i))))

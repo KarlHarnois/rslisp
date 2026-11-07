@@ -44,9 +44,9 @@
 (def eight broken)
 
 (defn malformed-let ()
-  (let bad)
+  (local bad)
   (barr))
 
 (defn shadowed ()
-  (let add 1)
+  (local add 1)
   (println shadowed-plus))

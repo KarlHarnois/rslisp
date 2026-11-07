@@ -11,10 +11,10 @@
   (bump! t))
 
 (defn main ()
-  (let c (->counter 0))
+  (local c (->counter 0))
   (bump-field! c)
-  (let n 1)
-  (let r (mut n))
+  (local n 1)
+  (local r (mut n))
   (bump-reference! r)
   (println (:count c))
   (println n))

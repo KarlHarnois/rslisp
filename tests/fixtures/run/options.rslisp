@@ -1,6 +1,6 @@
 (defn main ()
-  (let found (some 3))
-  (let missing (the (option i64) none))
+  (local found (some 3))
+  (local missing (the (option i64) none))
   (println (some? found))
   (println (none? missing))
   (println (unwrap-or found 0))

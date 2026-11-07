@@ -9,8 +9,8 @@ error[L0510]: cannot return a borrow of a local value
  2 |   :make str
    |         --- declared as a borrow here
 ...
-21 |   (let make (str "Nissan"))
-   |        ---- this local is dropped when the function returns
+21 |   (local make (str "Nissan"))
+   |          ---- this local is dropped when the function returns
 22 |   (new car
 23 |     (make (as-str make))
    |           ^^^^^^^^^^^^^ this borrows a local value
@@ -23,8 +23,8 @@ error[L0510]: cannot return a borrow of a local value
 10 |   :at (ref point))
    |       ----------- declared as a borrow here
 ...
-27 |   (let origin (->point 0 0))
-   |        ------ this local is dropped when the function returns
+27 |   (local origin (->point 0 0))
+   |          ------ this local is dropped when the function returns
 28 |   (->pin :at (ref origin)))
    |              ^^^^^^^^^^^^ this borrows a local value
    |
@@ -36,8 +36,8 @@ error[L0510]: cannot return a borrow of a local value
 14 | (enum badge (titled str u16) plain)
    |                     --- declared as a borrow here
 ...
-31 |   (let title (str "Leaf"))
-   |        ----- this local is dropped when the function returns
+31 |   (local title (str "Leaf"))
+   |          ----- this local is dropped when the function returns
 32 |   (badge/titled (as-str title) year))
    |                 ^^^^^^^^^^^^^^ this borrows a local value
    |
@@ -46,8 +46,8 @@ error[L0510]: cannot return a borrow of a local value
 error[L0510]: cannot return a borrow of a local value
   --> check/returned_borrow_forms.rslisp:36:21
    |
-35 |   (let make (str "Nissan"))
-   |        ---- this local is dropped when the function returns
+35 |   (local make (str "Nissan"))
+   |          ---- this local is dropped when the function returns
 36 |   (new holder (held (as-str make))))
    |                     ^^^^^^^^^^^^^ this borrows a local value
    |
@@ -59,8 +59,8 @@ error[L0510]: cannot return a borrow of a local value
 17 |   (engraved (struct (text str) (count u16)))
    |                           --- declared as a borrow here
 ...
-39 |   (let make (str "Nissan"))
-   |        ---- this local is dropped when the function returns
+39 |   (local make (str "Nissan"))
+   |          ---- this local is dropped when the function returns
 40 |   (plaque/engraved (as-str make) year))
    |                    ^^^^^^^^^^^^^ this borrows a local value
    |

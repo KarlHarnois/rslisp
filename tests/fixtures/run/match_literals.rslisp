@@ -23,7 +23,7 @@
   (println (label (str "left")))
   (println (label (str "right")))
   (println (label (str "other")))
-  (let (word (ref string))
+  (local (word (ref string))
     (ref (str "left")))
   (match word
     ("left" (println "ref-left"))

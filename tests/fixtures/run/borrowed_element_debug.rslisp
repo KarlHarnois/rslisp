@@ -1,5 +1,5 @@
 (defn main ()
-  (let names
+  (local names
     (vec (str "Ana")
          (str "Bartholomew")
          (str "Cy")))

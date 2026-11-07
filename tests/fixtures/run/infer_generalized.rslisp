@@ -12,7 +12,7 @@
   (println (infer none))
   (println (infer identity))
   (println (infer (fn (x) (str x))))
-  (let v (vec))
+  (local v (vec))
   (push! v (char "x"))
   (println (infer v))
   (wrap 1)

@@ -9,8 +9,8 @@ error[L0510]: cannot return a borrow of a local value
 2 |   :model (option str))
   |          ------------ declared as a borrow here
 ...
-5 |   (let model (str line))
-  |        ----- this local is dropped when the function returns
+5 |   (local model (str line))
+  |          ----- this local is dropped when the function returns
 6 |   (->car :model (some (as-str model))))
   |                       ^^^^^^^^^^^^^^ this borrows a local value
   |

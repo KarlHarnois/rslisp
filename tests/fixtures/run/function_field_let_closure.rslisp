@@ -7,11 +7,11 @@
   :label str)
 
 (defn main ()
-  (let ana (->user "Ana" 30))
-  (let key
+  (local ana (->user "Ana" 30))
+  (local key
     (fn ((someone (ref user)))
       (+ (:age someone) 2)))
-  (let by-bonus
+  (local by-bonus
     (new sorter (:key key) (:label "by bonus")))
   (println (:label by-bonus))
   (println ((:key by-bonus) ana)))

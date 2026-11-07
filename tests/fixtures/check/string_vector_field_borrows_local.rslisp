@@ -2,7 +2,7 @@
   :models (vec str))
 
 (defn build (line)
-  (let model (str line))
+  (local model (str line))
   (->car :models (vec (as-str model))))
 
 (defn main ()

@@ -1,5 +1,5 @@
 (defn main ()
-  (let path (str "input_output/data.txt"))
+  (local path (str "input_output/data.txt"))
   (let-try ((text (slurp path)))
     (do
       (println path ": "

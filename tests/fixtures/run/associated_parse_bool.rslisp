@@ -1,4 +1,4 @@
 (defn main ()
-  (let (answer (result bool _))
+  (local (answer (result bool _))
     (parse "maybe"))
   (println (str (unwrap-err answer))))

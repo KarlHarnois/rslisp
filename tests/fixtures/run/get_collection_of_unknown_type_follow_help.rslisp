@@ -4,5 +4,5 @@
 (defn score-of (scores name) (get scores name))
 
 (defn main ()
-  (let scores (sorted-map (str "ada") 3))
+  (local scores (sorted-map (str "ada") 3))
   (prn (score-of (ref scores) "ada")))

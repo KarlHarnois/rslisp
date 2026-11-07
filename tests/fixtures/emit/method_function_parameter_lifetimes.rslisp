@@ -34,13 +34,13 @@
 
 (impl builder yard
   (assemble (constructor lot)
-            (let make (str "Nissan"))
+            (local make (str "Nissan"))
             (+ (:rows lot)
                (:year (constructor (as-str make) 2025)))))
 
 (defn main ()
-  (let model (str "Leaf"))
-  (let lot (->depot 1))
+  (local model (str "Leaf"))
+  (local lot (->depot 1))
   (println (park (fn (make year)
                    (->car :make (as-str model) :year year))
                  lot))

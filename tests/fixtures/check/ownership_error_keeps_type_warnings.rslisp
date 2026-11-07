@@ -7,6 +7,6 @@
     (_ "unknown")))
 
 (defn main ()
-  (let model (str "Leaf"))
-  (let parked model)
+  (local model (str "Leaf"))
+  (local parked model)
   (println model parked (describe charge/full)))

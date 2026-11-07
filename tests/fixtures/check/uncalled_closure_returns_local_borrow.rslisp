@@ -1,6 +1,6 @@
 (defn main ()
-  (let first
+  (local first
     (fn ()
-      (let years (vec 2019 2021 2024))
+      (local years (vec 2019 2021 2024))
       (ref years)))
   (println 2024))

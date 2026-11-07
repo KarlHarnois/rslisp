@@ -52,7 +52,7 @@
                         (quote value))
                   (list name (quote key) (quote value))))
       (do
-        (let count (len pairs))
+        (local count (len pairs))
         (prepend (list (quote rust)
                        (string "{{ let mut map = " rust-type
                                "::new(); "

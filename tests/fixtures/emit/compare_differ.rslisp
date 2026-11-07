@@ -5,5 +5,5 @@
 (defn differ? (a b) (not= a b))
 
 (defn main ()
-  (let command (str "quit"))
+  (local command (str "quit"))
   (println (differ? command "quit")))

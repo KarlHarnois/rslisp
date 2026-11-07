@@ -1,6 +1,6 @@
 (defn reset! (s) (set! s (str "new")))
 
 (defn main ()
-  (let name (str "old"))
+  (local name (str "old"))
   (reset! name)
   (println name))

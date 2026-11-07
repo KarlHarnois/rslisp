@@ -1,7 +1,7 @@
 (use prelude/test assert deftest)
 
 (deftest derefs-a-value
-  (let number 1)
+  (local number 1)
   (assert (= (deref number) 1)))
 
 (defn main () (println "main"))

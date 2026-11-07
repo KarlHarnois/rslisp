@@ -1,14 +1,14 @@
 (use garage/cars ->car car)
 
 (defn main ()
-  (let leaf (->car "Nissan" "Leaf" 2024 true))
-  (let civic
+  (local leaf (->car "Nissan" "Leaf" 2024 true))
+  (local civic
     (new car
       (make "Honda")
       (model "Civic")
       (year 2019)
       (electric? false)))
-  (let newer (assoc civic :year 2021))
+  (local newer (assoc civic :year 2021))
   (println (:year leaf)
            " "
            (:make civic)

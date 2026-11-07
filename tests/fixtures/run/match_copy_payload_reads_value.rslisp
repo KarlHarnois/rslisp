@@ -6,6 +6,6 @@
     ((failure/empty column) column)))
 
 (defn main ()
-  (let failure (failure/message (str "bad") 3))
+  (local failure (failure/message (str "bad") 3))
   (println (column failure))
   (println (column failure)))

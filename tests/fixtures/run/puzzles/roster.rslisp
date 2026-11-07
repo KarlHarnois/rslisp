@@ -11,7 +11,7 @@
   "Ada,research,91\nBram,sales,78\nCleo,research,85\nDev,sales,93\nEsme,support,70\nFinn,support,88")
 
 (defn solve-roster ()
-  (let people (parse-roster roster))
+  (local people (parse-roster roster))
   (for-each (iter people)
             (fn (person)
               (println (describe person))))
@@ -30,7 +30,7 @@
                 (fn (line) (parse-employee line)))))
 
 (defn parse-employee (line)
-  (let fields (collect (split line ",")))
+  (local fields (collect (split line ",")))
   (->employee (str (unwrap (get fields 0)))
               (str (unwrap (get fields 1)))
               (parse-score (unwrap (get fields 2)))))
@@ -43,7 +43,7 @@
        (:score person)))
 
 (defn departments (people)
-  (let names
+  (local names
     (collect (map (iter people)
                   (fn (person) (as-str (:dept person))))))
   (sort! names)
@@ -51,7 +51,7 @@
   names)
 
 (defn print-top-scorer (people dept)
-  (let best
+  (local best
     (max-by-key (filter (iter people)
                         (fn (person) (in-dept? person dept)))
                 (fn (person) (:score person))))
