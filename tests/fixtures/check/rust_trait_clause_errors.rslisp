@@ -28,7 +28,9 @@
     (ord "first({0})")
     (partial-ord "second({0})")))
 
-(defstruct ticket :number i64)
+(defstruct ticket
+  :number i64)
+
 (derive ticket partial-eq eq partial-ord ord)
 
 (def struct-after-trait
@@ -37,9 +39,7 @@
     (ord "first({0})")
     (ticket "second({0})")))
 
-(rust-type (wrapped item)
-  "Vec<{0}>"
-  (ord "Vec<{0}>"))
+(rust-type (wrapped item) "Vec<{0}>" (ord "Vec<{0}>"))
 
 (def kept-order
   (rust "measure({0})"

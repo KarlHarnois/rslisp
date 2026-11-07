@@ -1,13 +1,15 @@
 (trait named
   (name-of (fn ((ref self)) (ref str))))
 
-(defstruct ticket :number i64)
+(defstruct ticket
+  :number i64)
+
 (derive ticket clone partial-eq eq partial-ord ord)
 
-(defstruct badge :number i64)
+(defstruct badge
+  :number i64)
 
-(impl named badge
-  (name-of (badge) "badge"))
+(impl named badge (name-of (badge) "badge"))
 
 (def kind
   (rust "{{ let _ = {0}; \"default\" }}"
@@ -18,21 +20,32 @@
     (named "{{ let _ = {0}; \"named\" }}")
     (partial-eq "{{ let _ = {0}; \"partial-eq\" }}")))
 
-(type bounded (where ((a ord)) (fn (a) (ref str))))
+(type bounded
+  (where ((a ord)) (fn (a) (ref str))))
 
 (defn bounded (value) (kind value))
 
-(type borrowed-bounded (where ((a ord)) (fn ((ref a)) (ref str))))
+(type borrowed-bounded
+  (where ((a ord))
+    (fn ((ref a)) (ref str))))
 
 (defn borrowed-bounded (value) (kind value))
 
-(type comparable (where ((a partial-eq)) (fn (a) (ref str))))
+(type comparable
+  (where ((a partial-eq))
+    (fn (a) (ref str))))
 
 (defn comparable (value) (kind value))
 
-(type unbounded (where (a) (fn (a) (ref str))))
+(type unbounded
+  (where (a) (fn (a) (ref str))))
 
 (defn unbounded (value) (kind value))
+
+(type named-kind
+  (where ((a named)) (fn (a) (ref str))))
+
+(defn named-kind (value) (kind value))
 
 (defn main ()
   (local number 1)
@@ -50,4 +63,5 @@
   (println (bounded 1))
   (println (borrowed-bounded (ref number)))
   (println (comparable 1))
-  (println (unbounded 1)))
+  (println (unbounded 1))
+  (println (named-kind (->badge 1))))

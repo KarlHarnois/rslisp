@@ -1,0 +1,3 @@
+(defn main ()
+  (println (max (vec 1) (vec 2)))
+  (println (unwrap (max (iter (vec 1.0))))))

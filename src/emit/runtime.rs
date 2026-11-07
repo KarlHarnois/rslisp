@@ -27,6 +27,8 @@ enum RuntimePart {
     NoteUntested,
     TestRun,
     RunTest,
+    Max,
+    Min,
 }
 
 impl RuntimePart {
@@ -38,7 +40,7 @@ impl RuntimePart {
         "eprintln!(",
         "std::io::stderr(",
     ];
-    const ALL: [(RuntimePart, &'static [&'static str]); 23] = [
+    const ALL: [(RuntimePart, &'static [&'static str]); 25] = [
         (RuntimePart::Number, &["crate::rt::Number"]),
         (RuntimePart::FromLiteral, &["::from_literal("]),
         (RuntimePart::FromFloatLiteral, &["::from_float_literal("]),
@@ -65,6 +67,8 @@ impl RuntimePart {
         (RuntimePart::NoteUntested, &["crate::rt::note_untested("]),
         (RuntimePart::TestRun, &["crate::rt::start_run("]),
         (RuntimePart::RunTest, &["crate::rt::run_test("]),
+        (RuntimePart::Max, &["crate::rt::max("]),
+        (RuntimePart::Min, &["crate::rt::min("]),
     ];
 
     const REQUIRED: [(RuntimePart, &'static [RuntimePart]); 18] = [
@@ -174,8 +178,10 @@ impl RuntimeModule {
     const NOTE_UNTESTED: &'static str = include_str!("../../prelude/runtime/note_untested.rs");
     const TEST_RUN: &'static str = include_str!("../../prelude/runtime/test_run.rs");
     const RUN_TEST: &'static str = include_str!("../../prelude/runtime/run_test.rs");
+    const MAX: &'static str = include_str!("../../prelude/runtime/max.rs");
+    const MIN: &'static str = include_str!("../../prelude/runtime/min.rs");
     const START_UP_CALL: &'static str = "crate::rt::restore_default_sigpipe();";
-    const FIXED_PARTS: [(RuntimePart, &'static str); 22] = [
+    const FIXED_PARTS: [(RuntimePart, &'static str); 24] = [
         (RuntimePart::Signed, Self::SIGNED),
         (RuntimePart::Float, Self::FLOAT),
         (RuntimePart::Integer, Self::INTEGER),
@@ -198,6 +204,8 @@ impl RuntimeModule {
         (RuntimePart::NoteUntested, Self::NOTE_UNTESTED),
         (RuntimePart::TestRun, Self::TEST_RUN),
         (RuntimePart::RunTest, Self::RUN_TEST),
+        (RuntimePart::Max, Self::MAX),
+        (RuntimePart::Min, Self::MIN),
     ];
     const CONVERSIONS: &'static [Conversion] = &[
         Conversion {

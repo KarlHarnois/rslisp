@@ -1,8 +1,8 @@
 (use prelude/types iterator option)
 (use prelude/pair pair)
-(use prelude/number + integer number ord)
+(use prelude/number + integer number ord partial-ord)
 (use prelude/syntax defn)
-(use prelude/macros defrule document)
+(use prelude/macros defrule defrule-with-value document)
 (use prelude/vec iter)
 (use prelude/sequence len)
 
@@ -113,15 +113,39 @@
                  (rest (first (rest form))))
         (prepend (quote count-items) (rest form))))))
 
-(def max
+(def largest-item
   (rust "{0}.max()"
     (where ((a ord))
       (fn ((iterator a)) (option a)))))
 
-(def min
+(def smallest-item
   (rust "{0}.min()"
     (where ((a ord))
       (fn ((iterator a)) (option a)))))
+
+(def larger
+  (rust "crate::rt::max({0}, {1})"
+    (where ((a partial-ord)) (fn (a a) a))
+    (f32 "f32::max({0}, {1})")
+    (f64 "f64::max({0}, {1})")
+    (ord "std::cmp::max({0}, {1})")))
+
+(def smaller
+  (rust "crate::rt::min({0}, {1})"
+    (where ((a partial-ord)) (fn (a a) a))
+    (f32 "f32::min({0}, {1})")
+    (f64 "f64::min({0}, {1})")
+    (ord "std::cmp::min({0}, {1})")))
+
+(defrule-with-value max largest-item
+  ((items) (largest-item items))
+  ((a b) (larger a b))
+  ((a b c more ...) (max (larger a b) c more ...)))
+
+(defrule-with-value min smallest-item
+  ((items) (smallest-item items))
+  ((a b) (smaller a b))
+  ((a b c more ...) (min (smaller a b) c more ...)))
 
 (def max-by-key
   (rust "{0}.max_by_key({1})"
@@ -209,19 +233,27 @@
   `(count (iter collection))` emits the collection's `len`, and any other call
   runs through the items. A vector or a map passes as its `iter`.")
 
-(document (max items)
-  "Returns the largest item as an `option`.
+(document (max items-or-value more ...)
+  "Returns the largest item of an iterator, or the largest of its arguments.
 
-  It returns `none` for no items, and the last of equal items. The items
-  implement `ord`, so a float is an error. A vector or a map passes as its
-  `iter`.")
+  One argument is an iterator: the result is an `option`, `none` for no items
+  and the last of equal items, and the items implement `ord`, so a float is an
+  error. A vector or a map passes as its `iter`.
 
-(document (min items)
-  "Returns the smallest item as an `option`.
+  Two or more arguments are values of one type that implements `partial-ord`,
+  so `(max 1 2)` is `2`, `(max 1.0 2.0)` is `2.0`, and a NaN loses to the other
+  value. `max` as a value is the iterator function.")
 
-  It returns `none` for no items, and the first of equal items. The items
-  implement `ord`, so a float is an error. A vector or a map passes as its
-  `iter`.")
+(document (min items-or-value more ...)
+  "Returns the smallest item of an iterator, or the smallest of its arguments.
+
+  One argument is an iterator: the result is an `option`, `none` for no items
+  and the first of equal items, and the items implement `ord`, so a float is an
+  error. A vector or a map passes as its `iter`.
+
+  Two or more arguments are values of one type that implements `partial-ord`,
+  so `(min 1 2)` is `1`, `(min 1.0 2.0)` is `1.0`, and a NaN loses to the other
+  value. `min` as a value is the iterator function.")
 
 (document (max-by-key items key)
   "Returns the item with the largest key as an `option`.
