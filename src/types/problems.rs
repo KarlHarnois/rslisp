@@ -855,14 +855,49 @@ impl TypeProblems {
         label: &FieldLabel,
         similar: Option<Rc<str>>,
     ) -> Diagnostic {
-        let diagnostic = Diagnostic::error(
-            DiagnosticCode::UNKNOWN_FIELD,
-            format!(
-                "`{struct_name}` has no field `{}`",
-                label.spelled(&label.name)
-            ),
+        let absent = Self::absent_field(DiagnosticCode::UNKNOWN_FIELD, struct_name, label);
+        Self::with_similar_field(absent, label, similar)
+    }
+
+    pub fn unknown_pattern_field(
+        owner: &str,
+        label: &FieldLabel,
+        similar: Option<Rc<str>>,
+    ) -> Diagnostic {
+        let absent = Self::absent_field(DiagnosticCode::UNKNOWN_PATTERN_FIELD, owner, label);
+        Self::with_similar_field(absent, label, similar)
+    }
+
+    pub fn label_on_positional_payload(
+        owner: &str,
+        label: &FieldLabel,
+        parts: usize,
+    ) -> Diagnostic {
+        Self::absent_field(DiagnosticCode::UNKNOWN_PATTERN_FIELD, owner, label)
+            .with_help(Self::positional_payload_help(owner, parts))
+    }
+
+    fn positional_payload_help(owner: &str, parts: usize) -> String {
+        if parts == 0 {
+            return format!("`{owner}` has no payload: write `{owner}`");
+        }
+        let parts = Counted::noun(parts, "part");
+        format!("`{owner}` takes {parts} by position, without a label")
+    }
+
+    fn absent_field(code: DiagnosticCode, owner: &str, label: &FieldLabel) -> Diagnostic {
+        Diagnostic::error(
+            code,
+            format!("`{owner}` has no field `{}`", label.spelled(&label.name)),
             Label::new(label.span, "unknown field"),
-        );
+        )
+    }
+
+    fn with_similar_field(
+        diagnostic: Diagnostic,
+        label: &FieldLabel,
+        similar: Option<Rc<str>>,
+    ) -> Diagnostic {
         match similar {
             Some(similar) => diagnostic.with_suggestion(
                 "a field with a similar name exists",
@@ -925,6 +960,51 @@ impl TypeProblems {
             "remove the second `{}` and its value",
             label.spelled(&label.name)
         ))
+    }
+
+    pub fn repeated_pattern_field(owner: &str, label: &FieldLabel, first: Span) -> Diagnostic {
+        let keyword = label.spelled(&label.name);
+        Diagnostic::error(
+            DiagnosticCode::REPEATED_PATTERN_FIELD,
+            format!("`{keyword}` is given twice in this pattern of `{owner}`"),
+            Label::new(label.span, "given again here"),
+        )
+        .with_label(Label::new(first, "first given here"))
+        .with_help(format!("remove the second `{keyword}` and its pattern"))
+    }
+
+    pub fn keyword_without_pattern(label: &FieldLabel) -> Diagnostic {
+        let keyword = label.spelled(&label.name);
+        Diagnostic::error(
+            DiagnosticCode::KEYWORD_WITHOUT_PATTERN,
+            format!("`{keyword}` has no pattern after it"),
+            Label::new(label.span, "this field keyword needs a pattern"),
+        )
+        .with_help(format!("write a pattern after `{keyword}`, or remove it"))
+    }
+
+    pub fn mixed_named_pattern(owner: &str, labeled: Span, positional: Span) -> Diagnostic {
+        Self::mixed_pattern_forms(owner, labeled, positional)
+            .with_help("label every part, or write one pattern for each field in order")
+    }
+
+    pub fn mixed_positional_pattern(
+        owner: &str,
+        labeled: Span,
+        positional: Span,
+        parts: usize,
+    ) -> Diagnostic {
+        Self::mixed_pattern_forms(owner, labeled, positional)
+            .with_help(Self::positional_payload_help(owner, parts))
+    }
+
+    fn mixed_pattern_forms(owner: &str, labeled: Span, positional: Span) -> Diagnostic {
+        Diagnostic::error(
+            DiagnosticCode::MIXED_PATTERN_FORMS,
+            format!("this pattern of `{owner}` mixes positions and field labels"),
+            Label::new(labeled, "this part names a field"),
+        )
+        .with_label(Label::new(positional, "this part goes by position"))
     }
 
     pub fn missing_fields(struct_name: &str, missing: &[Rc<str>], span: Span) -> Diagnostic {

@@ -1,0 +1,15 @@
+(defstruct point
+  :x i64
+  :y i64)
+
+(enum shape
+  (labeled (struct (text string) (size f64)))
+  dot)
+
+(defn struct-field (p)
+  (match p ((point :x a :x b) a)))
+
+(defn variant-field (s)
+  (match s
+    ((labeled :text a :size b :text c) b)
+    (dot 0.0)))

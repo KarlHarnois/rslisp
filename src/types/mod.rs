@@ -22,6 +22,7 @@ mod method_receivers;
 mod missing_annotations;
 mod opaque_positions;
 mod parameter_calls;
+mod pattern_placement;
 mod pending;
 mod pinning;
 mod pipelines;

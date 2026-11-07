@@ -1,0 +1,22 @@
+(defstruct point
+  :x i64
+  :y i64)
+
+(enum shape
+  (labeled (struct (text string) (size f64)))
+  dot)
+
+(defn y-of (p)
+  (match p ((point :y found) found)))
+
+(defn size-of (s)
+  (match s
+    ((labeled :size size :text _) size)
+    ((shape/labeled :text _) 0.0)
+    (dot 0.0)))
+
+(defn mixed (p)
+  (match p ((point :y b a) a)))
+
+(defn unfinished (p)
+  (match p ((point :x) 0)))

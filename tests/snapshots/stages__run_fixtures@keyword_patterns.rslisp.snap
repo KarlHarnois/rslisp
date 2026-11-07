@@ -1,0 +1,19 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/run/keyword_patterns.rslisp
+---
+5
+1
+4
+"origin"
+origin5
+"zero"
+"other"
+"empty"
+hi
+no size
+1.5
+dot
+2.0
+0.0

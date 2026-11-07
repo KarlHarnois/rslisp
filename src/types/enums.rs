@@ -2,6 +2,7 @@ use std::rc::Rc;
 
 use rustc_hash::FxHashMap;
 
+use super::pattern_placement::PatternFields;
 use super::ty::{GenericId, GenericParam, Type};
 use crate::core::BindingId;
 use crate::source::Span;
@@ -23,6 +24,16 @@ pub struct VariantDefinition {
 }
 
 impl VariantDefinition {
+    pub fn pattern_fields(&self) -> PatternFields<'_> {
+        match &self.payload {
+            VariantPayload::None => PatternFields::Positional(0),
+            VariantPayload::Positional(types) => PatternFields::Positional(types.len()),
+            VariantPayload::Named(fields) => {
+                PatternFields::Named(fields.iter().map(|(name, _)| name.as_ref()).collect())
+            }
+        }
+    }
+
     pub fn payload_types(&self) -> Vec<&Type> {
         match &self.payload {
             VariantPayload::None => Vec::new(),

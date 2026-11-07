@@ -1,0 +1,35 @@
+(defstruct point
+  :x i64
+  :y i64)
+
+(enum shape
+  (labeled (struct (text string) (size f64)))
+  dot)
+
+(defn struct-position-first (p)
+  (match p ((point a :y b) a)))
+
+(defn struct-label-first (p)
+  (match p ((point :x a b) a)))
+
+(defn short-variant (s)
+  (match s
+    ((labeled t :size z) z)
+    (dot 0.0)))
+
+(defn qualified-variant (s)
+  (match s
+    ((shape/labeled :text t z) z)
+    (dot 0.0)))
+
+(enum reading (measured f64) idle)
+
+(defn positional-variant (r)
+  (match r
+    ((measured a :value b) a)
+    (idle 0.0)))
+
+(defn empty-variant (r)
+  (match r
+    ((measured a) a)
+    ((idle a :value b) a)))

@@ -187,8 +187,9 @@
 (document (match value (pattern body) ...)
   "Evaluates the body of the first arm whose pattern matches the value.
 
-  A pattern is `_`, a literal, a bare name, `(variant pattern ...)` or
-  `(type-name pattern ...)`. It emits a Rust `match`.")
+  A pattern is `_`, a literal, a bare name, `(variant pattern ...)`,
+  `(variant :field pattern ...)`, `(type-name pattern ...)` or
+  `(type-name :field pattern ...)`. It emits a Rust `match`.")
 
 (document (assoc-at value (key ...) item)
   "Returns the collection with the item stored at a path of keys.

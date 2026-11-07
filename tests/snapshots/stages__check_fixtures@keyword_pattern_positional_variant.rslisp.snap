@@ -1,0 +1,28 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/keyword_pattern_positional_variant.rslisp
+---
+error[L0460]: `circle` has no field `:radius`
+ --> check/keyword_pattern_positional_variant.rslisp:5:14
+  |
+5 |     ((circle :radius r) r)
+  |              ^^^^^^^ unknown field
+  |
+  = help: `circle` takes 1 part by position, without a label
+
+error[L0460]: `circle` has no field `:radius`
+  --> check/keyword_pattern_positional_variant.rslisp:10:20
+   |
+10 |     ((shape/circle :radius r) r)
+   |                    ^^^^^^^ unknown field
+   |
+   = help: `circle` takes 1 part by position, without a label
+
+error[L0460]: `dot` has no field `:radius`
+  --> check/keyword_pattern_positional_variant.rslisp:16:11
+   |
+16 |     ((dot :radius r) r)))
+   |           ^^^^^^^ unknown field
+   |
+   = help: `dot` has no payload: write `dot`

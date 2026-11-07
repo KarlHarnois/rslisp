@@ -60,7 +60,7 @@ These forms are the compiler's complete vocabulary. Every other form is a macro 
 | `type` | `(type name type)` | signature | name: reference to a `def`, or to a macro whose value position expands to a function the macro introduced in this module. type: type. |
 | `struct` | `(struct name (field type)...)` or `(struct (name parameter...) (field type)...)` | `struct` | name: type binder. params: type binders. fields: field labels with types. |
 | `enum` | `(enum name (rust "Path")? variant...)` or `(enum (name parameter...) (rust "Path")? variant...)` | `enum`, or the named Rust type | name: type binder. params: type binders. `rust`: an optional Rust path. variants: a name, `(name type...)`, or `(name (struct (field type)...))`. |
-| `match` | `(match value (pattern body)...)` | `match` | value: expression. patterns: a wildcard, a literal, a bare name, `(variant pattern...)` or `(type-name pattern...)`. arms: one body expression. |
+| `match` | `(match value (pattern body)...)` | `match` | value: expression. patterns: a wildcard, a literal, a bare name, `(variant pattern...)`, `(variant :field pattern...)`, `(type-name pattern...)` or `(type-name :field pattern...)`. arms: one body expression. |
 | `derive` | `(derive type trait...)` | `#[derive(...)]` | type: reference to a `struct` or `enum` of this module. traits: references to traits. |
 | `new` | `(new name (field value)...)` or `(new _ base (field value)...)` | struct literal or struct update | name: type, or `_` with a base expression. base: expression. fields: field labels with expressions. A label is a field name or a keyword, as in `(new car (:year 2025))`. |
 | `assoc-at` | `(assoc-at value (key...) item)` | block | value: expression. keys: expressions. item: expression. |
@@ -285,7 +285,7 @@ A `defstruct` may end with one `(defaults :field value ...)` clause, recognized 
 
 A keyword reads a field. A list whose head is a keyword and that has one argument expands to the kernel `field` form: `(:x origin)` is `(field origin x)`, and it borrows, moves and reports an unknown field exactly as that form does. A read through a written `deref` emits no `*`, because a Rust field access dereferences by itself, so `(:year (deref c))` emits `c.year`. A keyword in value position expands to a closure that reads the field, so `(map (iter points) :x)` emits `points.iter().map(|value: &Point| value.x)`. Each such closure is typed where it is used.
 
-A keyword call with no value or with more than one value is an error. `let`, `def`, `fn` parameters and patterns reject a keyword as a name. The rule runs on the expanded program, so a macro receives a keyword unchanged, as `defstruct` does.
+A keyword call with no value or with more than one value is an error. `let`, `def`, `fn` parameters and patterns reject a keyword as a name, except that a keyword in a struct or variant pattern labels a field. The rule runs on the expanded program, so a macro receives a keyword unchanged, as `defstruct` does.
 
 A field label in `new` may be written as a keyword, so a macro passes the user's spelling through, as `assoc` and `->car` do. An unknown field then reports and suggests the field as a keyword, as `(assoc leaf :yer 2025)` suggests `:year`.
 
@@ -1060,11 +1060,15 @@ A `match` tests one value against patterns:
   (point 0.0))
 ```
 
-An arm is one pattern and one body expression. The body is in tail position, so `recur` works in an arm, and a call to the enclosing function in an arm compiles into the enclosing tail loop. When one arm borrows a small Copy value and another arm gives the value, the match copies the borrow out, as a call argument does. A pattern is `_`, a literal, a bare name, `(variant pattern...)`, or `(type-name pattern...)`, and patterns nest. Literal patterns are numbers, booleans and strings.
+An arm is one pattern and one body expression. The body is in tail position, so `recur` works in an arm, and a call to the enclosing function in an arm compiles into the enclosing tail loop. When one arm borrows a small Copy value and another arm gives the value, the match copies the borrow out, as a call argument does. A pattern is `_`, a literal, a bare name, a variant pattern, or a struct pattern, and patterns nest. Literal patterns are numbers, booleans and strings.
 
-A struct pattern is `(type-name pattern...)`, with exactly one pattern per field in field order. A wrong count is the wrong-number-of-pattern-parts error, as for a variant. A struct pattern nests inside a variant or pair pattern, and either of those nests inside it. An owned matched value moves each bound field out, and a `ref` or `mut` matched value binds a `&` or `&mut` field, as for every other pattern.
+A struct pattern is positional or labeled. A positional pattern is `(type-name pattern...)`, with exactly one pattern per field in field order. A wrong count is the wrong-number-of-pattern-parts error, as for a variant. A labeled pattern is `(type-name :field pattern...)`: it names any of the fields in any order and skips the rest, so `(match p ((point :x a) (println a)))` binds `x` and emits `let Point { x: a, .. } = p;`. A labeled pattern emits what the positional pattern with `_` at each skipped field emits.
 
-A pattern is sure when no value can fail it: `_`, a bare name that binds, a struct pattern whose parts are sure, or a variant of a one-variant enum whose parts are sure. A `match` with one sure arm emits `let <pattern> = <value>;` and then the arm's body, in place of a Rust `match`. A struct pattern therefore emits a `let` that names the fields it binds and writes `..` for the fields it skips with `_`, as in `let Parsed { node, .. } = p;`.
+A label that names no field of the type is `L0460`, a field labeled twice is `L0461`, a pattern that holds both positional parts and labels is `L0462`, and a label that names a field with no pattern after it is `L0463`.
+
+A struct pattern nests inside a variant or pair pattern, and either of those nests inside it. An owned matched value moves each bound field out, and a `ref` or `mut` matched value binds a `&` or `&mut` field, as for every other pattern.
+
+A pattern is sure when no value can fail it: `_`, a bare name that binds, a struct pattern whose parts are sure, or a variant of a one-variant enum whose parts are sure. A `match` with one sure arm emits `let <pattern> = <value>;` and then the arm's body, in place of a Rust `match`. A struct pattern therefore emits a `let` that names the fields it binds and writes `..` for the fields it skips, with `_` or by leaving them out, as in `let Parsed { node, .. } = p;`.
 
 `let-fields` takes `(let-fields (type-name (name ...)) value body ...)` and expands to a one-arm `match`, as `let-pair` does. Each name is a field pattern in field order, and `_` skips a field:
 
@@ -1077,7 +1081,7 @@ A `string` value matched against string literals emits `.as_str()` on the value,
 
 A variant name in a pattern is short, as in `(circle r)`. Its enum is the type of the value at that position. When the matched value's type is still unknown, the enum is the one visible enum that has every variant name the arms use. If two visible enums fit, the match is an error that asks for one qualified pattern. A qualified pattern, such as `(shape/circle r)`, is always allowed.
 
-A bare name that names a variant with no payload of the matched enum is that variant. Any other bare name binds the value. A variant pattern binds no value, so in its arm the name keeps its meaning from outside the `match`. A variant with a `struct` payload takes its patterns positionally, in field order.
+A bare name that names a variant with no payload of the matched enum is that variant. Any other bare name binds the value. A variant pattern binds no value, so in its arm the name keeps its meaning from outside the `match`. A variant with a `struct` payload takes its patterns as a struct does: one pattern per field in field order, or `:field pattern` pairs that name any of the fields and skip the rest, as `(labeled :text t)` or `(shape/labeled :size 0.0)`. The same errors apply. A label on a variant with a positional payload or no payload is `L0460`, whose help says that the variant takes its parts by position.
 
 When the matched value is a reference, each name a pattern binds is a reference of the same kind, as Rust's default binding modes do.
 

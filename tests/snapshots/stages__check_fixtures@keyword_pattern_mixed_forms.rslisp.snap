@@ -1,0 +1,64 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/keyword_pattern_mixed_forms.rslisp
+---
+error[L0462]: this pattern of `point` mixes positions and field labels
+  --> check/keyword_pattern_mixed_forms.rslisp:10:22
+   |
+10 |   (match p ((point a :y b) a)))
+   |                    - ^^ this part names a field
+   |                    |
+   |                    this part goes by position
+   |
+   = help: label every part, or write one pattern for each field in order
+
+error[L0462]: this pattern of `point` mixes positions and field labels
+  --> check/keyword_pattern_mixed_forms.rslisp:13:20
+   |
+13 |   (match p ((point :x a b) a)))
+   |                    ^^   - this part goes by position
+   |                    |
+   |                    this part names a field
+   |
+   = help: label every part, or write one pattern for each field in order
+
+error[L0462]: this pattern of `labeled` mixes positions and field labels
+  --> check/keyword_pattern_mixed_forms.rslisp:17:17
+   |
+17 |     ((labeled t :size z) z)
+   |               - ^^^^^ this part names a field
+   |               |
+   |               this part goes by position
+   |
+   = help: label every part, or write one pattern for each field in order
+
+error[L0462]: this pattern of `labeled` mixes positions and field labels
+  --> check/keyword_pattern_mixed_forms.rslisp:22:21
+   |
+22 |     ((shape/labeled :text t z) z)
+   |                     ^^^^^   - this part goes by position
+   |                     |
+   |                     this part names a field
+   |
+   = help: label every part, or write one pattern for each field in order
+
+error[L0462]: this pattern of `measured` mixes positions and field labels
+  --> check/keyword_pattern_mixed_forms.rslisp:29:18
+   |
+29 |     ((measured a :value b) a)
+   |                - ^^^^^^ this part names a field
+   |                |
+   |                this part goes by position
+   |
+   = help: `measured` takes 1 part by position, without a label
+
+error[L0462]: this pattern of `idle` mixes positions and field labels
+  --> check/keyword_pattern_mixed_forms.rslisp:35:14
+   |
+35 |     ((idle a :value b) a)))
+   |            - ^^^^^^ this part names a field
+   |            |
+   |            this part goes by position
+   |
+   = help: `idle` has no payload: write `idle`

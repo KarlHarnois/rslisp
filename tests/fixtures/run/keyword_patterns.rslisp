@@ -1,0 +1,66 @@
+(defstruct point
+  :x i64
+  :y i64
+  :label string)
+
+(enum shape
+  (circle f64)
+  (labeled (struct (text string) (size f64)))
+  dot)
+
+(enum wrapper (wrapped point) empty)
+
+(defn x-of (p)
+  (match p ((point :x a) a)))
+
+(defn swapped (p)
+  (match p
+    ((point :y first :x second) (- first second))))
+
+(defn every-field (p)
+  (match p
+    ((point :label text :x _ :y y) (println text y))))
+
+(type label-of
+  (fn ((ref point)) (ref string)))
+
+(defn label-of (p)
+  (match p ((point :label text) text)))
+
+(defn nested (w)
+  (match w
+    ((wrapped (point :x 0)) "zero")
+    ((wrapped (point :x _)) "other")
+    (empty "empty")))
+
+(defn describe (s)
+  (match s
+    ((shape/labeled :size 0.0) (println "no size"))
+    ((labeled :text t) (println t))
+    ((circle r) (println r))
+    (dot (println "dot"))))
+
+(defn size-of (s)
+  (match s
+    ((shape/labeled :size size :text _) size)
+    (_ 0.0)))
+
+(defrule y-of
+  ((value) (match value ((point :y found) found))))
+
+(defn main ()
+  (local p (->point 1 5 (str "origin")))
+  (prn (y-of p))
+  (prn (x-of p))
+  (prn (swapped p))
+  (prn (label-of p))
+  (every-field p)
+  (prn (nested (wrapper/wrapped (->point 0 0 (str "a")))))
+  (prn (nested (wrapper/wrapped (->point 1 0 (str "b")))))
+  (prn (nested wrapper/empty))
+  (describe (shape/labeled (str "hi") 2.0))
+  (describe (shape/labeled (str "bye") 0.0))
+  (describe (shape/circle 1.5))
+  (describe shape/dot)
+  (prn (size-of (shape/labeled (str "hi") 2.0)))
+  (prn (size-of shape/dot)))

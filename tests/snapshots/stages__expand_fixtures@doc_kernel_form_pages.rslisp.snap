@@ -5,5 +5,5 @@ input_file: tests/fixtures/expand/doc_kernel_form_pages.rslisp
 ---
 (def if-page "(if test then else)\n\nEvaluates `then` when the test is true, and `else` otherwise.\n\nIt emits a Rust `if` with an `else`.")
 (def fn-page "(fn (parameter ...) body ...)\n\nMakes a function of its parameters, whose result is its last body form.\n\nIt emits a Rust `fn` item, a closure or a block, by where it appears.")
-(def match-page "(match value (pattern body) ...)\n\nEvaluates the body of the first arm whose pattern matches the value.\n\nA pattern is `_`, a literal, a bare name, `(variant pattern ...)` or\n`(type-name pattern ...)`. It emits a Rust `match`.")
+(def match-page "(match value (pattern body) ...)\n\nEvaluates the body of the first arm whose pattern matches the value.\n\nA pattern is `_`, a literal, a bare name, `(variant pattern ...)`,\n`(variant :field pattern ...)`, `(type-name pattern ...)` or\n`(type-name :field pattern ...)`. It emits a Rust `match`.")
 (def new-page "(new name (field value) ...)\n\nBuilds a struct value from its fields.\n\nA field label is a field name or a keyword, as in `(new car (:year 2025))`.\n`(new _ base (field value) ...)` takes the other fields from a base value.")

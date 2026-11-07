@@ -12,8 +12,8 @@ use super::try_check::TryCheck;
 use crate::core::{
     Arm, Binder, BindingId, BindingKind, Block, BodyItem, Control, ControlForm, Expr, ExprKind,
     ExpressionForm, FieldLabel, FieldSpelling, KernelForm, Keyword, Lambda, Leaf, LeafForm,
-    Literal, MapOperation, Namespace, ParsedTemplate, Pattern, PatternKind, ReferenceKind,
-    RustTemplate, StructExpr, StructForm, TypeExpr, VariantInfo,
+    Literal, MapOperation, Namespace, ParsedTemplate, Pattern, PatternArguments, PatternKind,
+    PatternPart, ReferenceKind, RustTemplate, StructExpr, StructForm, TypeExpr, VariantInfo,
 };
 use crate::diagnostic::Diagnostic;
 use crate::reader::{Form, FormKind, Symbol};
@@ -704,9 +704,10 @@ impl Expander<'_> {
         };
         match self.kind(binding) {
             BindingKind::Boolean(value) => Ok(Some(PatternKind::Literal(Literal::Bool(value)))),
-            BindingKind::Variant(_, info) if info.arity == 0 => {
-                Ok(Some(PatternKind::Variant(binding, Vec::new())))
-            }
+            BindingKind::Variant(_, info) if info.arity == 0 => Ok(Some(PatternKind::Variant(
+                binding,
+                PatternArguments::default(),
+            ))),
             BindingKind::Variant(_, _) => Err(ExpandProblems::not_a_pattern(form.span())),
             _ => Ok(None),
         }
@@ -778,8 +779,34 @@ impl Expander<'_> {
         })
     }
 
-    fn lower_pattern_arguments(&mut self, forms: &[Form]) -> Result<Vec<Pattern>, Diagnostic> {
-        forms.iter().map(|form| self.lower_pattern(form)).collect()
+    fn lower_pattern_arguments(&mut self, forms: &[Form]) -> Result<PatternArguments, Diagnostic> {
+        let mut parts = Vec::with_capacity(forms.len());
+        let mut remaining = forms;
+        while let Some((form, rest)) = remaining.split_first() {
+            let (part, after) = match Self::written_field_keyword(form) {
+                Some(field_name) => self.lower_labeled_part(form, field_name, rest)?,
+                None => (PatternPart::Positional(self.lower_pattern(form)?), rest),
+            };
+            parts.push(part);
+            remaining = after;
+        }
+        Ok(PatternArguments { parts })
+    }
+
+    fn lower_labeled_part<'f>(
+        &mut self,
+        keyword: &Form,
+        field_name: &str,
+        rest: &'f [Form],
+    ) -> Result<(PatternPart, &'f [Form]), Diagnostic> {
+        let label = Self::keyword_label(field_name, keyword.span());
+        match rest.split_first() {
+            Some((pattern, after)) if Self::written_field_keyword(pattern).is_none() => {
+                let pattern = self.lower_pattern(pattern)?;
+                Ok((PatternPart::Labeled(label, Some(pattern)), after))
+            }
+            _ => Ok((PatternPart::Labeled(label, None), rest)),
+        }
     }
 
     fn variant_candidates(&self, symbol: &Symbol) -> Vec<BindingId> {

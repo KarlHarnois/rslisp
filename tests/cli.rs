@@ -1282,7 +1282,7 @@ fn doc_prints_the_page_of_a_kernel_form() {
     let doc = sandbox.compiler(&["doc", "match"]);
     assert_eq!(
         doc.assert_exit_code(0).stdout(),
-        "(match value (pattern body) ...)\n\nEvaluates the body of the first arm whose pattern matches the value.\n\nA pattern is `_`, a literal, a bare name, `(variant pattern ...)` or\n`(type-name pattern ...)`. It emits a Rust `match`.\n"
+        "(match value (pattern body) ...)\n\nEvaluates the body of the first arm whose pattern matches the value.\n\nA pattern is `_`, a literal, a bare name, `(variant pattern ...)`,\n`(variant :field pattern ...)`, `(type-name pattern ...)` or\n`(type-name :field pattern ...)`. It emits a Rust `match`.\n"
     );
 }
 

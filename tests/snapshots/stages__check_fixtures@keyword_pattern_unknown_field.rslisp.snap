@@ -1,0 +1,33 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/keyword_pattern_unknown_field.rslisp
+---
+error[L0460]: `point` has no field `:z`
+  --> check/keyword_pattern_unknown_field.rslisp:10:20
+   |
+10 |   (match p ((point :z a) a)))
+   |                    ^^ unknown field
+
+error[L0460]: `point` has no field `:yy`
+  --> check/keyword_pattern_unknown_field.rslisp:13:20
+   |
+13 |   (match p ((point :yy a) a)))
+   |                    ^^^ unknown field
+   |
+help: a field with a similar name exists
+   |
+13 -   (match p ((point :yy a) a)))
+13 +   (match p ((point :y a) a)))
+   |
+
+error[L0460]: `labeled` has no field `:txt`
+  --> check/keyword_pattern_unknown_field.rslisp:17:15
+   |
+17 |     ((labeled :txt t) t)
+   |               ^^^^ unknown field
+   |
+help: a field with a similar name exists
+   |
+17 |     ((labeled :text t) t)
+   |                 +

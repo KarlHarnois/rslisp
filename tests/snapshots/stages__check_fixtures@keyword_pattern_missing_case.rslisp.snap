@@ -1,0 +1,24 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/keyword_pattern_missing_case.rslisp
+---
+error[L0433]: non-exhaustive `match`
+  --> check/keyword_pattern_missing_case.rslisp:10:3
+   |
+10 |   (match p ((point :x 0) 1)))
+   |   ^^^^^^^^^^^^^^^^^^^^^^^^^^ this `match` does not cover every value
+   |
+   = note: missing 1 case: `(point _ _)`
+   = help: add an arm for each missing case
+
+error[L0433]: non-exhaustive `match`
+  --> check/keyword_pattern_missing_case.rslisp:13:3
+   |
+13 | /   (match s
+14 | |     ((labeled :size 0.0) 1)
+15 | |     (dot 2)))
+   | |____________^ this `match` does not cover every value
+   |
+   = note: missing 1 case: `(labeled _ _)`
+   = help: add an arm for each missing case
