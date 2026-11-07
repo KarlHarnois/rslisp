@@ -14,8 +14,8 @@
          (+ (:size lot) (count names))))
 
 (defn main ()
-  (let lot (->depot 1))
-  (let (models (vec (ref str)))
+  (local lot (->depot 1))
+  (local (models (vec (ref str)))
     (vec "Leaf" "Ariya"))
   (println (tally lot (copied models)))
   (println (total (copied models) lot)))

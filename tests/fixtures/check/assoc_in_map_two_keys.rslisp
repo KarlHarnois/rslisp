@@ -1,4 +1,4 @@
 (defn main ()
-  (let m (sorted-map "a" (sorted-map "b" 1)))
-  (let changed (assoc-in m ("a" "b") 2))
+  (local m (sorted-map "a" (sorted-map "b" 1)))
+  (local changed (assoc-in m ("a" "b") 2))
   (println (len changed)))

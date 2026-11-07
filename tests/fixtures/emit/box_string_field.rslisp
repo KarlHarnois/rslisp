@@ -6,5 +6,5 @@
     (fn ((ref str)) (box str))))
 
 (defn main ()
-  (let tag (->tag (box-str "Leaf")))
+  (local tag (->tag (box-str "Leaf")))
   (prn (:name tag)))

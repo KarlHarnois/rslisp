@@ -1,7 +1,7 @@
 (def primes (vec 2 3 5 7))
 
 (defn main ()
-  (let scores (vec))
+  (local scores (vec))
   (push! scores 10)
   (push! scores 20)
   (println (len scores))

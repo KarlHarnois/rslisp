@@ -12,9 +12,9 @@
     (second (clone (field p first)))))
 
 (defn main ()
-  (let counted (->pair 7 (str "seven")))
+  (local counted (->pair 7 (str "seven")))
   (println (:first counted))
   (println (:first (swap counted)))
-  (let named (->pair "pear" 3))
+  (local named (->pair "pear" 3))
   (println (field named first))
   (println (:second named)))

@@ -18,15 +18,15 @@
   (set! (at prices key) price))
 
 (defn main ()
-  (let cars
+  (local cars
     (vec (->car "Nissan Leaf" 2011) (->car "Honda Civic" 1999)))
   (replace-first! (mut cars) (->car "Nissan Ariya" 2023))
   (println (:make (at cars 0))
            " "
            (:year (at cars 0)))
-  (let models (hash-map "leaf" "Nissan Leaf"))
+  (local models (hash-map "leaf" "Nissan Leaf"))
   (rename-through! (mut models) "leaf" "Nissan Leaf Plus")
   (println (unwrap (get models "leaf")))
-  (let prices (sorted-map "leaf" 28000 "ariya" 39000))
+  (local prices (sorted-map "leaf" 28000 "ariya" 39000))
   (reprice! (mut prices) "ariya" 41000)
   (println (unwrap (get prices "ariya"))))

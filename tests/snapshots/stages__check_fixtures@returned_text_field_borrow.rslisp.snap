@@ -9,8 +9,8 @@ error[L0510]: cannot return a borrow of a local value
 2 |   :make str
   |         --- declared as a borrow here
 ...
-6 |   (let make (str "Nissan"))
-  |        ---- this local is dropped when the function returns
+6 |   (local make (str "Nissan"))
+  |          ---- this local is dropped when the function returns
 7 |   (->car :make (as-str make) :year year))
   |                ^^^^^^^^^^^^^ this borrows a local value
   |

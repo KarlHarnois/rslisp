@@ -79,8 +79,8 @@
 
 (def named-construction
   (fn (arguments shape)
-    (let written (named-initializers arguments))
-    (let omitted
+    (local written (named-initializers arguments))
+    (local omitted
       (defaults-without-key (signature-defaults shape)
                             (pair-keys arguments)))
     (concat (list (quote new) (signature-name shape))
@@ -129,16 +129,16 @@
 
 (def struct-definition
   (fn (head body)
-    (let name (head-name head))
-    (let fields (field-groups (declared-forms body)))
-    (let field-names (map-list first fields))
-    (let field-types (map-list field-type-form fields))
-    (let defaults
+    (local name (head-name head))
+    (local fields (field-groups (declared-forms body)))
+    (local field-names (map-list first fields))
+    (local field-types (map-list field-type-form fields))
+    (local defaults
       (default-bindings (default-pairs body)
                         (field-definition name)
                         field-names))
-    (let hidden (symbol (quote make) "make-" name))
-    (let signature
+    (local hidden (symbol (quote make) "make-" name))
+    (local signature
       (call-signature name field-names defaults field-types))
     (template (do
                 (struct (unquote head) (splice fields))

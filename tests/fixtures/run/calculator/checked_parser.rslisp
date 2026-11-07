@@ -24,7 +24,7 @@
            (fn (left) (parse-sums tokens left))))
 
 (defn parse-sums (tokens left)
-  (let next (:next left))
+  (local next (:next left))
   (match (get tokens next)
     ((some (symbol text))
      (match (as-str text)
@@ -44,7 +44,7 @@
            (fn (left) (parse-products tokens left))))
 
 (defn parse-products (tokens left)
-  (let next (:next left))
+  (local next (:next left))
   (match (get tokens next)
     ((some (symbol text))
      (match (as-str text)
@@ -76,7 +76,7 @@
     (none (err (str "expected a number at token " position)))))
 
 (defn expect-close (tokens inner)
-  (let next (:next inner))
+  (local next (:next inner))
   (match (get tokens next)
     ((some (symbol text))
      (match (as-str text)
@@ -89,6 +89,6 @@
             (:next right)))
 
 (defn number-value (text)
-  (let (parsed (result i64 _))
+  (local (parsed (result i64 _))
     (parse (as-str text)))
   (if (ok? parsed) (unwrap-ok parsed) 0))

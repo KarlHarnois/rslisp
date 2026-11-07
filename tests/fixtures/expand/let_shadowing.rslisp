@@ -2,6 +2,6 @@
 
 (def shadow
   (fn (total)
-    (let total (do total))
-    (let total (do total))
+    (local total (do total))
+    (local total (do total))
     total))

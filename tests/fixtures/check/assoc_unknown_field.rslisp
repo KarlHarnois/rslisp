@@ -5,7 +5,7 @@
   :electric? bool)
 
 (defn main ()
-  (let leaf
+  (local leaf
     (->car :make "Nissan"
            :model "Leaf"
            :year 2024

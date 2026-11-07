@@ -1,5 +1,5 @@
 (defn main ()
-  (let items (vec 3 1 2))
+  (local items (vec 3 1 2))
   (sort! items)
   (for-each (copied items)
             (fn (n) (println n)))

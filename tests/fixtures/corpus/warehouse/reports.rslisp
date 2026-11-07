@@ -9,12 +9,12 @@
     unit))
 
 (defn print-summary (stock)
-  (let units
+  (local units
     (reduce (vals stock)
             0
             (fn (total current)
               (+ total (widen (:quantity current))))))
-  (let worth
+  (local worth
     (reduce (vals stock)
             0
             (fn (total current)
@@ -29,7 +29,7 @@
     unit))
 
 (defn print-low-stock (stock)
-  (let low
+  (local low
     (collect (filter (vals stock)
                      (fn (current)
                        (<= (:quantity current) (:reorder-at current))))))
@@ -50,7 +50,7 @@
     unit))
 
 (defn print-categories (stock)
-  (let totals
+  (local totals
     (reduce (vals stock)
             (sorted-map)
             (fn (totals current)
@@ -68,7 +68,7 @@
     unit))
 
 (defn print-top-value (stock limit)
-  (let ranked (collect (vals stock)))
+  (local ranked (collect (vals stock)))
   (sort-by! ranked
             (fn (current) (value-cents current)))
   (reverse! ranked)
@@ -81,7 +81,7 @@
   (fn ((ref (vec entry))) unit))
 
 (defn print-activity (ledger)
-  (let moves
+  (local moves
     (reduce (iter ledger)
             (sorted-map)
             (fn (moves current)
@@ -89,7 +89,7 @@
                       (clone (:sku current))
                       (fn (count) (+ count 1))
                       0))))
-  (let busiest
+  (local busiest
     (max-by-key (iter moves)
                 (fn (pair) (deref (second-of pair)))))
   (match busiest

@@ -28,7 +28,7 @@
     (idle (do))))
 
 (defn main ()
-  (let state (counter-state/value 1))
+  (local state (counter-state/value 1))
   (bump! (mut state))
   (println (area (shape/circle 1.0)))
   (println (area (shape/rect 2.0 3.0)))

@@ -5,5 +5,5 @@
   :electric? bool)
 
 (defn main ()
-  (let leaf (->car "Nissan" "Leaf" 2024 true))
+  (local leaf (->car "Nissan" "Leaf" 2024 true))
   (println (:yer leaf)))

@@ -2,7 +2,7 @@
   (fn ((fn () (fn-once () string))) unit))
 
 (defn show-twice (make)
-  (let getter (make))
+  (local getter (make))
   (println (getter))
   (println (getter)))
 

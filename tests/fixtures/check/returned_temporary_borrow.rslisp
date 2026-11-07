@@ -11,7 +11,7 @@
   (ref (vec 2019 2021)))
 
 (defn main ()
-  (let years (some (vec 2019 2021 2024)))
+  (local years (some (vec 2019 2021 2024)))
   (println (first-of years))
   (println (first-fallback))
   (println (len (built-years))))

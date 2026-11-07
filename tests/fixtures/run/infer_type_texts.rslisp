@@ -37,12 +37,12 @@
            " "
            (infer shape/empty))
   (println (infer (->holder 1)))
-  (let p (->point 1 2))
-  (let s (str "Ariya"))
+  (local p (->point 1 2))
+  (local s (str "Ariya"))
   (println (infer (ref p))
            " "
            (infer (mut s)))
-  (let u (->user :name (str "Leaf")))
+  (local u (->user :name (str "Leaf")))
   (println (infer (:name u)))
   (println (infer (iter (vec 1 2))))
   (println (infer (fn (n) (+ n 1))))

@@ -8,19 +8,19 @@
   :electric? bool)
 
 (defn main ()
-  (let by-position (->car "Honda" "Civic" 2019 false))
-  (let by-name
+  (local by-position (->car "Honda" "Civic" 2019 false))
+  (local by-name
     (->car :make "Nissan"
            :model "Leaf"
            :year 2024
            :electric? true))
-  (let reordered
+  (local reordered
     (->car :year 2019
            :electric? false
            :make "Honda"
            :model "Civic"))
-  (let build ->car)
-  (let built (build "Volkswagen" "Golf" 2021 false))
+  (local build ->car)
+  (local built (build "Volkswagen" "Golf" 2021 false))
   (println (:make by-position))
   (println (:model by-name))
   (println (:year reordered))

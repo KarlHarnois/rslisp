@@ -5,8 +5,9 @@
   (apply (fn (n) (+ n 1))))
 
 (defn main ()
-  (let year 2024)
-  (let apply (fn (action) (action year)))
+  (local year 2024)
+  (local apply
+    (fn (action) (action year)))
   (println (apply-to-year apply))
-  (let shift (fn (n) (+ n year)))
+  (local shift (fn (n) (+ n year)))
   (prn (collect (map (range 1 4) shift))))

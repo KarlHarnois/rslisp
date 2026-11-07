@@ -4,13 +4,14 @@ expression: reports.report(path)
 input_file: tests/fixtures/run/closure_whole_parameter_borrow_result.rslisp
 ---
 error[L0512]: cannot pass a borrow of a local value to `whole`
- --> run/closure_whole_parameter_borrow_result.rslisp:8:26
+ --> run/closure_whole_parameter_borrow_result.rslisp:9:26
   |
-6 |   (let leaf (->car :make "Nissan" :year 2025))
-  |        ---- this local is dropped when the function returns
-7 |   (let whole (fn ((leaf (ref car))) leaf))
-  |                   ---------------- `whole` ties this parameter to its result, so it needs a borrow that outlives the function
-8 |   (println (:year (whole (ref leaf)))))
+6 |   (local leaf (->car :make "Nissan" :year 2025))
+  |          ---- this local is dropped when the function returns
+7 |   (local whole
+8 |     (fn ((leaf (ref car))) leaf))
+  |          ---------------- `whole` ties this parameter to its result, so it needs a borrow that outlives the function
+9 |   (println (:year (whole (ref leaf)))))
   |                          ^^^^^^^^^^ this borrows a local value
   |
   = help: define `whole` with `defn`, where its result can borrow from its argument

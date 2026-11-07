@@ -7,7 +7,7 @@
   (->spare :maker (some f)))
 
 (defn main ()
-  (let backup (wrap count-doors))
+  (local backup (wrap count-doors))
   (match backup
     ((spare (some maker)) (println (maker)))
     ((spare none) (println "no spare"))))

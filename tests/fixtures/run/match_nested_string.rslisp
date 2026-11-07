@@ -15,11 +15,11 @@
     (none 0)))
 
 (defn main ()
-  (let open
+  (local open
     (vec (token/symbol (str "("))))
-  (let name
+  (local name
     (vec (token/symbol (str "foo"))))
-  (let number
+  (local number
     (vec (token/number (str "42"))))
   (println (classify open 0))
   (println (classify name 0))

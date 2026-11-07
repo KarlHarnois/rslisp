@@ -16,7 +16,7 @@
   (parse-sums tokens (parse-term tokens position)))
 
 (defn parse-sums (tokens left)
-  (let next (:next left))
+  (local next (:next left))
   (match (get tokens next)
     ((some (symbol text))
      (match (as-str text)
@@ -33,7 +33,7 @@
   (parse-products tokens (parse-factor tokens position)))
 
 (defn parse-products (tokens left)
-  (let next (:next left))
+  (local next (:next left))
   (match (get tokens next)
     ((some (symbol text))
      (match (as-str text)
@@ -66,6 +66,6 @@
             (:next right)))
 
 (defn number-value (text)
-  (let (parsed (result i64 _))
+  (local (parsed (result i64 _))
     (parse (as-str text)))
   (if (ok? parsed) (unwrap-ok parsed) 0))

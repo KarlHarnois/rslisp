@@ -3,9 +3,9 @@
   :age u16)
 
 (defn main ()
-  (let users
+  (local users
     (vec (->user "Ana" 34) (->user "Bo" 12)))
-  (let names (map users :name))
+  (local names (map users :name))
   (println (count names))
   (for-each names
             (fn (name) (println name))))

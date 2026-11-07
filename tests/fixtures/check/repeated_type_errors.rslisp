@@ -7,8 +7,8 @@
 (defn twice (x) (* 2 x))
 
 (deftest compares-borrowed-operations
-  (let plain (->operation :name (str "a") :op twice))
-  (let borrowed (ref plain))
+  (local plain (->operation :name (str "a") :op twice))
+  (local borrowed (ref plain))
   (assert (= (deref borrowed) (deref borrowed))))
 
 (defn main () (println (twice 2)))

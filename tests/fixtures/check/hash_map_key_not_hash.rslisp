@@ -2,6 +2,6 @@
   :value f64)
 
 (defn main ()
-  (let items
+  (local items
     (hash-map (new float-key (value 1.5)) 1))
   (println (len items)))

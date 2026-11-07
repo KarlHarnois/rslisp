@@ -4,9 +4,9 @@
     (err "odd")))
 
 (defn main ()
-  (let numbers (vec 10 20 30))
-  (let index 0)
-  (let first (option/some 5))
+  (local numbers (vec 10 20 30))
+  (local index 0)
+  (local first (option/some 5))
   (println (unwrap first))
   (println (match (get numbers index)
              ((some x) (deref x))

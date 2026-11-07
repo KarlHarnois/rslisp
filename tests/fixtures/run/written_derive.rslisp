@@ -10,8 +10,8 @@
 (derive tag)
 
 (defn main ()
-  (let early (->ticket 1 4))
-  (let same early)
+  (local early (->ticket 1 4))
+  (local same early)
   (prn early)
   (prn same)
   (println (< early (->ticket 2 1)))

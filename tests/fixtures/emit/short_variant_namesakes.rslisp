@@ -19,7 +19,7 @@
   (fn ((option i64)) i64))
 
 (defn with-local-none (found)
-  (let none 7)
+  (local none 7)
   (match found
     ((some count) (+ count none))
     (none none)))

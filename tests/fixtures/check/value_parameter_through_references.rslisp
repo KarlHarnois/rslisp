@@ -8,10 +8,10 @@
 (defn big? (n) (> n 2))
 
 (defn main ()
-  (let people
+  (local people
     (vec (->employee (str "Ada") 91)
          (->employee (str "Bo") 70)))
-  (let numbers (vec 1 2 3))
+  (local numbers (vec 1 2 3))
   (println (count (filter (iter people)
                           (fn (person) (high? person)))))
   (println (count (filter (iter numbers)

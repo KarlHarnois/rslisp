@@ -4,10 +4,10 @@ expression: reports.report(path)
 input_file: tests/fixtures/check/closure_iterator_receiver.rslisp
 ---
 error[L0458]: Rust cannot name the type `(iterator (ref i64))` here
- --> check/closure_iterator_receiver.rslisp:3:19
+ --> check/closure_iterator_receiver.rslisp:3:21
   |
-3 |   (let tally (fn (it) (count it)))
-  |                   ^^ this parameter holds `(iterator (ref i64))`, and the closure calls a method on it
+3 |   (local tally (fn (it) (count it)))
+  |                     ^^ this parameter holds `(iterator (ref i64))`, and the closure calls a method on it
   |
   = note: Rust names this type only as the type of a function's own parameter or result
   = note: Rust must know a closure parameter's type before the closure calls a method on it
@@ -26,7 +26,7 @@ error[L0458]: Rust cannot name the type `(iterator (ref i64))` here
 error[L0458]: Rust cannot name the type `(iterator (ref i64))` here
  --> check/closure_iterator_receiver.rslisp:9:10
   |
-9 |     (fn (it) (let items it) (count items)))
+9 |     (fn (it) (local items it) (count items)))
   |          ^^ this parameter holds `(iterator (ref i64))`, and the closure calls a method on it
   |
   = note: Rust names this type only as the type of a function's own parameter or result

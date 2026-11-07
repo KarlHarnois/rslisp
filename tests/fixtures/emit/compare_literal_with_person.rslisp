@@ -2,5 +2,5 @@
   :name string)
 
 (defn main ()
-  (let p (->person (str "Ana")))
+  (local p (->person (str "Ana")))
   (println (= "Ana" (:name p))))

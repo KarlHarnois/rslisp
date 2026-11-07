@@ -4,12 +4,12 @@ expression: reports.report(path)
 input_file: tests/fixtures/check/cannot_infer_through_a_binding.rslisp
 ---
 error[L0407]: type annotations needed
- --> check/cannot_infer_through_a_binding.rslisp:2:19
+ --> check/cannot_infer_through_a_binding.rslisp:2:21
   |
-2 |   (let open (some (vec)))
-  |                   ^^^^^ cannot infer the type `(vec _)` of this value
+2 |   (local open (some (vec)))
+  |                     ^^^^^ cannot infer the type `(vec _)` of this value
   |
 help: write the type with `the`, and replace each `_` with a type
   |
-2 |   (let open (some (the (vec _) (vec))))
-  |                   ++++++++++++      +
+2 |   (local open (some (the (vec _) (vec))))
+  |                     ++++++++++++      +

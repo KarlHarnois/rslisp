@@ -8,7 +8,7 @@
 (enum source (stream (iterator i64)) empty)
 
 (defn main ()
-  (let leaf
+  (local leaf
     (->feed :items (range 2019 2025) :label "Nissan Leaf"))
   (println (:label leaf))
   (match (source/stream (range 2019 2025))

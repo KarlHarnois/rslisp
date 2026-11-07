@@ -1,16 +1,16 @@
 (defn size-of (collection) (len collection))
 
 (defn main ()
-  (let empty
+  (local empty
     (the (sorted-map string i64) (sorted-map)))
-  (let built (sorted-map "b" 2 "a" 1))
-  (let added (assoc built "c" 3))
-  (let changed (assoc added "a" 10))
+  (local built (sorted-map "b" 2 "a" 1))
+  (local added (assoc built "c" 3))
+  (local changed (assoc added "a" 10))
   (set! (at changed "b") 20)
-  (let pairs
+  (local pairs
     (vec (pair "x" 1) (pair "y" 2)))
-  (let collected (into-sorted-map pairs))
-  (let next
+  (local collected (into-sorted-map pairs))
+  (local next
     (update changed "a" (fn (n) (+ n 1)) 0))
   (println (len next) " " (empty? empty))
   (println (unwrap (get next "a")))

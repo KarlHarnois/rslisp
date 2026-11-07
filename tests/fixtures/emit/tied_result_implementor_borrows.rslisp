@@ -36,7 +36,7 @@
 
 (impl garage van
   (echo (v label)
-        (let name (:model v))
+        (local name (:model v))
         name)
   (tag (label v) label)
   (maybe (v label) (some label))

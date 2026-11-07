@@ -3,6 +3,6 @@
   :second b)
 
 (defn main ()
-  (let labelled (->pair :first 1 :second "a"))
+  (local labelled (->pair :first 1 :second "a"))
   (println (:first labelled))
   (println (:second labelled)))

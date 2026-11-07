@@ -51,7 +51,7 @@ impl LambdaSource {
             .flat_map(|module| &module.definitions)
             .flat_map(|definition| definition.value.let_bindings())
             .find(|(binder, _)| self.name(binder.binding) == name)
-            .unwrap_or_else(|| panic!("the source binds `{name}` with `let`"))
+            .unwrap_or_else(|| panic!("the source binds `{name}` with `local`"))
     }
 
     fn name(&self, binding: BindingId) -> &str {

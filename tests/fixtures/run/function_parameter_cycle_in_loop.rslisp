@@ -9,6 +9,6 @@
   (if (> n 0) (ping f (- n 1)) 0))
 
 (defn main ()
-  (let total (vec 0))
+  (local total (vec 0))
   (ping (fn (n) (push! total n)) 3)
   (println (len total)))

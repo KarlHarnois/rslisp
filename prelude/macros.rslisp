@@ -163,7 +163,7 @@
 
 (def match-ellipsis
   (fn (repeated tail inputs)
-    (let repeat-count
+    (local repeat-count
       (number-sub (len inputs) (len tail)))
     (if (number-lt repeat-count 0)
       false
@@ -216,7 +216,7 @@
 
 (def fill-symbol
   (fn (template bindings)
-    (let entry (lookup template bindings))
+    (local entry (lookup template bindings))
     (if (entry-kind? entry "one")
       (nth entry 2)
       (if (repeated-entry? entry)
@@ -235,14 +235,14 @@
 
 (def fill-repeated
   (fn (template bindings)
-    (let entries
+    (local entries
       (repeated-entries (template-variables template) bindings))
     (if (empty? entries)
       (fail "nothing before this `...` repeats" template)
       (if (lone-slice? template (first entries))
         (nth (first entries) 2)
         (do
-          (let fill-iteration
+          (local fill-iteration
             (fn (index)
               (fill-template template
                              (iteration-bindings entries bindings index))))
@@ -255,8 +255,8 @@
 
 (def repetition-count
   (fn (repeated entries fill-iteration)
-    (let count (entry-length (first entries)))
-    (let mismatched (mismatched-entry count (rest entries)))
+    (local count (entry-length (first entries)))
+    (local mismatched (mismatched-entry count (rest entries)))
     (if (list? mismatched)
       (do
         (map-count (shortest-length count (rest entries))
@@ -290,9 +290,9 @@
 
 (def unequal-repetitions
   (fn (repeated leader mismatched)
-    (let names
+    (local names
       (string "`" (nth leader 1) "` and `" (nth mismatched 1) "`"))
-    (let label
+    (local label
       (if (number-lt (entry-length leader) (entry-length mismatched))
         (unpaired-label repeated names mismatched leader)
         (unpaired-label repeated names leader mismatched)))
@@ -347,7 +347,7 @@
 
 (def iteration-entry
   (fn (entry index)
-    (let item (nth (nth entry 2) index))
+    (local item (nth (nth entry 2) index))
     (if (entry-kind? entry "forms")
       (list (quote one) (nth entry 1) item)
       item)))
@@ -365,7 +365,7 @@
 
 (def try-clause
   (fn (clause others clauses form)
-    (let bindings
+    (local bindings
       (match-list (first clause) (rest form)))
     (if (list? bindings)
       (fill-template (nth clause 1) bindings)
@@ -388,9 +388,9 @@
 
 (def defrule
   (macro (form)
-    (let name (nth form 1))
+    (local name (nth form 1))
     (declare-macro-definition name)
-    (let body (drop 2 form))
+    (local body (drop 2 form))
     (if (documented-body? body)
       (do
         (note-docstring (value-doc-key name) (first body))
@@ -434,7 +434,7 @@
 
 (def match-or-fail
   (fn (pattern form)
-    (let bindings (match-list pattern (rest form)))
+    (local bindings (match-list pattern (rest form)))
     (if (list? bindings)
       bindings
       (fail (string "this use of `"
@@ -446,7 +446,7 @@
 (def pattern-lets
   (fn (pattern)
     (map-list (fn (variable)
-                (list (quote let)
+                (list (quote local)
                       variable
                       (list (quote binding-value)
                             (quote macro-bindings)
@@ -455,10 +455,10 @@
 
 (def defmacro
   (macro (form)
-    (let name (nth form 1))
+    (local name (nth form 1))
     (declare-macro-definition name)
-    (let pattern (nth form 2))
-    (let body (drop 3 form))
+    (local pattern (nth form 2))
+    (local body (drop 3 form))
     (if (string? pattern)
       (docstring-before-parameters pattern)
       (if (docstring-before-body? body)
@@ -487,7 +487,7 @@
           name
           (concat (list (quote macro)
                         (list (quote macro-form))
-                        (list (quote let)
+                        (list (quote local)
                               (quote macro-bindings)
                               (list (quote match-or-fail)
                                     (list (quote quote) pattern)
@@ -629,7 +629,7 @@
 
 (def closest-marker
   (fn (marker sole)
-    (let closest
+    (local closest
       (closest-name (keyword-field marker) shape-marker-names))
     (if (empty? closest)
       (if sole (list (first shape-marker-names)) closest)
@@ -677,7 +677,7 @@
   The header is the term's call form, as in `(document (twice x) text)`, or
   the bare name of a term that takes no arguments. The page shows the header
   as written, and the header's head names the term."
-  (let key (value-doc-key (header-name header)))
+  (local key (value-doc-key (header-name header)))
   (do
     (add-module-note (quote docstrings)
                      (concat key (list header text)))
@@ -745,8 +745,8 @@
 
 (def documentation-part
   (fn (part term)
-    (let documented-values (value-notes term))
-    (let notes
+    (local documented-values (value-notes term))
+    (local notes
       (if (empty? documented-values)
         (type-notes term)
         documented-values))
@@ -779,7 +779,7 @@
 
 (def type-notes
   (fn (term)
-    (let context (type-definition-symbol term "doc"))
+    (local context (type-definition-symbol term "doc"))
     (map-list (fn (note)
                 (with-call-header (calls-header term context
                                                 (type-definition-call term))
@@ -819,7 +819,7 @@
 
 (def calls-header
   (fn (term context written-calls)
-    (let calls (scoped-form context written-calls))
+    (local calls (scoped-form context written-calls))
     (if (empty? calls)
       term
       (call-header term
@@ -840,7 +840,7 @@
 
 (def call-header
   (fn (term call expand expansions-left)
-    (let shapes (header-shapes (first call)))
+    (local shapes (header-shapes (first call)))
     (if (empty? shapes)
       (expansion-header term expand expansions-left)
       (shaped-header (first shapes) call))))
@@ -919,19 +919,19 @@
 
 (def page-text
   (fn (note)
-    (let docstrings (note-docstrings note))
+    (local docstrings (note-docstrings note))
     (if (empty? docstrings)
       "No documentation."
       (clean-docstring (first docstrings)))))
 
 (def clean-docstring
   (fn (text)
-    (let lines (string-lines text))
-    (let margin (shared-indentation (rest lines)))
-    (let continuation
+    (local lines (string-lines text))
+    (local margin (shared-indentation (rest lines)))
+    (local continuation
       (map-list (fn (line) (unindent margin line))
                 (rest lines)))
-    (let first-line (string-trim-start (first lines)))
+    (local first-line (string-trim-start (first lines)))
     (without-trailing-newlines
       (join-lines (without-leading-blanks (prepend first-line continuation))))))
 
@@ -999,5 +999,5 @@
 
 (def without-trailing-newlines
   (fn (text)
-    (let stripped (string-strip-suffix text "\n"))
+    (local stripped (string-strip-suffix text "\n"))
     (if (value-eq stripped text) text (recur stripped))))

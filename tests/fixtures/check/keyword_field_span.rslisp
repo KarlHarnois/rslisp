@@ -10,5 +10,5 @@
               ((unquote key) (unquote item)))))
 
 (defn main ()
-  (let leaf (->car "Leaf" 2024))
+  (local leaf (->car "Leaf" 2024))
   (println (:year (with-field leaf :yer 2025))))

@@ -10,6 +10,6 @@
   (rust "{0}" (fn (i64) i64)))
 
 (defn main ()
-  (let x (open-one))
+  (local x (open-one))
   (println (compares? (ref x)))
   (println (takes-int x)))

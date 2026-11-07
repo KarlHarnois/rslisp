@@ -1,7 +1,7 @@
 (defn apply (f) (f 0))
 
 (defn main ()
-  (let text (str "Leaf"))
-  (let consume (fn (ignored) text))
+  (local text (str "Leaf"))
+  (local consume (fn (ignored) text))
   (println (apply consume))
   (println (apply consume)))

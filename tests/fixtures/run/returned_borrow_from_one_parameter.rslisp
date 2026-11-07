@@ -13,5 +13,5 @@
   (scan line (collect (chars line)) 0))
 
 (defn main ()
-  (let tokens (unwrap-ok (tokenize " hi ")))
+  (local tokens (unwrap-ok (tokenize " hi ")))
   (println (field (unwrap (get tokens 0)) text)))

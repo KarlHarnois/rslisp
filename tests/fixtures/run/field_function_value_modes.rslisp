@@ -9,7 +9,7 @@
 (defn adult? (p) (>= (field p age) 18))
 
 (defn main ()
-  (let handler
+  (local handler
     (new handler
       (callback adult?)
       (tag (rust "std::cell::Cell::new(0)" mark))))

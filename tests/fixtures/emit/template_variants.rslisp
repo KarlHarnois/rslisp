@@ -20,7 +20,7 @@
     (result string app-error)))
 
 (defn read-file (path)
-  (let text (try (slurp path)))
+  (local text (try (slurp path)))
   (ok text))
 
 (defn found (n)
@@ -32,8 +32,9 @@
     (none (println "none"))))
 
 (defn choose ()
-  (let (value (result i64 string)) (ok 1))
-  (let (bad (result i64 string))
+  (local (value (result i64 string))
+    (ok 1))
+  (local (bad (result i64 string))
     (err (str "bad")))
   (match value
     ((ok n) (println n))

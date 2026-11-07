@@ -3,7 +3,7 @@
 
 (defn sort-users (:key (fn ((ref user)) (ref string))
                        :label str)
-  (let ana (->user (str "ana")))
+  (local ana (->user (str "ana")))
   (println label ": " (key (ref ana))))
 
 (defn main () (sort-users :name "by name"))

@@ -4,5 +4,5 @@
 (defn first-word (text) (trim text))
 
 (defn main ()
-  (let fields (collect (split "a b" " ")))
+  (local fields (collect (split "a b" " ")))
   (println (first-word (at fields 1))))

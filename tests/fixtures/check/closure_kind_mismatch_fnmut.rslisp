@@ -3,5 +3,5 @@
 (defn keep (f) (do))
 
 (defn main ()
-  (let more (vec 1))
+  (local more (vec 1))
   (keep (fn () (push! more 2))))

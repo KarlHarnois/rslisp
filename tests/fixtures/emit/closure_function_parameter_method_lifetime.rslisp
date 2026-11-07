@@ -12,12 +12,13 @@
 (impl showroom depot
   (longer-make (first second lot)
                (println (:size lot))
-               (let pick (fn (build) (:make (build))))
+               (local pick
+                 (fn (build) (:make (build))))
                (pick (fn ()
                        (->car :make (if (> (len first) (len second))
                                       first second)
                               :model "Leaf")))))
 
 (defn main ()
-  (let lot (->depot 2024))
+  (local lot (->depot 2024))
   (println (longer-make "Nissan" "Mitsubishi" lot)))

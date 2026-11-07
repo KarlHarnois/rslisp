@@ -7,6 +7,6 @@
   (set! (at (:items order) 0) 9))
 
 (defn main ()
-  (let order (->order (vec 1 2)))
+  (local order (->order (vec 1 2)))
   (bump! (mut order))
   (println (at (:items order) 0)))

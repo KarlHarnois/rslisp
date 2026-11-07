@@ -6,14 +6,14 @@ input_file: tests/fixtures/check/assoc_in_after_move.rslisp
 error[L0501]: use of moved value `garage`
   --> check/assoc_in_after_move.rslisp:16:19
    |
-13 |   (let bigger (assoc-in garage (:badge :size) 14))
-   |                         ------ value moved here
+13 |   (local bigger (assoc-in garage (:badge :size) 14))
+   |                           ------ value moved here
 ...
 16 |            (:name garage)))
    |                   ^^^^^^ value used here after it moved
    |
 help: clone the value if both places need it
    |
-13 -   (let bigger (assoc-in garage (:badge :size) 14))
-13 +   (let bigger (assoc-in (clone garage) (:badge :size) 14))
+13 -   (local bigger (assoc-in garage (:badge :size) 14))
+13 +   (local bigger (assoc-in (clone garage) (:badge :size) 14))
    |

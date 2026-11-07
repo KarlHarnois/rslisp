@@ -11,5 +11,5 @@
       ((slot none) (do)))))
 
 (defn main ()
-  (let items (vec 1 2))
+  (local items (vec 1 2))
   (drain! (mut items)))

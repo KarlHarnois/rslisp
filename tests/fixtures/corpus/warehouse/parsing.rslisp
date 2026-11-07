@@ -21,9 +21,9 @@
   (match (get rows index)
     ((some row)
      (do
-       (let parsed
+       (local parsed
          (try (parse-item (+ index 1) row)))
-       (let sku (clone (:sku parsed)))
+       (local sku (clone (:sku parsed)))
        (parse-stock-lines rows
                           (+ index 1)
                           (assoc stock sku parsed))))
@@ -34,7 +34,7 @@
     (result item ledger-error)))
 
 (defn parse-item (line row)
-  (let fields
+  (local fields
     (collect (map (split row ",") trim)))
   (if (= (len fields) 5)
     (ok (->item :sku (str (field-at fields 0))
@@ -65,9 +65,9 @@
   (match (get rows index)
     ((some row)
      (do
-       (let parsed
+       (local parsed
          (try (parse-event (+ index 1) row)))
-       (let growing events)
+       (local growing events)
        (push! growing parsed)
        (parse-event-lines rows (+ index 1) growing)))
     (none (ok events))))
@@ -77,7 +77,7 @@
     (result event ledger-error)))
 
 (defn parse-event (line row)
-  (let words
+  (local words
     (collect (split (trim row) " ")))
   (if (= (len words) 3)
     (event-of line

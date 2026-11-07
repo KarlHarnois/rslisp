@@ -7,6 +7,6 @@
   (set! (at v 0) 2))
 
 (defn main ()
-  (let xs (vec 1))
+  (local xs (vec 1))
   (g! xs)
   (println (at xs 0)))

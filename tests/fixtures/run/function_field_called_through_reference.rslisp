@@ -11,6 +11,6 @@
   ((:key chosen) someone))
 
 (defn main ()
-  (let by-age (->sorter :age "by age"))
-  (let ana (->user :name (str "ana") :age 34))
+  (local by-age (->sorter :age "by age"))
+  (local ana (->user :name (str "ana") :age 34))
   (println (:label by-age) ": " (key-of by-age ana)))

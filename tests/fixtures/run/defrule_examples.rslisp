@@ -5,7 +5,7 @@
 
 (defrule case
   ((value clause ...)
-   (do (let subject value) (case-clauses subject clause ...))))
+   (do (local subject value) (case-clauses subject clause ...))))
 
 (defrule case-clauses
   ((subject ((quote else) body ...)) (do body ...))
@@ -26,5 +26,5 @@
 
 (defn main ()
   (dotimes (i 3) (println (describe i)))
-  (let subject 7)
+  (local subject 7)
   (println (case 1 (1 subject) (else 0))))

@@ -2,16 +2,16 @@
 
 (def pick-separate-quotes
   (macro (form)
-    (let reference (quote picked))
+    (local reference (quote picked))
     (template (do
-                (let picked (unquote (nth form 1)))
+                (local picked (unquote (nth form 1)))
                 (unquote reference)))))
 
 (def pick-passed
   (macro (form)
-    (let name (quote picked))
+    (local name (quote picked))
     (template (do
-                (let (unquote name)
+                (local (unquote name)
                   (unquote (nth form 1)))
                 (unquote (echo name))))))
 

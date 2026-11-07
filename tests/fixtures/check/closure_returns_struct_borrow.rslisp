@@ -3,16 +3,16 @@
   :year u16)
 
 (defn build (year)
-  (let assemble
+  (local assemble
     (fn ()
-      (let make (str "Nissan"))
+      (local make (str "Nissan"))
       (->car :make (as-str make) :year year)))
   (assemble))
 
 (defn build-maybe (year)
-  (let assemble
+  (local assemble
     (fn ()
-      (let make (str "Nissan"))
+      (local make (str "Nissan"))
       (some (->car :make (as-str make) :year year))))
   (assemble))
 

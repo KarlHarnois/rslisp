@@ -17,6 +17,6 @@
   (println (option-compares? (some 1)))
   (println (reference-compares? (ref 1)))
   (println (bound-compares? (some 1)))
-  (let call-with-one
+  (local call-with-one
     (fn (function) (function (some 1))))
   (println (call-with-one option-compares?)))

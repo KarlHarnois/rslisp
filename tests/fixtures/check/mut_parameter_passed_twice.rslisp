@@ -5,6 +5,6 @@
   (add-one stack))
 
 (defn main ()
-  (let xs (vec))
+  (local xs (vec))
   (add-two xs)
   (println (len xs)))

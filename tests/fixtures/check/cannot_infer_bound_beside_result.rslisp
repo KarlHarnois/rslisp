@@ -4,7 +4,7 @@
       (fn ((ref a)) bool))))
 
 (defn main ()
-  (let run
+  (local run
     (fn (g v)
       (if true
         (g (compares? (ref v)))

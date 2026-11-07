@@ -5,7 +5,7 @@
 (defn adult? (p) (>= (:age p) 18))
 
 (defn main ()
-  (let people
+  (local people
     (vec (->person (str "Ana") 30)
          (->person (str "Ben") 12)))
   (println (count (filter (iter people) adult?))))

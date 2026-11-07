@@ -1,5 +1,5 @@
 (defn bad-value ()
-  (let n 4)
+  (local n 4)
   (deref n))
 
 (defn bad-copy ()

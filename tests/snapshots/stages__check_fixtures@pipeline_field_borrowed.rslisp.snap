@@ -13,10 +13,10 @@ error[L0458]: Rust cannot name the type `(iterator i64)` here
   = help: store the collection the items come from instead, and call `iter` on it where the items are used
 
 error[L0503]: this value is borrowed, but the call needs to own it
- --> check/pipeline_field_borrowed.rslisp:6:21
+ --> check/pipeline_field_borrowed.rslisp:6:23
   |
-6 |   (let first (count (:items f)))
-  |                     ^^^^^^^^^^ only a borrow is available here
+6 |   (local first (count (:items f)))
+  |                       ^^^^^^^^^^ only a borrow is available here
   |
   = note: this value is a lazy pipeline, so it runs once
   = help: collect it if both places need its items, as in `(collect ...)`, or write a function that rebuilds it

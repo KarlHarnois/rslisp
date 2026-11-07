@@ -2,7 +2,7 @@
 (use trait_method_namesakes/counters reset-counter!)
 
 (defn main ()
-  (let readings (vec 1200 3400))
+  (local readings (vec 1200 3400))
   (reset-odometer! (mut readings))
   (reset-counter! (mut readings))
   (println (at readings 0) " " (len readings)))

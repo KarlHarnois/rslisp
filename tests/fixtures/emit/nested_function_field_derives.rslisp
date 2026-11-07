@@ -15,7 +15,7 @@
   (println (none? (:maker (->spare :maker none))))
   (match (line/stations (vec))
     ((stations steps) (println (len steps))))
-  (let backup (->spare :maker (some build-leaf)))
+  (local backup (->spare :maker (some build-leaf)))
   (match backup
     ((spare (some maker))
      (println (:make (maker))

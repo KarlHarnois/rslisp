@@ -7,7 +7,7 @@
   :label str)
 
 (defn main ()
-  (let chosen
+  (local chosen
     (->sorter (fn (someone) (+ (:age someone) 1))
               "by next age"))
   (println (:label chosen)))

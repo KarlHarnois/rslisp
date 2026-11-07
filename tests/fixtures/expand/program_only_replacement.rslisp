@@ -1,7 +1,7 @@
 (use code len)
 
 (defmacro count-plus-one (forms ...)
-  (let n (+ (len forms) 1))
+  (local n (+ (len forms) 1))
   (template (do)))
 
 (defn main () (count-plus-one 1 2))

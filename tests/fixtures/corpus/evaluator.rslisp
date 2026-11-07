@@ -32,8 +32,8 @@
     (result (sorted-map string i64) string)))
 
 (defn evaluate-script (source)
-  (let tokens (try (tokenize source)))
-  (let statements
+  (local tokens (try (tokenize source)))
+  (local statements
     (try (parse-program (ref tokens))))
   (execute (ref statements)))
 

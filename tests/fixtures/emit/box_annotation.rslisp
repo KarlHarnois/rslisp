@@ -7,10 +7,10 @@
   (area (c) (field c radius)))
 
 (defn main ()
-  (let boxed
+  (local boxed
     (the (box shape)
          (box (new circle (radius 1.0)))))
-  (let (other (box shape))
+  (local (other (box shape))
     (box (new circle (radius 2.0))))
   (println (area boxed))
   (println (area other)))

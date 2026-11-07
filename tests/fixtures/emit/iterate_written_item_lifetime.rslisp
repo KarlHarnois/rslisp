@@ -7,6 +7,6 @@
                  (fn (name) (> (len name) 4)))))
 
 (defn main ()
-  (let (models (vec (ref str)))
+  (local (models (vec (ref str)))
     (vec "Leaf" "Ariya" "Sakura"))
   (println (count-long models)))

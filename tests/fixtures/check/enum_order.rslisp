@@ -1,5 +1,5 @@
 (enum rank low high)
 
 (defn main ()
-  (let values (vec rank/low rank/high))
+  (local values (vec rank/low rank/high))
   (sort! values))

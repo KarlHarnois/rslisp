@@ -5,6 +5,6 @@
   (defaults :admin? false))
 
 (defn main ()
-  (let ana
+  (local ana
     (->user :name "ana" :name "bea" :email "ana@example.com"))
   (println (:name ana)))

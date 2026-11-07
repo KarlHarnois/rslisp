@@ -4,11 +4,11 @@ expression: reports.report(path)
 input_file: tests/fixtures/check/assoc_field_base_in_closure.rslisp
 ---
 error[L0509]: this closure is `FnOnce`, but the parameter accepts `FnMut`
-  --> check/assoc_field_base_in_closure.rslisp:15:29
+  --> check/assoc_field_base_in_closure.rslisp:15:31
    |
 14 | /             (fn (i)
-15 | |               (let b (assoc (:badge g) :size 14))
-   | |                             ^^^^^^^^^^ `g` moves here
+15 | |               (local b (assoc (:badge g) :size 14))
+   | |                               ^^^^^^^^^^ `g` moves here
 16 | |               (println i " " (:size b)))))
    | |________________________________________- this closure is passed here
    |

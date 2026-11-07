@@ -41,18 +41,18 @@
   (fn ((fn ((ref str)) (ref str))) u16))
 
 (defn measure (pick)
-  (let model (str "Leaf"))
-  (let picked (pick (as-str model)))
+  (local model (str "Leaf"))
+  (local picked (pick (as-str model)))
   (if (= picked "Leaf") 4 0))
 
 (defn main ()
   (println (:year (build-with ->car)))
-  (let model (str "Leaf"))
-  (let built
+  (local model (str "Leaf"))
+  (local built
     (build-with (fn (make year)
                   (->car :make (as-str model) :year year))))
   (println (:make built))
-  (let make (str "Nissan"))
+  (local make (str "Nissan"))
   (println (:make (build-with-make ->car (as-str make))))
   (println (:year (build-default (fn () (->car "Nissan" 2023)))))
   (println (count-make (fn (text) 3) "Leaf"))

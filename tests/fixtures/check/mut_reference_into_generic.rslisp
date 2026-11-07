@@ -10,6 +10,6 @@
   (push! stack 1))
 
 (defn main ()
-  (let items (vec 1))
+  (local items (vec 1))
   (twice! items)
   (println (len items)))

@@ -7,6 +7,6 @@
 (defn count-of (c) (:count c))
 
 (defn main ()
-  (let c (->counter 0))
+  (local c (->counter 0))
   (bump (count-of c))
   (println (:count c)))

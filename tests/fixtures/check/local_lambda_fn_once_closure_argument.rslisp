@@ -1,6 +1,7 @@
 (defn main ()
-  (let year 2024)
-  (let model (str "Nissan Leaf"))
-  (let apply (fn (action) (action year)))
+  (local year 2024)
+  (local model (str "Nissan Leaf"))
+  (local apply
+    (fn (action) (action year)))
   (apply (fn (n)
-           (do (let owned model) (println owned n)))))
+           (do (local owned model) (println owned n)))))

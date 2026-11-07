@@ -10,8 +10,8 @@
 (defn owned-size (collection) (len collection))
 
 (defn main ()
-  (let grid (vec (vec 1 2 3) (vec 4 5)))
-  (let models
+  (local grid (vec (vec 1 2 3) (vec 4 5)))
+  (local models
     (vec (str "Leaf") (str "Ariya")))
   (prn (sizes grid))
   (prn (sizes models))

@@ -9,7 +9,7 @@
   (calculate "7 % 2"))
 
 (defn calculate (source)
-  (let outcome
+  (local outcome
     (then-ok (tokenize source)
              (fn (tokens) (evaluate (ref tokens)))))
   (match outcome

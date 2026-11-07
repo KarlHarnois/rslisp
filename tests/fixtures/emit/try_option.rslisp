@@ -2,7 +2,7 @@
   (fn ((vec i64)) (option i64)))
 
 (defn first-even-double (numbers)
-  (let found
+  (local found
     (try (find (copied numbers)
                (fn (n) (= (rem n 2) 0)))))
   (some (* found 2)))

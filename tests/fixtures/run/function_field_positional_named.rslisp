@@ -10,5 +10,5 @@
   (:age someone))
 
 (defn main ()
-  (let chosen (->sorter age-of "by age"))
+  (local chosen (->sorter age-of "by age"))
   (println (:label chosen)))

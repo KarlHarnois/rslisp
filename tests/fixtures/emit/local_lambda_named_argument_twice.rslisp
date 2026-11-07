@@ -1,6 +1,7 @@
 (defn main ()
-  (let model "Nissan Leaf")
-  (let shout (fn (n) (println model n)))
-  (let apply (fn (action) (action 2024)))
+  (local model "Nissan Leaf")
+  (local shout (fn (n) (println model n)))
+  (local apply
+    (fn (action) (action 2024)))
   (apply shout)
   (apply shout))

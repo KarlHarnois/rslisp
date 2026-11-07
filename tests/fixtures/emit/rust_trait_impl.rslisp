@@ -12,4 +12,5 @@
   (write-str (p _text)
              (rust "std::fmt::Result::Ok(())" fmt-result)))
 
-(defn main () (let _point (new point)))
+(defn main ()
+  (local _point (new point)))

@@ -100,8 +100,8 @@
     (result book ledger-error)))
 
 (defn load (stock-source event-source)
-  (let stock (try (parse-stock stock-source)))
-  (let events (try (parse-events event-source)))
+  (local stock (try (parse-stock stock-source)))
+  (local events (try (parse-events event-source)))
   (ok (apply-all stock (ref events))))
 
 (defn main ()

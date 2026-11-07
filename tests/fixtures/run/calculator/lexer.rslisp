@@ -32,7 +32,7 @@
     (else (err (str "unknown character `" c "` at position " position)))))
 
 (defn scan-number (characters start tokens)
-  (let end (digits-end characters start))
+  (local end (digits-end characters start))
   (scan characters end
         (append tokens
                 (token/number (slice-text characters start end)))))
@@ -44,7 +44,7 @@
     position))
 
 (defn append (items item)
-  (let growing items)
+  (local growing items)
   (push! growing item)
   growing)
 

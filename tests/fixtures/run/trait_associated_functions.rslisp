@@ -17,6 +17,6 @@
   (add (extra l) (* extra (:spots l))))
 
 (defn main ()
-  (let (g garage) (build 3))
+  (local (g garage) (build 3))
   (println (:spots g))
   (println (add 2 (->lot 5))))

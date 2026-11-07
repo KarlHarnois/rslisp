@@ -3,5 +3,5 @@
   :argument i64)
 
 (defn main ()
-  (let i (->instruction "push" 3))
+  (local i (->instruction "push" 3))
   (println (:opcode i)))

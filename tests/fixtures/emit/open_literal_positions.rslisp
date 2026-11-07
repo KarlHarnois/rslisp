@@ -15,12 +15,12 @@
 (struct (holder a) (value a) (spare a))
 
 (defn main ()
-  (let several?
+  (local several?
     (> (len (command-line-args)) 5))
-  (let odometer (the i64 2024))
-  (let (total i64) (same 3000000000))
+  (local odometer (the i64 2024))
+  (local (total i64) (same 3000000000))
   (println total)
-  (let reading (fn () 3000000000))
+  (local reading (fn () 3000000000))
   (prn (reading))
   (shown 3000000000)
   (prn (twice (do (shown "block") 3000000000)))
@@ -30,7 +30,7 @@
     ((some miles) (prn miles))
     (none (println "none")))
   (prn (some 3000000000))
-  (let (maybe (option i64))
+  (local (maybe (option i64))
     (some 3000000000))
   (prn maybe)
   (prn (field (new holder (value 3000000000) (spare 1))

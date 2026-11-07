@@ -8,8 +8,8 @@
 (defn build-leaf () (->car :make "Nissan" :model "Leaf"))
 
 (defn main ()
-  (let oppama
+  (local oppama
     (->plant :maker (fn () build-leaf)))
-  (let make ((:maker oppama)))
-  (let leaf (make))
+  (local make ((:maker oppama)))
+  (local leaf (make))
   (println (:make leaf) " " (:model leaf)))

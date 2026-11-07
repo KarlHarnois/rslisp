@@ -11,7 +11,7 @@
         (fn (m) (= m "Leaf"))))
 
 (defn main ()
-  (let models (vec "Leaf" "Ariya"))
+  (local models (vec "Leaf" "Ariya"))
   (println (leaves models))
   (println (leaf-models models))
   (prn (first-leaf models)))

@@ -8,7 +8,7 @@
                     0))))
 
 (defn main ()
-  (let counts (count-words (str "the cat and the hat")))
+  (local counts (count-words (str "the cat and the hat")))
   (println (len counts))
   (println (unwrap (get counts "the")))
   (println (unwrap (get counts "cat"))))

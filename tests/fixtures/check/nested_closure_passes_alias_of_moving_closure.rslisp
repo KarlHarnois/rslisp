@@ -5,10 +5,10 @@
 (defn keep (model) model)
 
 (defn main ()
-  (let model (str "Leaf"))
-  (let announce (fn () (keep model)))
-  (let later
+  (local model (str "Leaf"))
+  (local announce (fn () (keep model)))
+  (local later
     (fn ()
-      (let again announce)
+      (local again announce)
       (twice again)))
   (later))

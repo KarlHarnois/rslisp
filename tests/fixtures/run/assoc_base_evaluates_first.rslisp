@@ -11,6 +11,6 @@
   3)
 
 (defn main ()
-  (let updated
+  (local updated
     (assoc (noisy-base) :x (noisy-field)))
   (println (:x updated) (:y updated)))

@@ -27,9 +27,9 @@
   (:year (:car (deref o))))
 
 (defn main ()
-  (let leaf (->car :make "Nissan" :year 2024))
-  (let ana (->owner :name "ana" :car leaf))
-  (let borrowed (ref leaf))
+  (local leaf (->car :make "Nissan" :year 2024))
+  (local ana (->owner :name "ana" :car leaf))
+  (local borrowed (ref leaf))
   (println (year-of (ref leaf)))
   (println (make-of (ref leaf)))
   (println (year-through-two (ref borrowed)))

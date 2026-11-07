@@ -3,7 +3,7 @@
   (push! names (at names 2)))
 
 (defn main ()
-  (let names
+  (local names
     (vec (str "Leaf")
          (str "Civic")
          (str "Kona")))

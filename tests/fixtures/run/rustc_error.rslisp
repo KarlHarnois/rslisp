@@ -3,6 +3,6 @@
   :right f64)
 
 (defn main ()
-  (let first-pair (->pair (str "one") 2))
-  (let moved first-pair)
+  (local first-pair (->pair (str "one") 2))
+  (local moved first-pair)
   (println (:left first-pair)))

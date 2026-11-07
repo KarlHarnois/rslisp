@@ -1,21 +1,21 @@
 (defn forward ((text (ref str))) text)
 
 (defn make ()
-  (let text (str "hi"))
+  (local text (str "hi"))
   (ref text))
 
 (defn pick (flag)
-  (let text (str "hi"))
+  (local text (str "hi"))
   (if flag (ref text) (ref text)))
 
 (defn nested ()
-  (let text (str "hi"))
+  (local text (str "hi"))
   (do (ref text)))
 
 (enum choice yes no)
 
 (defn choose (value)
-  (let text (str "hi"))
+  (local text (str "hi"))
   (match value
     (yes (ref text))
     (no (ref text))))

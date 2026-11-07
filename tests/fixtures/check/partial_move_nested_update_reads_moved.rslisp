@@ -7,10 +7,10 @@
   :badge badge)
 
 (defn main ()
-  (let g
+  (local g
     (->garage (str "Leaf Garage")
               (->badge (str "open") 12)))
-  (let h (assoc-in g (:badge :size) 3))
+  (local h (assoc-in g (:badge :size) 3))
   (println (:size (:badge h))
            " "
            (:text (:badge g))))

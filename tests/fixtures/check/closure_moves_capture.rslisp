@@ -1,5 +1,5 @@
 (defn apply (f) (f 0))
 
 (defn main ()
-  (let text (str "x"))
+  (local text (str "x"))
   (println (apply (fn (ignored) text))))

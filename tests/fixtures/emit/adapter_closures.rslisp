@@ -40,12 +40,12 @@
             (fn (c) (println (:make c)))))
 
 (defn main ()
-  (let years (vec 2019 2021 2024))
+  (local years (vec 2019 2021 2024))
   (println (count (filter (iter years)
                           (fn (y) (> (deref y) 2020)))))
   (println (sum (map (iter years)
                      (fn (y) (+ (deref y) 1)))))
   (report-years years)
-  (let cars
+  (local cars
     (vec (->car "Nissan" 2024) (->car "Honda" 2019)))
   (report-cars cars))

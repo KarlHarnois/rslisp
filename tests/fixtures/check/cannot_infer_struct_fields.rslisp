@@ -3,6 +3,6 @@
         (right (vec b)))
 
 (defn main ()
-  (let held
+  (local held
     (new holder (left (vec)) (right (vec))))
   (println "done"))

@@ -5,6 +5,6 @@
   (push! stack 2))
 
 (defn main ()
-  (let items (vec 0))
+  (local items (vec 0))
   (fill! items)
   (println (len items)))

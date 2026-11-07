@@ -7,10 +7,10 @@
   (->spare :maker (if c f g)))
 
 (defn main ()
-  (let base 4)
-  (let chosen
+  (local base 4)
+  (local chosen
     (wrap true
           (fn () (+ base 1))
           count-doors))
-  (let pick (:maker chosen))
+  (local pick (:maker chosen))
   (println (pick)))

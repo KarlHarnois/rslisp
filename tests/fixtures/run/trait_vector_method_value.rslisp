@@ -11,5 +11,5 @@
 (defn apply-total (measure o readings) (measure o readings))
 
 (defn main ()
-  (let readings (vec 1200 3400))
+  (local readings (vec 1200 3400))
   (println (apply-total total (->odometer 10) readings)))

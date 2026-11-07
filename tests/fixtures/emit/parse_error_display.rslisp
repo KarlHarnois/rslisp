@@ -1,8 +1,8 @@
 (defn show-error (text)
-  (let (parsed (result i64 _))
+  (local (parsed (result i64 _))
     (parse text))
-  (let reason (unwrap-err parsed))
-  (let message (str reason))
+  (local reason (unwrap-err parsed))
+  (local message (str reason))
   (println message)
   (prn reason))
 

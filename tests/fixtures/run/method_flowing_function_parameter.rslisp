@@ -13,8 +13,8 @@
   (pick (lot constructor) (constructor "Nissan")))
 
 (defn main ()
-  (let lot (->depot 1))
-  (let picked
+  (local lot (->depot 1))
+  (local picked
     (pick lot
           (fn (make) (->car :make make :year 2025))))
   (println (:make picked))

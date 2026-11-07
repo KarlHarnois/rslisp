@@ -1,5 +1,5 @@
 (defrule pick ((c) (if c (vec) (vec))))
 
 (defn main ()
-  (let x (pick true))
+  (local x (pick true))
   (println "done"))

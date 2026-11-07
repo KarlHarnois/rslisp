@@ -6,7 +6,7 @@
   "143\n147\n150\n149\n160\n171\n168\n175\n190\n188")
 
 (defn solve-sonar ()
-  (let depths (parse-depths sonar-report))
+  (local depths (parse-depths sonar-report))
   (println (str "sonar increases: " (count-increases depths)))
   (println (str "sonar window increases: "
                 (count-increases (window-sums depths)))))

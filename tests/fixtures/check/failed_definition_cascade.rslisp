@@ -16,8 +16,8 @@
         (clone word)))
 
 (defn main ()
-  (let words (broken))
-  (let entries
+  (local words (broken))
+  (local entries
     (collect (map (iter words)
                   (fn (word) (rank-word word words)))))
   (println (len entries)))

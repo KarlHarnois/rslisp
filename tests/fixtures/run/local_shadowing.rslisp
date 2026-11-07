@@ -4,7 +4,7 @@
   (do
     (local count (* count 10))
     (println count))
-  (let label "flat")
+  (local label "flat")
   (local label (str label " local"))
   (println label)
   (println count))

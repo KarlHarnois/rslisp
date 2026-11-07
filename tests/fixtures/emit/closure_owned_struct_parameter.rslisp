@@ -3,7 +3,7 @@
   :age i64)
 
 (defn main ()
-  (let ana (->user (str "Ana") 30))
-  (let age-of
+  (local ana (->user (str "Ana") 30))
+  (local age-of
     (fn (someone) (:age someone)))
   (println (age-of ana)))

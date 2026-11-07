@@ -3,7 +3,7 @@
   (some x))
 
 (defn main ()
-  (let v (vec))
+  (local v (vec))
   (println (infer (push! v 1)))
   (println (infer (vec 1 2)))
   (prn (wrap 1))

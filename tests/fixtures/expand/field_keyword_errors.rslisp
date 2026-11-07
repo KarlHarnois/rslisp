@@ -12,9 +12,9 @@
   (match vehicle (:year 0)))
 
 (defn main ()
-  (let leaf (->car "Nissan" "Leaf" 2024 true))
-  (let civic (->car "Honda" "Civic" 2019 false))
+  (local leaf (->car "Nissan" "Leaf" 2024 true))
+  (local civic (->car "Honda" "Civic" 2019 false))
   (println (:year leaf civic))
   (println (:year))
-  (let :year 3)
+  (local :year 3)
   (println :year))

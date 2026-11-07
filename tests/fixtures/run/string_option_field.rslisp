@@ -2,5 +2,5 @@
   :nickname (option str))
 
 (defn main ()
-  (let user (->user :nickname (option/some "Leafy")))
+  (local user (->user :nickname (option/some "Leafy")))
   (println (unwrap (:nickname user))))

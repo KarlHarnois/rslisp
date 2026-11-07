@@ -29,11 +29,11 @@
 (defn label (value) (show-cell value))
 
 (defn main ()
-  (let grid
+  (local grid
     (vec (vec true false) (vec false true)))
   (println (is-alive grid 1 0))
   (print-generation 42)
-  (let word (str "one"))
+  (local word (str "one"))
   (println (size word))
   (println (size-many word))
   (println (size-many (vec 1 2)))

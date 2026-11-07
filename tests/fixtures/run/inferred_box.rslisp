@@ -36,7 +36,7 @@
     (tree/leaf count)))
 
 (defn main ()
-  (let tree (tree/node tree/leaf 1 tree/leaf))
+  (local tree (tree/node tree/leaf 1 tree/leaf))
   (prn tree)
   (prn (total tree))
   (prn (first-child tree))

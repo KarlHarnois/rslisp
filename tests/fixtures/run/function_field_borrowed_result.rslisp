@@ -7,8 +7,8 @@
   :label str)
 
 (defn main ()
-  (let chosen (->sorter :name "by name"))
-  (let ana (->user :name "ana" :age 34))
+  (local chosen (->sorter :name "by name"))
+  (local ana (->user :name "ana" :age 34))
   (println (:label chosen)
            ": "
            ((:key chosen) ana)))

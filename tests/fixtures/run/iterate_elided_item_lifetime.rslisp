@@ -38,9 +38,9 @@
 (defn last-name (names) (max names))
 
 (defn main ()
-  (let names (vec "Leaf" "Ariya" "Sakura"))
-  (let scores (vec 70 40 90))
-  (let cars
+  (local names (vec "Leaf" "Ariya" "Sakura"))
+  (local scores (vec 70 40 90))
+  (local cars
     (vec (->car "Leaf" 2024) (->car "Micra" 2017)))
   (println (count-long names))
   (println (count-big scores))

@@ -5,9 +5,9 @@
 (defn later? (a b) (> a b))
 
 (defn main ()
-  (let year 2024)
-  (let range 240.5)
-  (let floor 2000)
+  (local year 2024)
+  (local range 240.5)
+  (local floor 2000)
   (println (later? 2020 (ref year)))
   (println (later? 300.0 (ref range)))
   (println (later? 1999 (ref floor))))

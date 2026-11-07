@@ -94,8 +94,8 @@ error[L0510]: cannot return a borrow of a temporary value
 error[L0510]: cannot return a borrow of a temporary value
   --> check/returned_unpromoted_temporary.rslisp:27:3
    |
-27 |   (ref (do (let year 2019) year)))
-   |   ^^^^^-------------------------^
+27 |   (ref (do (local year 2019) year)))
+   |   ^^^^^---------------------------^
    |   |    |
    |   |    this temporary value is dropped when the function returns
    |   this borrows a temporary value
@@ -166,11 +166,11 @@ error[L0510]: cannot return a borrow of a temporary value
 52 |      (ref (if c
    |  ____^    -
    | | ________|
-53 | ||          (do (println "Leaf") (let year 2019))
-54 | ||          (do (println "Ariya") (let year 2021)))))
-   | ||________________________________________________-^ this borrows a temporary value
-   |  |________________________________________________|
-   |                                                   this temporary value is dropped when the function returns
+53 | ||          (do (println "Leaf") (local year 2019))
+54 | ||          (do (println "Ariya") (local year 2021)))))
+   | ||__________________________________________________-^ this borrows a temporary value
+   |  |__________________________________________________|
+   |                                                     this temporary value is dropped when the function returns
    |
    = help: return an owned value, or borrow from a parameter or a top-level `def`
 

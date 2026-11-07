@@ -3,5 +3,5 @@
 
 (defn main ()
   (println (count-between 2 5))
-  (let low (the u8 1))
+  (local low (the u8 1))
   (println (count-between low (the u8 3))))

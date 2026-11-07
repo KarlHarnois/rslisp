@@ -1,8 +1,8 @@
 (defn second (items) (get items 1))
 
 (defn main ()
-  (let years (vec 2019 2025))
-  (let prices (hash-map "leaf" 30))
+  (local years (vec 2019 2025))
+  (local prices (hash-map "leaf" 30))
   (println (unwrap (get years 1)))
   (println (unwrap (second years)))
   (prn (get years 5))

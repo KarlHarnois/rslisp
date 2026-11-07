@@ -1,5 +1,5 @@
 (defn main ()
-  (let numbers (vec 1 2 3 4))
+  (local numbers (vec 1 2 3 4))
   (println (sum (copied numbers)))
   (println (count (iter numbers)))
   (println (unwrap-or (max (copied numbers)) 0))

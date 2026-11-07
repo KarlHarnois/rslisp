@@ -5,8 +5,8 @@
 (defn later? (a b) (> a b))
 
 (defn main ()
-  (let year 2024)
-  (let model (str "Leaf"))
+  (local year 2024)
+  (local model (str "Leaf"))
   (println (later? (ref year) 2020))
   (println (later? 2020 (ref year)))
   (println (later? (ref model) (str "Civic"))))

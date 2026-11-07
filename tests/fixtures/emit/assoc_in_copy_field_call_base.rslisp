@@ -10,7 +10,7 @@
   (->sticker (str "open") (->point 0 2)))
 
 (defn main ()
-  (let moved
+  (local moved
     (assoc-in (:at (make-badge)) (:x) 4))
   (println (:text (make-badge))
            " "

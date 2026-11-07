@@ -8,7 +8,7 @@
 (def podium-size 3)
 
 (defn solve-rations ()
-  (let totals (group-totals packing-list))
+  (local totals (group-totals packing-list))
   (println (str "largest group: " (largest-total totals)))
   (println (str "top three groups: " (podium-total totals))))
 

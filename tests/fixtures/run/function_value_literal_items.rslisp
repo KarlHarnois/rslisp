@@ -7,13 +7,13 @@
 (defn small-ratio? (x) (< x 10.0))
 
 (defn main ()
-  (let bytes
+  (local bytes
     (the (vec u8) (vec 3 7 12 4)))
-  (let readings
+  (local readings
     (the (vec u16) (vec 1 2 3 40 5)))
-  (let offsets
+  (local offsets
     (the (vec i32) (vec -2 9 10)))
-  (let ratios
+  (local ratios
     (the (vec f32) (vec 0.5 9.5 10.5)))
   (println (count (take-while (iter bytes) small-byte?)))
   (println (count (take-while (iter readings) small-reading?)))

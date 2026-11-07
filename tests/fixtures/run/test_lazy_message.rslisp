@@ -11,11 +11,11 @@
   (assert (= 1 1) (panicking-message)))
 
 (deftest a-failed-assert-computes-its-message
-  (let wanted 3)
+  (local wanted 3)
   (assert (= 2 wanted) (str "wanted " wanted)))
 
 (deftest a-message-stays-usable
-  (let note (str "kept"))
+  (local note (str "kept"))
   (assert true note)
   (println note))
 

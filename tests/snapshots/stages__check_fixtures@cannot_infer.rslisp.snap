@@ -4,12 +4,12 @@ expression: reports.report(path)
 input_file: tests/fixtures/check/cannot_infer.rslisp
 ---
 error[L0407]: type annotations needed
- --> check/cannot_infer.rslisp:2:24
+ --> check/cannot_infer.rslisp:2:26
   |
-2 |   (let ignored (fn (y) y))
-  |                        ^ cannot infer the type `_` of this value
+2 |   (local ignored (fn (y) y))
+  |                          ^ cannot infer the type `_` of this value
   |
 help: write the type with `the`, and replace each `_` with a type
   |
-2 |   (let ignored (fn (y) (the _ y)))
-  |                        ++++++  +
+2 |   (local ignored (fn (y) (the _ y)))
+  |                          ++++++  +

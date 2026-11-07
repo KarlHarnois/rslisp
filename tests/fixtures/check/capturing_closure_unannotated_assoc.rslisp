@@ -9,8 +9,8 @@
 (defn age (someone) (:age someone))
 
 (defn main ()
-  (let bonus 2)
-  (let by-age
+  (local bonus 2)
+  (local by-age
     (assoc (->sorter age "by age")
            :key (fn (someone) (+ (:age someone) bonus))))
   (println (:label by-age)))

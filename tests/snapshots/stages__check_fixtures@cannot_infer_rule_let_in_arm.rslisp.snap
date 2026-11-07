@@ -4,9 +4,9 @@ expression: reports.report(path)
 input_file: tests/fixtures/check/cannot_infer_rule_let_in_arm.rslisp
 ---
 error[L0407]: type annotations needed
- --> check/cannot_infer_rule_let_in_arm.rslisp:5:19
+ --> check/cannot_infer_rule_let_in_arm.rslisp:6:19
   |
-5 |     ((some value) (hold it))
+6 |     ((some value) (hold it))
   |                   ^^^^^^^^^ cannot infer the type of this value
   |
   = help: write the type with `the`, as in `(the (vec i64) (vec))`, or add a `type` signature

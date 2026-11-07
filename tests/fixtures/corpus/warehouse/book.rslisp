@@ -29,23 +29,23 @@
 
 (defn record (current changed)
   (let-fields (book (stock entries rejected)) current
-    (let before
+    (local before
       (quantity-of (ref stock) (:sku changed)))
-    (let growing entries)
+    (local growing entries)
     (push! growing
            (->entry (+ (len growing) 1)
                     (clone (:sku changed))
                     (- (signed (:quantity changed))
                        (signed before))
                     (:quantity changed)))
-    (let sku (clone (:sku changed)))
+    (local sku (clone (:sku changed)))
     (->book (assoc stock sku changed) growing rejected)))
 
 (type reject (fn (book ledger-error) book))
 
 (defn reject (current problem)
   (let-fields (book (stock entries rejected)) current
-    (let growing rejected)
+    (local growing rejected)
     (push! growing (str problem))
     (->book stock entries growing)))
 
@@ -96,7 +96,7 @@
   (fn ((ref item) u32) item))
 
 (defn restock (current amount)
-  (let quantity (+ (:quantity current) amount))
+  (local quantity (+ (:quantity current) amount))
   (assoc (clone current) :quantity quantity))
 
 (type ship
@@ -104,7 +104,7 @@
     (result item ledger-error)))
 
 (defn ship (current amount)
-  (let available (:quantity current))
+  (local available (:quantity current))
   (if (> amount available)
     (err (ledger-error/short-stock (clone (:sku current))
                                    amount available))
@@ -115,7 +115,7 @@
     (result item ledger-error)))
 
 (defn adjust (current delta)
-  (let counted
+  (local counted
     (+ (signed (:quantity current)) delta))
   (if (< counted 0)
     (err (ledger-error/negative-count (clone (:sku current))

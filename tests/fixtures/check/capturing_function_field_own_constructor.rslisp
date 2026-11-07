@@ -10,8 +10,8 @@
 (defn by-score (score) (->ranking score "custom"))
 
 (defn main ()
-  (let base-year 2000)
-  (let newest
+  (local base-year 2000)
+  (local newest
     (by-score (fn (vehicle)
                 (- (:year vehicle) base-year))))
   (println (:label newest)))

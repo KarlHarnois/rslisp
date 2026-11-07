@@ -27,7 +27,7 @@
 (defn log! (m readings) (record! m readings))
 
 (defn main ()
-  (let readings (vec 1200 3400))
+  (local readings (vec 1200 3400))
   (println (report (->odometer 10) readings))
   (println (total (->meter 2) readings))
   (log! (->odometer 10) (mut readings))

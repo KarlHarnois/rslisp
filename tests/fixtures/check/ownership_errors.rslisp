@@ -21,6 +21,6 @@
 (defn apply-once (f) (f))
 
 (defn moving-closure (name)
-  (let take (fn () (store name)))
+  (local take (fn () (store name)))
   (apply-once take)
   (apply-once take))

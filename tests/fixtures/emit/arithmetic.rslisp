@@ -3,8 +3,8 @@
   :y f64)
 
 (defn distance-squared (a b)
-  (let dx (- (:x a) (:x b)))
-  (let dy (- (:y a) (:y b)))
+  (local dx (- (:x a) (:x b)))
+  (local dy (- (:y a) (:y b)))
   (+ (* dx dx) (* dy dy)))
 
 (defn main ()

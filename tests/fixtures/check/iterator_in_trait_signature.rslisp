@@ -22,5 +22,5 @@
              (fn ((iterator (ref i64))) usize))))
 
 (defn main ()
-  (let lot (->depot (vec 2019 2021 2024)))
+  (local lot (->depot (vec 2019 2021 2024)))
   (println (tally lot count)))

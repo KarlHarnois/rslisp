@@ -285,7 +285,7 @@ mod tests {
             (defstruct tally :total i64)
             (defn bump-tally! (t) (add-one! (field t total)))
             (defn main ()
-              (let t (->tally 5))
+              (local t (->tally 5))
               (bump-tally! t)
               (println (:total t)))";
 

@@ -4,12 +4,12 @@ expression: reports.report(path)
 input_file: tests/fixtures/check/capturing_function_field_option_parameter.rslisp
 ---
 error[L0511]: cannot store a capturing closure in the field `maker`
- --> check/capturing_function_field_option_parameter.rslisp:9:21
+ --> check/capturing_function_field_option_parameter.rslisp:9:23
   |
 2 |   :maker (option (fn () i64)))
   |                  ----------- declared with a function type here
 ...
-9 |   (let backup (wrap (fn () (+ base 1))))
-  |                     ^^^^^^^^^^^^^^^^^^ this closure captures `base`
+9 |   (local backup (wrap (fn () (+ base 1))))
+  |                       ^^^^^^^^^^^^^^^^^^ this closure captures `base`
   |
   = help: a field declared with a function type holds only a named function or a closure that captures nothing

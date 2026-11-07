@@ -2,5 +2,5 @@
   (sum (map (iter row) (fn (x) (deref x)))))
 
 (defn main ()
-  (let grid (vec (vec 1 2) (vec 3 4)))
+  (local grid (vec (vec 1 2) (vec 3 4)))
   (println (sum (map (iter grid) total))))

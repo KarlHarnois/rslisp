@@ -7,7 +7,7 @@
   :age u32)
 
 (defn main ()
-  (let origin (->point 0 0))
+  (local origin (->point 0 0))
   (prn origin)
   (println (= origin (->point 0 0)))
   (prn (->person (str "Ada") 36))

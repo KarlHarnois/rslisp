@@ -4,15 +4,15 @@ expression: reports.report(path)
 input_file: tests/fixtures/check/assoc_field_base_moves_owner.rslisp
 ---
 error[L0501]: use of moved value `(:badge garage)`
-  --> check/assoc_field_base_moves_owner.rslisp:14:14
+  --> check/assoc_field_base_moves_owner.rslisp:14:16
    |
-13 |   (let bigger (assoc (:badge garage) :size 14))
-   |                      --------------- value moved here
-14 |   (let again garage)
-   |              ^^^^^^ value used here after it moved
+13 |   (local bigger (assoc (:badge garage) :size 14))
+   |                        --------------- value moved here
+14 |   (local again garage)
+   |                ^^^^^^ value used here after it moved
    |
 help: clone the value if both places need it
    |
-13 -   (let bigger (assoc (:badge garage) :size 14))
-13 +   (let bigger (assoc (clone (:badge garage)) :size 14))
+13 -   (local bigger (assoc (:badge garage) :size 14))
+13 +   (local bigger (assoc (clone (:badge garage)) :size 14))
    |

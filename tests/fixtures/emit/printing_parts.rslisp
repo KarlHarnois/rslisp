@@ -3,8 +3,8 @@
   :y i64)
 
 (defn main ()
-  (let n 3)
-  (let p (->point 1 2))
+  (local n 3)
+  (local p (->point 1 2))
   (println "hello")
   (println "total: " n)
   (println (str "n=" n))

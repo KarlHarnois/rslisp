@@ -6,8 +6,8 @@ input_file: tests/fixtures/check/clone_meaning.rslisp
 error[L0501]: use of moved value `stack`
  --> check/clone_meaning.rslisp:4:8
   |
-2 |   (let copy stack)
-  |             ----- value moved here
+2 |   (local copy stack)
+  |               ----- value moved here
 3 |   (push! copy 1)
 4 |   (len stack))
   |        ^^^^^ value used here after it moved

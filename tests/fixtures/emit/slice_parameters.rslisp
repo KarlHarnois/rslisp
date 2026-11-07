@@ -22,18 +22,18 @@
 (defn add-year! (known-years year) (push! known-years year))
 
 (defn main ()
-  (let leaf
+  (local leaf
     (->car :make "Nissan"
            :model "Leaf"
            :year 2024
            :electric? true))
-  (let civic (->car "Honda" "Civic" 2019 false))
-  (let fleet (vec leaf civic))
+  (local civic (->car "Honda" "Civic" 2019 false))
+  (local fleet (vec leaf civic))
   (println (size fleet))
   (print-years fleet)
   (println (len (years fleet)))
   (println (second-year fleet))
   (println (unwrap-or (maybe-second-year fleet) 0))
-  (let model-years (vec 2019))
+  (local model-years (vec 2019))
   (add-year! (mut model-years) 2024)
   (println (len model-years)))

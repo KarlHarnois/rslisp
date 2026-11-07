@@ -15,8 +15,8 @@
   (->backup :maker (some (if c f g))))
 
 (defn main ()
-  (let chosen (wrap true count-doors count-wheels))
-  (let pick (:maker chosen))
+  (local chosen (wrap true count-doors count-wheels))
+  (local pick (:maker chosen))
   (println (pick))
   (match (wrap-backup false count-doors count-wheels)
     ((backup (some maker)) (println (maker)))

@@ -22,19 +22,19 @@
          :model (if electric? "Ariya" "Navara")))
 
 (defn main ()
-  (let plant (->factory :make build-leaf :label "Oppama"))
-  (let leaf ((:make plant)))
+  (local plant (->factory :make build-leaf :label "Oppama"))
+  (local leaf ((:make plant)))
   (println (:label plant)
            ": "
            (:make leaf)
            " "
            (:model leaf))
-  (let tochigi
+  (local tochigi
     (->line :make (fn () (->car :make "Nissan" :model "Sakura"))))
   (println (:model ((:make tochigi))))
-  (let shop (->dealer :order order-nissan))
+  (local shop (->dealer :order order-nissan))
   (println (:model ((:order shop) true)))
-  (let backup (->spare :maker (some build-leaf)))
+  (local backup (->spare :maker (some build-leaf)))
   (match backup
     ((spare (some maker)) (println (:model (maker))))
     ((spare none) (println "no spare"))))

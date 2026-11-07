@@ -3,11 +3,11 @@
   :age u16)
 
 (defn main ()
-  (let scores (vec 3 1 2))
+  (local scores (vec 3 1 2))
   (println (sum scores))
-  (let prices (vec 1.5 2.25 4.0))
+  (local prices (vec 1.5 2.25 4.0))
   (println (sum prices))
-  (let users
+  (local users
     (vec (->user "ana" 34) (->user "bo" 27)))
   (println (sum (map users :age)))
   (println (sum (copied scores))))

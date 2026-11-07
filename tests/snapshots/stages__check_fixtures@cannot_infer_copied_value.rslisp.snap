@@ -4,12 +4,12 @@ expression: reports.report(path)
 input_file: tests/fixtures/check/cannot_infer_copied_value.rslisp
 ---
 error[L0407]: type annotations needed
- --> check/cannot_infer_copied_value.rslisp:2:25
+ --> check/cannot_infer_copied_value.rslisp:2:27
   |
-2 |   (let held (deref (ref (vec))))
-  |                         ^^^^^ cannot infer the type `(vec _)` of this value
+2 |   (local held (deref (ref (vec))))
+  |                           ^^^^^ cannot infer the type `(vec _)` of this value
   |
 help: write the type with `the`, and replace each `_` with a type
   |
-2 |   (let held (deref (ref (the (vec _) (vec)))))
-  |                         ++++++++++++      +
+2 |   (local held (deref (ref (the (vec _) (vec)))))
+  |                           ++++++++++++      +

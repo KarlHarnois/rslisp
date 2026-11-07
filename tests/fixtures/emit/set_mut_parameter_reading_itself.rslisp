@@ -1,6 +1,6 @@
 (defn shout! (s) (set! s (str s "!")))
 
 (defn main ()
-  (let name (str "old"))
+  (local name (str "old"))
   (shout! name)
   (println name))

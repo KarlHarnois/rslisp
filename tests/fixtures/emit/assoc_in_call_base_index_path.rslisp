@@ -6,7 +6,7 @@
   (->shelf (str "top") (vec 1 2 3)))
 
 (defn main ()
-  (let items
+  (local items
     (assoc-in (:items (stock)) (1) 9))
   (println (:label (stock))
            " "

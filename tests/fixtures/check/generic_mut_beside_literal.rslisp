@@ -5,9 +5,9 @@
 (defn later? (a b) (> a b))
 
 (defn literal-first ()
-  (let year 2024)
+  (local year 2024)
   (later? 2020 (mut year)))
 
 (defn literal-last ()
-  (let year 2024)
+  (local year 2024)
   (later? (mut year) 2020))

@@ -71,13 +71,13 @@ error[L0304]: `broken` is a macro, not a value
    |
    = help: a macro can only be called; pass a function instead
 
-error[L0210]: malformed `let`
+error[L0210]: malformed `local`
   --> check/macro_function_edges.rslisp:47:3
    |
-47 |   (let bad)
-   |   ^^^^^^^^^ this does not fit the shape of `let`
+47 |   (local bad)
+   |   ^^^^^^^^^^^ this does not fit the shape of `local`
    |
-   = help: write it as `(let name value)`
+   = help: write it as `(local name value)`
 
 error[L0201]: cannot find `barr` in this scope
   --> check/macro_function_edges.rslisp:48:4

@@ -3,7 +3,7 @@
   :label str)
 
 (defn main ()
-  (let s (->spare :size 3 :label "bolt"))
+  (local s (->spare :size 3 :label "bolt"))
   (println (:label s))
   (if (= s (->spare :size 3 :label "bolt"))
     (println "same")

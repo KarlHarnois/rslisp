@@ -10,6 +10,6 @@
        (push! (mut (field s items)) value)))
 
 (defn main ()
-  (let words (new stack (items (vec))))
+  (local words (new stack (items (vec))))
   (put (mut words) (str "alpha"))
   (println (len (field words items))))

@@ -8,8 +8,8 @@
   skip)
 
 (defn main ()
-  (let cutoff 2020)
-  (let recent
+  (local cutoff 2020)
+  (local recent
     (rule/keep (fn ((vehicle (ref car)))
                  (> (:year vehicle) cutoff))))
   (match recent

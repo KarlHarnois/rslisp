@@ -6,14 +6,14 @@ input_file: tests/fixtures/check/use_after_whole_struct_move.rslisp
 error[L0501]: use of moved value `g`
   --> check/use_after_whole_struct_move.rslisp:16:27
    |
-13 |   (let h g)
-   |          - value moved here
+13 |   (local h g)
+   |            - value moved here
 ...
 16 |            (:text (:badge g))))
    |                           ^ value used here after it moved
    |
 help: clone the value if both places need it
    |
-13 -   (let h g)
-13 +   (let h (clone g))
+13 -   (local h g)
+13 +   (local h (clone g))
    |

@@ -8,6 +8,6 @@
   :name (shared str))
 
 (defn main ()
-  (let tag (->tag (shared-str "Leaf")))
-  (let name (:name tag))
+  (local tag (->tag (shared-str "Leaf")))
+  (local name (:name tag))
   (println "Leaf"))

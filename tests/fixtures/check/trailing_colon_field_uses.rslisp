@@ -14,7 +14,7 @@
   (map (iter users) :email:))
 
 (defn main ()
-  (let ana (build-user))
+  (local ana (build-user))
   (println (read-email ana))
   (println (:name (change-email ana)))
   (println (count (emails (vec ana)))))

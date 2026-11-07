@@ -3,13 +3,13 @@
             (fn (entry)
               (let-pair (index line) entry
                 (println (str index ": " line)))))
-  (let left (collect (lines "a\nb")))
-  (let right (collect (range 1 3)))
+  (local left (collect (lines "a\nb")))
+  (local right (collect (range 1 3)))
   (for-each (zip (copied left) (copied right))
             (fn (entry)
               (let-pair (text number) entry
                 (println (str text number)))))
-  (let pairs
+  (local pairs
     (vec (pair 2 "b") (pair 1 "a")))
   (sort! pairs)
   (for-each (copied pairs)

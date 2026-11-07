@@ -1,9 +1,9 @@
 (defn main ()
-  (let (value (option i64)) (some 1))
-  (let (nothing (option i64)) none)
-  (let (answer (result i64 string))
+  (local (value (option i64)) (some 1))
+  (local (nothing (option i64)) none)
+  (local (answer (result i64 string))
     (ok 1))
-  (let (bad (result i64 string))
+  (local (bad (result i64 string))
     (err (str "bad")))
   (println (none? nothing))
   (match value

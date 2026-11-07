@@ -342,13 +342,13 @@
 
 (def without-trailing-newline
   (fn (pieces)
-    (let text (nth (last-piece pieces) 1))
+    (local text (nth (last-piece pieces) 1))
     (concat (take (number-sub (len pieces) 1) pieces)
             (list (list (quote literal) (string-strip-suffix text "\n"))))))
 
 (def print-call
   (fn (pieces)
-    (let formatted (format-pieces pieces 0 escape-format))
+    (local formatted (format-pieces pieces 0 escape-format))
     (prepend (list (quote rust)
                    (format-template "print!"
                                     (nth formatted 0)
@@ -358,8 +358,8 @@
 
 (def line-call
   (fn (function pieces)
-    (let formatted (format-pieces pieces 0 escape-format))
-    (let variables (nth formatted 2))
+    (local formatted (format-pieces pieces 0 escape-format))
+    (local variables (nth formatted 2))
     (prepend (list (quote rust)
                    (if (value-eq (nth formatted 0) "")
                      (string function "()")
@@ -371,7 +371,7 @@
 
 (def string-form
   (fn (parts)
-    (let pieces (flatten-parts parts))
+    (local pieces (flatten-parts parts))
     (if (one-value? pieces)
       (list (quote display-string)
             (nth (first pieces) 1))
@@ -388,11 +388,11 @@
 
 (def format-string-form
   (fn (pieces)
-    (let count (placeholder-count pieces))
-    (let formatted
+    (local count (placeholder-count pieces))
+    (local formatted
       (format-pieces pieces 0
                      (if (number-lt 0 count) escape-format escape-string)))
-    (let variables (nth formatted 2))
+    (local variables (nth formatted 2))
     (if (number-lt 0 count)
       (prepend (list (quote rust)
                      (format-template "format!"
@@ -423,7 +423,7 @@
 
   A string literal part is literal text, a `(pr-str x)` part prints with
   `show`, and any other part prints with `display`."
-  (let pieces (flatten-parts parts))
+  (local pieces (flatten-parts parts))
   (if (ends-with-newline? pieces)
     (line-call "println!" (without-trailing-newline pieces))
     (print-call pieces)))
@@ -463,7 +463,7 @@
 
 (def display-template
   (fn (pieces)
-    (let formatted (format-pieces pieces 0 escape-format))
+    (local formatted (format-pieces pieces 0 escape-format))
     (list (string "write!({0}, \""
                   (nth formatted 0)
                   "\""
@@ -474,7 +474,7 @@
 
 (def display-write
   (fn (parts out)
-    (let rendered (display-template (flatten-parts parts)))
+    (local rendered (display-template (flatten-parts parts)))
     (prepend (list (quote rust)
                    (nth rendered 0)
                    (nth rendered 1))
@@ -529,7 +529,7 @@
       (display-write (list) out)
       (if (empty? (rest parts))
         (do
-          (let part (first parts))
+          (local part (first parts))
           (if (display-match? part)
             (display-match part out)
             (if (display-if? part)
@@ -543,7 +543,7 @@
   `param` is a one-name list that binds the value, and `parts` are what
   `print` takes. One `match` or `if` part prints each arm by its own parts.
   `display` is also the trait, Rust's `Display`, that a `print` part needs."
-  (let out (symbol (quote display) "out"))
+  (local out (symbol (quote display) "out"))
   (list (quote impl)
         (quote display)
         type
@@ -641,8 +641,8 @@
 
 (def show-construction
   (fn (body out)
-    (let arguments (rest body))
-    (let values (shown-values arguments))
+    (local arguments (rest body))
+    (local values (shown-values arguments))
     (prepend (list (quote rust)
                    (string "crate::rt::Record::open({0}, \""
                            (escape-string (symbol-name (first body)))
@@ -679,7 +679,7 @@
   a list headed by a symbol. A keyword argument of the list prints as
   written, and any other argument prints with `show`. `show` is also the
   trait that `prn` and `pr-str` need."
-  (let out (symbol (quote show) "out"))
+  (local out (symbol (quote show) "out"))
   (list (quote impl)
         (quote show)
         type

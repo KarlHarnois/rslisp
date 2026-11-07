@@ -7,7 +7,7 @@
   (println (:name (make)) (:name (make))))
 
 (defn main ()
-  (let g
+  (local g
     (->garage (str "Leaf Garage") (str "Leeds") 12))
   (twice (fn ()
            (assoc g :name (str "x") :city (str "York")))))

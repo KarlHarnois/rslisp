@@ -20,7 +20,7 @@
   (swap (c year) (->car (:model c) year)))
 
 (defn main ()
-  (let leaf (->car "Leaf" 2024))
+  (local leaf (->car "Leaf" 2024))
   (println (:model (twin leaf)))
   (println (len (fleet leaf)))
   (println (:year (rename leaf "Nissan")))

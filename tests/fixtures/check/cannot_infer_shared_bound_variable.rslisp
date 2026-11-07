@@ -8,5 +8,5 @@
       (fn (a d) bool))))
 
 (defn main ()
-  (let one 1)
+  (local one 1)
   (println (probe one 2)))

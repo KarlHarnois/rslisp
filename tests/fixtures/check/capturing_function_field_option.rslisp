@@ -2,8 +2,8 @@
   :maker (option (fn () i64)))
 
 (defn main ()
-  (let base 4)
-  (let backup
+  (local base 4)
+  (local backup
     (->spare :maker (some (fn () (+ base 1)))))
   (match backup
     ((spare (some maker)) (println (maker)))

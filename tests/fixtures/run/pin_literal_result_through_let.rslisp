@@ -4,5 +4,5 @@
   (let-pair (number text) value number))
 
 (defn main ()
-  (let reply (status))
+  (local reply (status))
   (println (code reply)))

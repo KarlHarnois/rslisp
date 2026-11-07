@@ -1,5 +1,5 @@
 (defn add-one (x) (+ x 1))
 
 (defn main ()
-  (let (n i64) 4)
+  (local (n i64) 4)
   (add-one (ref n)))

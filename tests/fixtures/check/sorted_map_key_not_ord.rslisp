@@ -2,7 +2,7 @@
   :name string)
 
 (defn main ()
-  (let items
+  (local items
     (sorted-map (new not-a-key (name (str "x")))
                 1))
   (println (len items)))

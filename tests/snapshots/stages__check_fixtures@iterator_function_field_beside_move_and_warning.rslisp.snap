@@ -23,13 +23,13 @@ warning[L0434]: unreachable `match` arm
 error[L0501]: use of moved value `years`
   --> check/iterator_function_field_beside_move_and_warning.rslisp:16:17
    |
-15 |   (let moved (consume years))
-   |                       ----- value moved here
+15 |   (local moved (consume years))
+   |                         ----- value moved here
 16 |   (println (len years)))
    |                 ^^^^^ value used here after it moved
    |
 help: clone the value if both places need it
    |
-15 -   (let moved (consume years))
-15 +   (let moved (consume (clone years)))
+15 -   (local moved (consume years))
+15 +   (local moved (consume (clone years)))
    |

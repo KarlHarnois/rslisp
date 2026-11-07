@@ -3,7 +3,7 @@
 (export run)
 
 (defn run (program)
-  (let stack (vec))
+  (local stack (vec))
   (run-from! program 0 stack))
 
 (defn run-from! (program counter stack)

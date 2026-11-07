@@ -12,9 +12,9 @@
 (defn by-score (score) (->ranking score "custom"))
 
 (defn main ()
-  (let ana (->user 30))
-  (let named (by-score age))
-  (let plain
+  (local ana (->user 30))
+  (local named (by-score age))
+  (local plain
     (by-score (fn ((someone (ref user)))
                 (:age someone))))
   (println (:label named)

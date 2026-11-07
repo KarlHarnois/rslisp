@@ -17,7 +17,7 @@
         (* 3.0 (field c radius) (field c radius)))
   (label-length (c) 0)
   (label-details (c) 0)
-  (wait (c) (let ignored 0)))
+  (wait (c) (local ignored 0)))
 
 (impl shape rect
   (area (r)

@@ -7,6 +7,6 @@
 (struct wrapper (value i64))
 
 (defn main ()
-  (let wrapped
+  (local wrapped
     (wrap-new (new wrapper (value 1))))
   (do))

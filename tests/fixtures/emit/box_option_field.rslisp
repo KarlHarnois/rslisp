@@ -2,6 +2,6 @@
   :nickname (box (option str)))
 
 (defn main ()
-  (let user
+  (local user
     (->user :nickname (box (option/some "Leafy"))))
   (prn (:nickname user)))

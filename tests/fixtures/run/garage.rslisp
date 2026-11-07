@@ -17,20 +17,20 @@
        (if (:electric? vehicle) " (electric)" "")))
 
 (defn main ()
-  (let leaf
+  (local leaf
     (->car :make "Nissan"
            :model "Leaf"
            :year 2024
            :electric? true))
-  (let civic (->car "Honda" "Civic" 2019 false))
-  (let build ->car)
-  (let golf (build "Volkswagen" "Golf" 2021 false))
-  (let mine (->garage "karl" (vec leaf civic golf)))
+  (local civic (->car "Honda" "Civic" 2019 false))
+  (local build ->car)
+  (local golf (build "Volkswagen" "Golf" 2021 false))
+  (local mine (->garage "karl" (vec leaf civic golf)))
   (println (:owner mine) "'s garage:")
   (for-each (iter (:cars mine))
             (fn (vehicle)
               (println (describe vehicle))))
   (println (describe (assoc civic :year 2020)))
-  (let newest
+  (local newest
     (max (map (iter (:cars mine)) :year)))
   (println "newest: " (unwrap newest)))

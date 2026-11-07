@@ -18,7 +18,7 @@
 (defn double (value) (+ value value))
 
 (defn port ()
-  (let (number u16) 8080)
+  (local (number u16) 8080)
   number)
 
 (defn small () (the u8 200))

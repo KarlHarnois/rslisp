@@ -18,8 +18,8 @@
 (defn total (values) (sum-of values))
 
 (defn main ()
-  (let boxed-seven (box-new 7))
+  (local boxed-seven (box-new 7))
   (println (unbox boxed-seven))
-  (let summed
+  (local summed
     (fn (values) (total values)))
   (println (summed one-to-three)))

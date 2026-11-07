@@ -11,7 +11,7 @@
 (defn keep (value) value)
 
 (defn main ()
-  (let handler
+  (local handler
     (new handler
       (callback adult?)
       (tag (rust "std::cell::Cell::new(0)" mark))))

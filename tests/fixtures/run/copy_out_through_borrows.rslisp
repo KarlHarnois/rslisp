@@ -1,7 +1,7 @@
 (defn recent? (y) (> y 2020))
 
 (defn main ()
-  (let years (vec 2021 2023 2018 2024))
+  (local years (vec 2021 2023 2018 2024))
   (println (count (filter (iter years) recent?)))
   (println (any? (iter years) recent?))
   (prn (find (iter years) recent?))

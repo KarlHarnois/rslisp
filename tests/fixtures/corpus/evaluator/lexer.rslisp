@@ -40,15 +40,15 @@
     (else (err (str "unexpected character `" c "` at " position)))))
 
 (defn scan-number (characters start tokens)
-  (let end (span-end characters start digit?))
-  (let text (slice-text characters start end))
+  (local end (span-end characters start digit?))
+  (local text (slice-text characters start end))
   (match (parse (as-str text))
     ((ok value)
      (scan characters end (append tokens (token/number value))))
     ((err problem) (err (str "bad number " text ": " problem)))))
 
 (defn scan-name (characters start tokens)
-  (let end (span-end characters start name-part?))
+  (local end (span-end characters start name-part?))
   (scan characters end
         (append tokens
                 (token/name (slice-text characters start end)))))
@@ -66,7 +66,7 @@
     position))
 
 (defn two-character-symbol? (characters position)
-  (let next (+ position 1))
+  (local next (+ position 1))
   (and (< next (len characters))
        (= (char-at characters next) (char "="))
        (comparison-start? (char-at characters position))))
@@ -98,7 +98,7 @@
   (or (alphanumeric? c) (= c (char "_"))))
 
 (defn append (items item)
-  (let growing items)
+  (local growing items)
   (push! growing item)
   growing)
 

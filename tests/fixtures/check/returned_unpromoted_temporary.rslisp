@@ -24,7 +24,7 @@
   (ref (+ (if flag 2019 2021) 1)))
 
 (defn counted-year ()
-  (ref (do (let year 2019) year)))
+  (ref (do (local year 2019) year)))
 
 (defn later () (ref (+ (base-year) 1)))
 
@@ -50,8 +50,8 @@
 
 (defn settled-pick (c)
   (ref (if c
-         (do (println "Leaf") (let year 2019))
-         (do (println "Ariya") (let year 2021)))))
+         (do (println "Leaf") (local year 2019))
+         (do (println "Ariya") (local year 2021)))))
 
 (def by-nothing
   (rust "{0} / 0" (fn (i64) i64)))
@@ -71,8 +71,8 @@
   (at (do (println "noting") years) 0))
 
 (defn main ()
-  (let spot (->point 1 2))
-  (let years (vec 2021))
+  (local spot (->point 1 2))
+  (local years (vec 2021))
   (prn (titles-match))
   (prn (by-zero))
   (prn (by-sum))

@@ -2,7 +2,7 @@
   :model (option str))
 
 (defn build (line)
-  (let model (str line))
+  (local model (str line))
   (->car :model (some (as-str model))))
 
 (defn main () (build "Leaf"))

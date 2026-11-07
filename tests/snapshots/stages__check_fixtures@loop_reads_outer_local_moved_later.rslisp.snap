@@ -8,11 +8,11 @@ error[L0501]: use of moved value `g`
    |
 10 |                  (println (:owner g))
    |                                   ^ value used here after an earlier pass of the loop moved it
-11 |                  (let b g)
-   |                         - value moved here, in an earlier pass of the loop
+11 |                  (local b g)
+   |                           - value moved here, in an earlier pass of the loop
    |
 help: clone the value if both places need it
    |
-11 -                  (let b g)
-11 +                  (let b (clone g))
+11 -                  (local b g)
+11 +                  (local b (clone g))
    |

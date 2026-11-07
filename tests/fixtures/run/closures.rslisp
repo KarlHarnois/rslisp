@@ -3,7 +3,7 @@
 (defn apply-to-ten (f) (f 10))
 
 (defn main ()
-  (let add-five (adder 5))
+  (local add-five (adder 5))
   (println (add-five 1))
   (println (apply-to-ten add-five))
   (println (apply-to-ten (fn (x) (* x 3)))))

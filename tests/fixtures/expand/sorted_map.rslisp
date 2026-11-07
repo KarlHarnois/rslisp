@@ -1,13 +1,13 @@
 (defn main ()
-  (let m (sorted-map "a" 1))
-  (let found (get m "a"))
+  (local m (sorted-map "a" 1))
+  (local found (get m "a"))
   (for-each (keys m)
             (fn (key) (println key)))
   (for-each (vals m)
             (fn (value) (println value)))
   (for-each (iter m)
             (fn (entry) (println entry)))
-  (let next
+  (local next
     (update m "a" (fn (n) (+ n 1)) 0))
   (set! (at next "a") 2)
   (println found))

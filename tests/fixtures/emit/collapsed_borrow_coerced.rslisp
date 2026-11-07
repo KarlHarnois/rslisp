@@ -16,22 +16,22 @@
 (defn count-items (items) (len items))
 
 (defn main ()
-  (let number 1)
-  (let inner (ref number))
-  (let outer (ref inner))
-  (let equal
+  (local number 1)
+  (local inner (ref number))
+  (local outer (ref inner))
+  (local equal
     (fn (left right) (= left right)))
   (println (equal outer outer))
   (println (check-both outer outer
                        (fn (left right) (= left right))))
   (println (total outer))
-  (let items (vec 1 2))
-  (let view (ref items))
-  (let deep-view (ref view))
+  (local items (vec 1 2))
+  (local view (ref items))
+  (local deep-view (ref view))
   (println (count-items deep-view))
-  (let names (vec "a" "b"))
+  (local names (vec "a" "b"))
   (push! names "c")
-  (let matches
+  (local matches
     (collect (map (iter names)
                   (fn (name) (= name "a")))))
   (println (len matches)))

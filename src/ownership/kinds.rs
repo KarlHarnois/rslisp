@@ -1728,10 +1728,10 @@ mod tests {
         const NESTED_CLOSURES: &str = "
             (defn keep (model) model)
             (defn main ()
-              (let model (str \"Leaf\"))
-              (let make (str \"Nissan\"))
-              (let announce (fn ()
-                (let shown (fn () (keep model)))
+              (local model (str \"Leaf\"))
+              (local make (str \"Nissan\"))
+              (local announce (fn ()
+                (local shown (fn () (keep model)))
                 (shown)))
               (announce))";
 

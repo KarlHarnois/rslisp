@@ -83,7 +83,7 @@
     (vec (pair point point))))
 
 (defn edges (corners)
-  (let count (len corners))
+  (local count (len corners))
   (collect (map (range 0 count)
                 (fn (index)
                   (pair (deref (at corners index))
@@ -92,8 +92,8 @@
 (type distance (fn (point point) f64))
 
 (defn distance (from to)
-  (let dx (- (:x to) (:x from)))
-  (let dy (- (:y to) (:y from)))
+  (local dx (- (:x to) (:x from)))
+  (local dy (- (:y to) (:y from)))
   (sqrt (+ (* dx dx) (* dy dy))))
 
 (type cross (fn (point point point) f64))

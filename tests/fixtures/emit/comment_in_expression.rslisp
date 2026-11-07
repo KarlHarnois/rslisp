@@ -1,6 +1,6 @@
 (comment (println "scratch"))
 
 (defn main ()
-  (let marker (comment (println "scratch")))
+  (local marker (comment (println "scratch")))
   (comment)
   (println "after"))

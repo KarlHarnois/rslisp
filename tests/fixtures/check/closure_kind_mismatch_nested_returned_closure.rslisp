@@ -5,8 +5,8 @@
 (defn keep (model) model)
 
 (defn main ()
-  (let model (str "Leaf"))
-  (let outer
+  (local model (str "Leaf"))
+  (local outer
     (fn () (fn () (fn () (keep model)))))
-  (let middle (outer))
+  (local middle (outer))
   (println (twice (middle))))

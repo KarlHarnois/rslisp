@@ -10,8 +10,8 @@
   (ref (:count crate)))
 
 (deftest deref-of-a-local
-  (let number 1)
-  (let borrowed (ref number))
+  (local number 1)
+  (local borrowed (ref number))
   (assert (= (deref borrowed) 1)))
 
 (type holds-one (fn ((ref i64)) unit))
@@ -22,7 +22,7 @@
 (deftest deref-of-a-parameter (holds-one (ref 1)))
 
 (deftest deref-of-a-call
-  (let crate (->crate-of :count 1))
+  (local crate (->crate-of :count 1))
   (assert (= (deref (count-of crate)) 1)))
 
 (defn main () (run-tests :marker "<record>"))

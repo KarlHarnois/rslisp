@@ -7,8 +7,8 @@
   :label str)
 
 (defn main ()
-  (let bonus 2)
-  (let by-age
+  (local bonus 2)
+  (local by-age
     (new sorter
       (:key (fn (someone) (+ (:age someone) bonus)))
       (:label "by age")))

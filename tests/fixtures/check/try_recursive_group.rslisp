@@ -2,7 +2,7 @@
   (ok (try (parse text))))
 
 (defn parse-expression (text)
-  (let parsed (try (parse-number text)))
+  (local parsed (try (parse-number text)))
   (ok (pair parsed 0)))
 
 (defn parse (text)

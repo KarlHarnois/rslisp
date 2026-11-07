@@ -17,8 +17,8 @@ const GREETING: &str = "(defn main ()\n  (println \"hello from the sandbox\"))\n
 const PRINTS_A: &str = "(defn main () (println \"A\"))\n";
 const PRINTS_B: &str = "(defn main () (println \"B\"))\n";
 const MARKED_PROGRAM: &str = "\u{feff}(defn main () (println 1))\n";
-const FAILED_MAIN: &str = "(defn fails () (the (result i64 string) (err (str \"boom\"))))\n(defn main () (let value (try (fails))) (ok value))\n";
-const REPORTING_MAIN: &str = "(defn works () (the (result i64 string) (ok 1)))\n(defn main ()\n  (eprintln \"working\")\n  (let value (try (works)))\n  (ok value))\n";
+const FAILED_MAIN: &str = "(defn fails () (the (result i64 string) (err (str \"boom\"))))\n(defn main () (local value (try (fails))) (ok value))\n";
+const REPORTING_MAIN: &str = "(defn works () (the (result i64 string) (ok 1)))\n(defn main ()\n  (eprintln \"working\")\n  (local value (try (works)))\n  (ok value))\n";
 const ERROR_ONLY_MAIN: &str = "(defn main () (eprintln \"only\"))\n";
 const UNWRAPPED_FAILURE: &str = "(defstruct failure :line i64)
 (defn main ()
@@ -2063,7 +2063,7 @@ fn eval_runs_every_form_once_in_order_as_one_body() {
     let eval = sandbox.compiler(&[
         "eval",
         "session.rslisp",
-        "(let x 5) (println \"x\") (* x 2) (main)",
+        "(local x 5) (println \"x\") (* x 2) (main)",
     ]);
     assert_eq!(
         eval.assert_silent_success().stdout(),
@@ -2386,7 +2386,7 @@ fn eval_prints_a_warning_of_a_form_inside_a_definition_once() {
 #[test]
 fn eval_prints_a_value_behind_a_mutable_borrow() {
     let sandbox = Sandbox::new("eval_mutable").with_file("session.rslisp", SESSION);
-    let eval = sandbox.compiler(&["eval", "session.rslisp", "(let v (vec 1)) (mut v)"]);
+    let eval = sandbox.compiler(&["eval", "session.rslisp", "(local v (vec 1)) (mut v)"]);
     assert_eq!(eval.assert_silent_success().stdout(), "(vec 1)\n");
 }
 

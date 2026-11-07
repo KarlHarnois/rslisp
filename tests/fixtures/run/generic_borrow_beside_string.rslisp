@@ -5,6 +5,6 @@
 (defn later? (a b) (> a b))
 
 (defn main ()
-  (let model (str "Leaf"))
+  (local model (str "Leaf"))
   (println (later? "Civic" (ref model)))
   (println (later? (ref model) (str "Civic"))))

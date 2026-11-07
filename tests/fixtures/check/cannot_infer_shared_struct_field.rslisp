@@ -3,6 +3,6 @@
         (right (vec a)))
 
 (defn main ()
-  (let held
+  (local held
     (new twin (left (vec)) (right (vec))))
   (println "done"))

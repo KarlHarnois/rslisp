@@ -4,9 +4,9 @@ expression: reports.report(path)
 input_file: tests/fixtures/expand/def_as_value.rslisp
 ---
 error[L0211]: `def` is a form, not a value
- --> expand/def_as_value.rslisp:2:10
+ --> expand/def_as_value.rslisp:2:12
   |
-2 |   (let d def)
-  |          ^^^ used as a value here
+2 |   (local d def)
+  |            ^^^ used as a value here
   |
   = help: write it as `(def name value)`

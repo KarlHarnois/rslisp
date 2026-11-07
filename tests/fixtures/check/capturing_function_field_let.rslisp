@@ -7,11 +7,11 @@
   :label str)
 
 (defn main ()
-  (let bonus 2)
-  (let key
+  (local bonus 2)
+  (local key
     (fn ((someone (ref user)))
       (+ (:age someone) bonus)))
-  (let by-bonus
+  (local by-bonus
     (new sorter (:key key) (:label "by bonus")))
   (println (:label by-bonus)))
 
@@ -19,9 +19,9 @@
   (new sorter (:key key) (:label label)))
 
 (defn rebound ()
-  (let bonus 3)
-  (let key
+  (local bonus 3)
+  (local key
     (fn ((someone (ref user)))
       (+ (:age someone) bonus)))
-  (let chosen key)
+  (local chosen key)
   (println (:label (by-key chosen "rebound"))))

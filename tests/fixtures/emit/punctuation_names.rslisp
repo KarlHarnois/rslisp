@@ -13,8 +13,8 @@
 (def max-size 10)
 
 (defn main ()
-  (let a-b (- _ (\)))
-  (let a_b (+ (`) (,)))
+  (local a-b (- _ (\)))
+  (local a_b (+ (`) (,)))
   (println (add-one max-size))
   (println a-b)
   (println a_b))

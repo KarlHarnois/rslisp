@@ -196,8 +196,8 @@
   (byte-link-2 (+ x 0)))
 
 (defn byte-link-2 (x)
-  (let step 1)
-  (let next (+ x step))
+  (local step 1)
+  (local next (+ x step))
   (byte-link-3 next))
 
 (defn byte-link-3 (x)
@@ -209,8 +209,8 @@
   (byte-link-5 (+ x 0)))
 
 (defn byte-link-5 (x)
-  (let step 1)
-  (let next (+ x step))
+  (local step 1)
+  (local next (+ x step))
   (byte-link-6 next))
 
 (defn byte-link-6 (x)
@@ -222,8 +222,8 @@
   (byte-link-8 (+ x 0)))
 
 (defn byte-link-8 (x)
-  (let step 1)
-  (let next (+ x step))
+  (local step 1)
+  (local next (+ x step))
   (byte-link-9 next))
 
 (defn byte-link-9 (x)
@@ -235,8 +235,8 @@
   (byte-link-11 (+ x 0)))
 
 (defn byte-link-11 (x)
-  (let step 1)
-  (let next (+ x step))
+  (local step 1)
+  (local next (+ x step))
   (byte-link-12 next))
 
 (defn byte-link-12 (x)
@@ -248,8 +248,8 @@
   (byte-link-14 (+ x 0)))
 
 (defn byte-link-14 (x)
-  (let step 1)
-  (let next (+ x step))
+  (local step 1)
+  (local next (+ x step))
   (byte-link-15 next))
 
 (defn byte-link-15 (x)
@@ -261,8 +261,8 @@
   (byte-link-17 (+ x 0)))
 
 (defn byte-link-17 (x)
-  (let step 1)
-  (let next (+ x step))
+  (local step 1)
+  (local next (+ x step))
   (byte-link-18 next))
 
 (defn byte-link-18 (x)
@@ -274,8 +274,8 @@
   (byte-link-20 (+ x 0)))
 
 (defn byte-link-20 (x)
-  (let step 1)
-  (let next (+ x step))
+  (local step 1)
+  (local next (+ x step))
   (byte-link-21 next))
 
 (defn byte-link-21 (x)
@@ -287,8 +287,8 @@
   (byte-link-23 (+ x 0)))
 
 (defn byte-link-23 (x)
-  (let step 1)
-  (let next (+ x step))
+  (local step 1)
+  (local next (+ x step))
   (byte-link-24 next))
 
 (defn byte-link-24 (x)
@@ -300,8 +300,8 @@
   (byte-link-26 (+ x 0)))
 
 (defn byte-link-26 (x)
-  (let step 1)
-  (let next (+ x step))
+  (local step 1)
+  (local next (+ x step))
   (byte-link-27 next))
 
 (defn byte-link-27 (x)
@@ -313,8 +313,8 @@
   (byte-link-29 (+ x 0)))
 
 (defn byte-link-29 (x)
-  (let step 1)
-  (let next (+ x step))
+  (local step 1)
+  (local next (+ x step))
   (byte-link-30 next))
 
 (defn byte-link-30 (x)
@@ -326,8 +326,8 @@
   (byte-link-32 (+ x 0)))
 
 (defn byte-link-32 (x)
-  (let step 1)
-  (let next (+ x step))
+  (local step 1)
+  (local next (+ x step))
   (byte-link-33 next))
 
 (defn byte-link-33 (x)
@@ -339,8 +339,8 @@
   (byte-link-35 (+ x 0)))
 
 (defn byte-link-35 (x)
-  (let step 1)
-  (let next (+ x step))
+  (local step 1)
+  (local next (+ x step))
   (byte-link-36 next))
 
 (defn byte-link-36 (x)
@@ -352,8 +352,8 @@
   (byte-link-38 (+ x 0)))
 
 (defn byte-link-38 (x)
-  (let step 1)
-  (let next (+ x step))
+  (local step 1)
+  (local next (+ x step))
   (byte-link-39 next))
 
 (defn byte-link-39 (x)
@@ -365,8 +365,8 @@
   (byte-link-41 (+ x 0)))
 
 (defn byte-link-41 (x)
-  (let step 1)
-  (let next (+ x step))
+  (local step 1)
+  (local next (+ x step))
   (byte-link-42 next))
 
 (defn byte-link-42 (x)
@@ -378,8 +378,8 @@
   (byte-link-44 (+ x 0)))
 
 (defn byte-link-44 (x)
-  (let step 1)
-  (let next (+ x step))
+  (local step 1)
+  (local next (+ x step))
   (byte-link-45 next))
 
 (defn byte-link-45 (x)
@@ -391,8 +391,8 @@
   (byte-link-47 (+ x 0)))
 
 (defn byte-link-47 (x)
-  (let step 1)
-  (let next (+ x step))
+  (local step 1)
+  (local next (+ x step))
   (byte-link-48 next))
 
 (defn byte-link-48 (x)
@@ -404,8 +404,8 @@
   (byte-link-50 (+ x 0)))
 
 (defn byte-link-50 (x)
-  (let step 1)
-  (let next (+ x step))
+  (local step 1)
+  (local next (+ x step))
   (byte-link-51 next))
 
 (defn byte-link-51 (x)
@@ -417,8 +417,8 @@
   (byte-link-53 (+ x 0)))
 
 (defn byte-link-53 (x)
-  (let step 1)
-  (let next (+ x step))
+  (local step 1)
+  (local next (+ x step))
   (byte-link-54 next))
 
 (defn byte-link-54 (x)
@@ -430,8 +430,8 @@
   (byte-link-56 (+ x 0)))
 
 (defn byte-link-56 (x)
-  (let step 1)
-  (let next (+ x step))
+  (local step 1)
+  (local next (+ x step))
   (byte-link-57 next))
 
 (defn byte-link-57 (x)
@@ -443,8 +443,8 @@
   (byte-link-59 (+ x 0)))
 
 (defn byte-link-59 (x)
-  (let step 1)
-  (let next (+ x step))
+  (local step 1)
+  (local next (+ x step))
   (byte-link-60 next))
 
 (defn byte-link-60 (x)
@@ -490,8 +490,8 @@
   (port-link-2 (+ x 0)))
 
 (defn port-link-2 (x)
-  (let step 1)
-  (let next (+ x step))
+  (local step 1)
+  (local next (+ x step))
   (port-link-3 next))
 
 (defn port-link-3 (x)
@@ -503,8 +503,8 @@
   (port-link-5 (+ x 0)))
 
 (defn port-link-5 (x)
-  (let step 1)
-  (let next (+ x step))
+  (local step 1)
+  (local next (+ x step))
   (port-link-6 next))
 
 (defn port-link-6 (x)
@@ -516,8 +516,8 @@
   (port-link-8 (+ x 0)))
 
 (defn port-link-8 (x)
-  (let step 1)
-  (let next (+ x step))
+  (local step 1)
+  (local next (+ x step))
   (port-link-9 next))
 
 (defn port-link-9 (x)
@@ -529,8 +529,8 @@
   (port-link-11 (+ x 0)))
 
 (defn port-link-11 (x)
-  (let step 1)
-  (let next (+ x step))
+  (local step 1)
+  (local next (+ x step))
   (port-link-12 next))
 
 (defn port-link-12 (x)
@@ -542,8 +542,8 @@
   (port-link-14 (+ x 0)))
 
 (defn port-link-14 (x)
-  (let step 1)
-  (let next (+ x step))
+  (local step 1)
+  (local next (+ x step))
   (port-link-15 next))
 
 (defn port-link-15 (x)
@@ -555,8 +555,8 @@
   (port-link-17 (+ x 0)))
 
 (defn port-link-17 (x)
-  (let step 1)
-  (let next (+ x step))
+  (local step 1)
+  (local next (+ x step))
   (port-link-18 next))
 
 (defn port-link-18 (x)
@@ -568,8 +568,8 @@
   (port-link-20 (+ x 0)))
 
 (defn port-link-20 (x)
-  (let step 1)
-  (let next (+ x step))
+  (local step 1)
+  (local next (+ x step))
   (port-link-21 next))
 
 (defn port-link-21 (x)
@@ -581,8 +581,8 @@
   (port-link-23 (+ x 0)))
 
 (defn port-link-23 (x)
-  (let step 1)
-  (let next (+ x step))
+  (local step 1)
+  (local next (+ x step))
   (port-link-24 next))
 
 (defn port-link-24 (x)
@@ -594,8 +594,8 @@
   (port-link-26 (+ x 0)))
 
 (defn port-link-26 (x)
-  (let step 1)
-  (let next (+ x step))
+  (local step 1)
+  (local next (+ x step))
   (port-link-27 next))
 
 (defn port-link-27 (x)
@@ -607,8 +607,8 @@
   (port-link-29 (+ x 0)))
 
 (defn port-link-29 (x)
-  (let step 1)
-  (let next (+ x step))
+  (local step 1)
+  (local next (+ x step))
   (port-link-30 next))
 
 (defn port-link-30 (x)
@@ -620,8 +620,8 @@
   (port-link-32 (+ x 0)))
 
 (defn port-link-32 (x)
-  (let step 1)
-  (let next (+ x step))
+  (local step 1)
+  (local next (+ x step))
   (port-link-33 next))
 
 (defn port-link-33 (x)
@@ -633,8 +633,8 @@
   (port-link-35 (+ x 0)))
 
 (defn port-link-35 (x)
-  (let step 1)
-  (let next (+ x step))
+  (local step 1)
+  (local next (+ x step))
   (port-link-36 next))
 
 (defn port-link-36 (x)
@@ -646,8 +646,8 @@
   (port-link-38 (+ x 0)))
 
 (defn port-link-38 (x)
-  (let step 1)
-  (let next (+ x step))
+  (local step 1)
+  (local next (+ x step))
   (port-link-39 next))
 
 (defn port-link-39 (x)
@@ -659,8 +659,8 @@
   (port-link-41 (+ x 0)))
 
 (defn port-link-41 (x)
-  (let step 1)
-  (let next (+ x step))
+  (local step 1)
+  (local next (+ x step))
   (port-link-42 next))
 
 (defn port-link-42 (x)
@@ -672,8 +672,8 @@
   (port-link-44 (+ x 0)))
 
 (defn port-link-44 (x)
-  (let step 1)
-  (let next (+ x step))
+  (local step 1)
+  (local next (+ x step))
   (port-link-45 next))
 
 (defn port-link-45 (x)
@@ -685,8 +685,8 @@
   (port-link-47 (+ x 0)))
 
 (defn port-link-47 (x)
-  (let step 1)
-  (let next (+ x step))
+  (local step 1)
+  (local next (+ x step))
   (port-link-48 next))
 
 (defn port-link-48 (x)
@@ -698,8 +698,8 @@
   (port-link-50 (+ x 0)))
 
 (defn port-link-50 (x)
-  (let step 1)
-  (let next (+ x step))
+  (local step 1)
+  (local next (+ x step))
   (port-link-51 next))
 
 (defn port-link-51 (x)
@@ -711,8 +711,8 @@
   (port-link-53 (+ x 0)))
 
 (defn port-link-53 (x)
-  (let step 1)
-  (let next (+ x step))
+  (local step 1)
+  (local next (+ x step))
   (port-link-54 next))
 
 (defn port-link-54 (x)
@@ -724,8 +724,8 @@
   (port-link-56 (+ x 0)))
 
 (defn port-link-56 (x)
-  (let step 1)
-  (let next (+ x step))
+  (local step 1)
+  (local next (+ x step))
   (port-link-57 next))
 
 (defn port-link-57 (x)
@@ -737,8 +737,8 @@
   (port-link-59 (+ x 0)))
 
 (defn port-link-59 (x)
-  (let step 1)
-  (let next (+ x step))
+  (local step 1)
+  (local next (+ x step))
   (port-link-60 next))
 
 (defn port-link-60 (x)
@@ -784,8 +784,8 @@
   (count-link-2 (+ x 0)))
 
 (defn count-link-2 (x)
-  (let step 1)
-  (let next (+ x step))
+  (local step 1)
+  (local next (+ x step))
   (count-link-3 next))
 
 (defn count-link-3 (x)
@@ -797,8 +797,8 @@
   (count-link-5 (+ x 0)))
 
 (defn count-link-5 (x)
-  (let step 1)
-  (let next (+ x step))
+  (local step 1)
+  (local next (+ x step))
   (count-link-6 next))
 
 (defn count-link-6 (x)
@@ -810,8 +810,8 @@
   (count-link-8 (+ x 0)))
 
 (defn count-link-8 (x)
-  (let step 1)
-  (let next (+ x step))
+  (local step 1)
+  (local next (+ x step))
   (count-link-9 next))
 
 (defn count-link-9 (x)
@@ -823,8 +823,8 @@
   (count-link-11 (+ x 0)))
 
 (defn count-link-11 (x)
-  (let step 1)
-  (let next (+ x step))
+  (local step 1)
+  (local next (+ x step))
   (count-link-12 next))
 
 (defn count-link-12 (x)
@@ -836,8 +836,8 @@
   (count-link-14 (+ x 0)))
 
 (defn count-link-14 (x)
-  (let step 1)
-  (let next (+ x step))
+  (local step 1)
+  (local next (+ x step))
   (count-link-15 next))
 
 (defn count-link-15 (x)
@@ -849,8 +849,8 @@
   (count-link-17 (+ x 0)))
 
 (defn count-link-17 (x)
-  (let step 1)
-  (let next (+ x step))
+  (local step 1)
+  (local next (+ x step))
   (count-link-18 next))
 
 (defn count-link-18 (x)
@@ -862,8 +862,8 @@
   (count-link-20 (+ x 0)))
 
 (defn count-link-20 (x)
-  (let step 1)
-  (let next (+ x step))
+  (local step 1)
+  (local next (+ x step))
   (count-link-21 next))
 
 (defn count-link-21 (x)
@@ -875,8 +875,8 @@
   (count-link-23 (+ x 0)))
 
 (defn count-link-23 (x)
-  (let step 1)
-  (let next (+ x step))
+  (local step 1)
+  (local next (+ x step))
   (count-link-24 next))
 
 (defn count-link-24 (x)
@@ -888,8 +888,8 @@
   (count-link-26 (+ x 0)))
 
 (defn count-link-26 (x)
-  (let step 1)
-  (let next (+ x step))
+  (local step 1)
+  (local next (+ x step))
   (count-link-27 next))
 
 (defn count-link-27 (x)
@@ -901,8 +901,8 @@
   (count-link-29 (+ x 0)))
 
 (defn count-link-29 (x)
-  (let step 1)
-  (let next (+ x step))
+  (local step 1)
+  (local next (+ x step))
   (count-link-30 next))
 
 (defn count-link-30 (x)
@@ -914,8 +914,8 @@
   (count-link-32 (+ x 0)))
 
 (defn count-link-32 (x)
-  (let step 1)
-  (let next (+ x step))
+  (local step 1)
+  (local next (+ x step))
   (count-link-33 next))
 
 (defn count-link-33 (x)
@@ -927,8 +927,8 @@
   (count-link-35 (+ x 0)))
 
 (defn count-link-35 (x)
-  (let step 1)
-  (let next (+ x step))
+  (local step 1)
+  (local next (+ x step))
   (count-link-36 next))
 
 (defn count-link-36 (x)
@@ -940,8 +940,8 @@
   (count-link-38 (+ x 0)))
 
 (defn count-link-38 (x)
-  (let step 1)
-  (let next (+ x step))
+  (local step 1)
+  (local next (+ x step))
   (count-link-39 next))
 
 (defn count-link-39 (x)
@@ -953,8 +953,8 @@
   (count-link-41 (+ x 0)))
 
 (defn count-link-41 (x)
-  (let step 1)
-  (let next (+ x step))
+  (local step 1)
+  (local next (+ x step))
   (count-link-42 next))
 
 (defn count-link-42 (x)
@@ -966,8 +966,8 @@
   (count-link-44 (+ x 0)))
 
 (defn count-link-44 (x)
-  (let step 1)
-  (let next (+ x step))
+  (local step 1)
+  (local next (+ x step))
   (count-link-45 next))
 
 (defn count-link-45 (x)
@@ -979,8 +979,8 @@
   (count-link-47 (+ x 0)))
 
 (defn count-link-47 (x)
-  (let step 1)
-  (let next (+ x step))
+  (local step 1)
+  (local next (+ x step))
   (count-link-48 next))
 
 (defn count-link-48 (x)
@@ -992,8 +992,8 @@
   (count-link-50 (+ x 0)))
 
 (defn count-link-50 (x)
-  (let step 1)
-  (let next (+ x step))
+  (local step 1)
+  (local next (+ x step))
   (count-link-51 next))
 
 (defn count-link-51 (x)
@@ -1005,8 +1005,8 @@
   (count-link-53 (+ x 0)))
 
 (defn count-link-53 (x)
-  (let step 1)
-  (let next (+ x step))
+  (local step 1)
+  (local next (+ x step))
   (count-link-54 next))
 
 (defn count-link-54 (x)
@@ -1018,8 +1018,8 @@
   (count-link-56 (+ x 0)))
 
 (defn count-link-56 (x)
-  (let step 1)
-  (let next (+ x step))
+  (local step 1)
+  (local next (+ x step))
   (count-link-57 next))
 
 (defn count-link-57 (x)
@@ -1031,8 +1031,8 @@
   (count-link-59 (+ x 0)))
 
 (defn count-link-59 (x)
-  (let step 1)
-  (let next (+ x step))
+  (local step 1)
+  (local next (+ x step))
   (count-link-60 next))
 
 (defn count-link-60 (x)
@@ -1078,8 +1078,8 @@
   (offset-link-2 (+ x 0)))
 
 (defn offset-link-2 (x)
-  (let step 1)
-  (let next (+ x step))
+  (local step 1)
+  (local next (+ x step))
   (offset-link-3 next))
 
 (defn offset-link-3 (x)
@@ -1091,8 +1091,8 @@
   (offset-link-5 (+ x 0)))
 
 (defn offset-link-5 (x)
-  (let step 1)
-  (let next (+ x step))
+  (local step 1)
+  (local next (+ x step))
   (offset-link-6 next))
 
 (defn offset-link-6 (x)
@@ -1104,8 +1104,8 @@
   (offset-link-8 (+ x 0)))
 
 (defn offset-link-8 (x)
-  (let step 1)
-  (let next (+ x step))
+  (local step 1)
+  (local next (+ x step))
   (offset-link-9 next))
 
 (defn offset-link-9 (x)
@@ -1117,8 +1117,8 @@
   (offset-link-11 (+ x 0)))
 
 (defn offset-link-11 (x)
-  (let step 1)
-  (let next (+ x step))
+  (local step 1)
+  (local next (+ x step))
   (offset-link-12 next))
 
 (defn offset-link-12 (x)
@@ -1130,8 +1130,8 @@
   (offset-link-14 (+ x 0)))
 
 (defn offset-link-14 (x)
-  (let step 1)
-  (let next (+ x step))
+  (local step 1)
+  (local next (+ x step))
   (offset-link-15 next))
 
 (defn offset-link-15 (x)
@@ -1143,8 +1143,8 @@
   (offset-link-17 (+ x 0)))
 
 (defn offset-link-17 (x)
-  (let step 1)
-  (let next (+ x step))
+  (local step 1)
+  (local next (+ x step))
   (offset-link-18 next))
 
 (defn offset-link-18 (x)
@@ -1156,8 +1156,8 @@
   (offset-link-20 (+ x 0)))
 
 (defn offset-link-20 (x)
-  (let step 1)
-  (let next (+ x step))
+  (local step 1)
+  (local next (+ x step))
   (offset-link-21 next))
 
 (defn offset-link-21 (x)
@@ -1169,8 +1169,8 @@
   (offset-link-23 (+ x 0)))
 
 (defn offset-link-23 (x)
-  (let step 1)
-  (let next (+ x step))
+  (local step 1)
+  (local next (+ x step))
   (offset-link-24 next))
 
 (defn offset-link-24 (x)
@@ -1182,8 +1182,8 @@
   (offset-link-26 (+ x 0)))
 
 (defn offset-link-26 (x)
-  (let step 1)
-  (let next (+ x step))
+  (local step 1)
+  (local next (+ x step))
   (offset-link-27 next))
 
 (defn offset-link-27 (x)
@@ -1195,8 +1195,8 @@
   (offset-link-29 (+ x 0)))
 
 (defn offset-link-29 (x)
-  (let step 1)
-  (let next (+ x step))
+  (local step 1)
+  (local next (+ x step))
   (offset-link-30 next))
 
 (defn offset-link-30 (x)
@@ -1208,8 +1208,8 @@
   (offset-link-32 (+ x 0)))
 
 (defn offset-link-32 (x)
-  (let step 1)
-  (let next (+ x step))
+  (local step 1)
+  (local next (+ x step))
   (offset-link-33 next))
 
 (defn offset-link-33 (x)
@@ -1221,8 +1221,8 @@
   (offset-link-35 (+ x 0)))
 
 (defn offset-link-35 (x)
-  (let step 1)
-  (let next (+ x step))
+  (local step 1)
+  (local next (+ x step))
   (offset-link-36 next))
 
 (defn offset-link-36 (x)
@@ -1234,8 +1234,8 @@
   (offset-link-38 (+ x 0)))
 
 (defn offset-link-38 (x)
-  (let step 1)
-  (let next (+ x step))
+  (local step 1)
+  (local next (+ x step))
   (offset-link-39 next))
 
 (defn offset-link-39 (x)
@@ -1247,8 +1247,8 @@
   (offset-link-41 (+ x 0)))
 
 (defn offset-link-41 (x)
-  (let step 1)
-  (let next (+ x step))
+  (local step 1)
+  (local next (+ x step))
   (offset-link-42 next))
 
 (defn offset-link-42 (x)
@@ -1260,8 +1260,8 @@
   (offset-link-44 (+ x 0)))
 
 (defn offset-link-44 (x)
-  (let step 1)
-  (let next (+ x step))
+  (local step 1)
+  (local next (+ x step))
   (offset-link-45 next))
 
 (defn offset-link-45 (x)
@@ -1273,8 +1273,8 @@
   (offset-link-47 (+ x 0)))
 
 (defn offset-link-47 (x)
-  (let step 1)
-  (let next (+ x step))
+  (local step 1)
+  (local next (+ x step))
   (offset-link-48 next))
 
 (defn offset-link-48 (x)
@@ -1286,8 +1286,8 @@
   (offset-link-50 (+ x 0)))
 
 (defn offset-link-50 (x)
-  (let step 1)
-  (let next (+ x step))
+  (local step 1)
+  (local next (+ x step))
   (offset-link-51 next))
 
 (defn offset-link-51 (x)
@@ -1299,8 +1299,8 @@
   (offset-link-53 (+ x 0)))
 
 (defn offset-link-53 (x)
-  (let step 1)
-  (let next (+ x step))
+  (local step 1)
+  (local next (+ x step))
   (offset-link-54 next))
 
 (defn offset-link-54 (x)
@@ -1312,8 +1312,8 @@
   (offset-link-56 (+ x 0)))
 
 (defn offset-link-56 (x)
-  (let step 1)
-  (let next (+ x step))
+  (local step 1)
+  (local next (+ x step))
   (offset-link-57 next))
 
 (defn offset-link-57 (x)
@@ -1325,8 +1325,8 @@
   (offset-link-59 (+ x 0)))
 
 (defn offset-link-59 (x)
-  (let step 1)
-  (let next (+ x step))
+  (local step 1)
+  (local next (+ x step))
   (offset-link-60 next))
 
 (defn offset-link-60 (x)
@@ -1372,8 +1372,8 @@
   (index-link-2 (+ x 0)))
 
 (defn index-link-2 (x)
-  (let step 1)
-  (let next (+ x step))
+  (local step 1)
+  (local next (+ x step))
   (index-link-3 next))
 
 (defn index-link-3 (x)
@@ -1385,8 +1385,8 @@
   (index-link-5 (+ x 0)))
 
 (defn index-link-5 (x)
-  (let step 1)
-  (let next (+ x step))
+  (local step 1)
+  (local next (+ x step))
   (index-link-6 next))
 
 (defn index-link-6 (x)
@@ -1398,8 +1398,8 @@
   (index-link-8 (+ x 0)))
 
 (defn index-link-8 (x)
-  (let step 1)
-  (let next (+ x step))
+  (local step 1)
+  (local next (+ x step))
   (index-link-9 next))
 
 (defn index-link-9 (x)
@@ -1411,8 +1411,8 @@
   (index-link-11 (+ x 0)))
 
 (defn index-link-11 (x)
-  (let step 1)
-  (let next (+ x step))
+  (local step 1)
+  (local next (+ x step))
   (index-link-12 next))
 
 (defn index-link-12 (x)
@@ -1424,8 +1424,8 @@
   (index-link-14 (+ x 0)))
 
 (defn index-link-14 (x)
-  (let step 1)
-  (let next (+ x step))
+  (local step 1)
+  (local next (+ x step))
   (index-link-15 next))
 
 (defn index-link-15 (x)
@@ -1437,8 +1437,8 @@
   (index-link-17 (+ x 0)))
 
 (defn index-link-17 (x)
-  (let step 1)
-  (let next (+ x step))
+  (local step 1)
+  (local next (+ x step))
   (index-link-18 next))
 
 (defn index-link-18 (x)
@@ -1450,8 +1450,8 @@
   (index-link-20 (+ x 0)))
 
 (defn index-link-20 (x)
-  (let step 1)
-  (let next (+ x step))
+  (local step 1)
+  (local next (+ x step))
   (index-link-21 next))
 
 (defn index-link-21 (x)
@@ -1463,8 +1463,8 @@
   (index-link-23 (+ x 0)))
 
 (defn index-link-23 (x)
-  (let step 1)
-  (let next (+ x step))
+  (local step 1)
+  (local next (+ x step))
   (index-link-24 next))
 
 (defn index-link-24 (x)
@@ -1476,8 +1476,8 @@
   (index-link-26 (+ x 0)))
 
 (defn index-link-26 (x)
-  (let step 1)
-  (let next (+ x step))
+  (local step 1)
+  (local next (+ x step))
   (index-link-27 next))
 
 (defn index-link-27 (x)
@@ -1489,8 +1489,8 @@
   (index-link-29 (+ x 0)))
 
 (defn index-link-29 (x)
-  (let step 1)
-  (let next (+ x step))
+  (local step 1)
+  (local next (+ x step))
   (index-link-30 next))
 
 (defn index-link-30 (x)
@@ -1502,8 +1502,8 @@
   (index-link-32 (+ x 0)))
 
 (defn index-link-32 (x)
-  (let step 1)
-  (let next (+ x step))
+  (local step 1)
+  (local next (+ x step))
   (index-link-33 next))
 
 (defn index-link-33 (x)
@@ -1515,8 +1515,8 @@
   (index-link-35 (+ x 0)))
 
 (defn index-link-35 (x)
-  (let step 1)
-  (let next (+ x step))
+  (local step 1)
+  (local next (+ x step))
   (index-link-36 next))
 
 (defn index-link-36 (x)
@@ -1528,8 +1528,8 @@
   (index-link-38 (+ x 0)))
 
 (defn index-link-38 (x)
-  (let step 1)
-  (let next (+ x step))
+  (local step 1)
+  (local next (+ x step))
   (index-link-39 next))
 
 (defn index-link-39 (x)
@@ -1541,8 +1541,8 @@
   (index-link-41 (+ x 0)))
 
 (defn index-link-41 (x)
-  (let step 1)
-  (let next (+ x step))
+  (local step 1)
+  (local next (+ x step))
   (index-link-42 next))
 
 (defn index-link-42 (x)
@@ -1554,8 +1554,8 @@
   (index-link-44 (+ x 0)))
 
 (defn index-link-44 (x)
-  (let step 1)
-  (let next (+ x step))
+  (local step 1)
+  (local next (+ x step))
   (index-link-45 next))
 
 (defn index-link-45 (x)
@@ -1567,8 +1567,8 @@
   (index-link-47 (+ x 0)))
 
 (defn index-link-47 (x)
-  (let step 1)
-  (let next (+ x step))
+  (local step 1)
+  (local next (+ x step))
   (index-link-48 next))
 
 (defn index-link-48 (x)
@@ -1580,8 +1580,8 @@
   (index-link-50 (+ x 0)))
 
 (defn index-link-50 (x)
-  (let step 1)
-  (let next (+ x step))
+  (local step 1)
+  (local next (+ x step))
   (index-link-51 next))
 
 (defn index-link-51 (x)
@@ -1593,8 +1593,8 @@
   (index-link-53 (+ x 0)))
 
 (defn index-link-53 (x)
-  (let step 1)
-  (let next (+ x step))
+  (local step 1)
+  (local next (+ x step))
   (index-link-54 next))
 
 (defn index-link-54 (x)
@@ -1606,8 +1606,8 @@
   (index-link-56 (+ x 0)))
 
 (defn index-link-56 (x)
-  (let step 1)
-  (let next (+ x step))
+  (local step 1)
+  (local next (+ x step))
   (index-link-57 next))
 
 (defn index-link-57 (x)
@@ -1619,8 +1619,8 @@
   (index-link-59 (+ x 0)))
 
 (defn index-link-59 (x)
-  (let step 1)
-  (let next (+ x step))
+  (local step 1)
+  (local next (+ x step))
   (index-link-60 next))
 
 (defn index-link-60 (x)
@@ -1666,8 +1666,8 @@
   (ratio-link-2 (+ x 0.5)))
 
 (defn ratio-link-2 (x)
-  (let step 1.5)
-  (let next (+ x step))
+  (local step 1.5)
+  (local next (+ x step))
   (ratio-link-3 next))
 
 (defn ratio-link-3 (x)
@@ -1679,8 +1679,8 @@
   (ratio-link-5 (+ x 0.5)))
 
 (defn ratio-link-5 (x)
-  (let step 1.5)
-  (let next (+ x step))
+  (local step 1.5)
+  (local next (+ x step))
   (ratio-link-6 next))
 
 (defn ratio-link-6 (x)
@@ -1692,8 +1692,8 @@
   (ratio-link-8 (+ x 0.5)))
 
 (defn ratio-link-8 (x)
-  (let step 1.5)
-  (let next (+ x step))
+  (local step 1.5)
+  (local next (+ x step))
   (ratio-link-9 next))
 
 (defn ratio-link-9 (x)
@@ -1705,8 +1705,8 @@
   (ratio-link-11 (+ x 0.5)))
 
 (defn ratio-link-11 (x)
-  (let step 1.5)
-  (let next (+ x step))
+  (local step 1.5)
+  (local next (+ x step))
   (ratio-link-12 next))
 
 (defn ratio-link-12 (x)
@@ -1718,8 +1718,8 @@
   (ratio-link-14 (+ x 0.5)))
 
 (defn ratio-link-14 (x)
-  (let step 1.5)
-  (let next (+ x step))
+  (local step 1.5)
+  (local next (+ x step))
   (ratio-link-15 next))
 
 (defn ratio-link-15 (x)
@@ -1731,8 +1731,8 @@
   (ratio-link-17 (+ x 0.5)))
 
 (defn ratio-link-17 (x)
-  (let step 1.5)
-  (let next (+ x step))
+  (local step 1.5)
+  (local next (+ x step))
   (ratio-link-18 next))
 
 (defn ratio-link-18 (x)
@@ -1744,8 +1744,8 @@
   (ratio-link-20 (+ x 0.5)))
 
 (defn ratio-link-20 (x)
-  (let step 1.5)
-  (let next (+ x step))
+  (local step 1.5)
+  (local next (+ x step))
   (ratio-link-21 next))
 
 (defn ratio-link-21 (x)
@@ -1757,8 +1757,8 @@
   (ratio-link-23 (+ x 0.5)))
 
 (defn ratio-link-23 (x)
-  (let step 1.5)
-  (let next (+ x step))
+  (local step 1.5)
+  (local next (+ x step))
   (ratio-link-24 next))
 
 (defn ratio-link-24 (x)
@@ -1770,8 +1770,8 @@
   (ratio-link-26 (+ x 0.5)))
 
 (defn ratio-link-26 (x)
-  (let step 1.5)
-  (let next (+ x step))
+  (local step 1.5)
+  (local next (+ x step))
   (ratio-link-27 next))
 
 (defn ratio-link-27 (x)
@@ -1783,8 +1783,8 @@
   (ratio-link-29 (+ x 0.5)))
 
 (defn ratio-link-29 (x)
-  (let step 1.5)
-  (let next (+ x step))
+  (local step 1.5)
+  (local next (+ x step))
   (ratio-link-30 next))
 
 (defn ratio-link-30 (x)
@@ -1796,8 +1796,8 @@
   (ratio-link-32 (+ x 0.5)))
 
 (defn ratio-link-32 (x)
-  (let step 1.5)
-  (let next (+ x step))
+  (local step 1.5)
+  (local next (+ x step))
   (ratio-link-33 next))
 
 (defn ratio-link-33 (x)
@@ -1809,8 +1809,8 @@
   (ratio-link-35 (+ x 0.5)))
 
 (defn ratio-link-35 (x)
-  (let step 1.5)
-  (let next (+ x step))
+  (local step 1.5)
+  (local next (+ x step))
   (ratio-link-36 next))
 
 (defn ratio-link-36 (x)
@@ -1822,8 +1822,8 @@
   (ratio-link-38 (+ x 0.5)))
 
 (defn ratio-link-38 (x)
-  (let step 1.5)
-  (let next (+ x step))
+  (local step 1.5)
+  (local next (+ x step))
   (ratio-link-39 next))
 
 (defn ratio-link-39 (x)
@@ -1835,8 +1835,8 @@
   (ratio-link-41 (+ x 0.5)))
 
 (defn ratio-link-41 (x)
-  (let step 1.5)
-  (let next (+ x step))
+  (local step 1.5)
+  (local next (+ x step))
   (ratio-link-42 next))
 
 (defn ratio-link-42 (x)
@@ -1848,8 +1848,8 @@
   (ratio-link-44 (+ x 0.5)))
 
 (defn ratio-link-44 (x)
-  (let step 1.5)
-  (let next (+ x step))
+  (local step 1.5)
+  (local next (+ x step))
   (ratio-link-45 next))
 
 (defn ratio-link-45 (x)
@@ -1861,8 +1861,8 @@
   (ratio-link-47 (+ x 0.5)))
 
 (defn ratio-link-47 (x)
-  (let step 1.5)
-  (let next (+ x step))
+  (local step 1.5)
+  (local next (+ x step))
   (ratio-link-48 next))
 
 (defn ratio-link-48 (x)
@@ -1874,8 +1874,8 @@
   (ratio-link-50 (+ x 0.5)))
 
 (defn ratio-link-50 (x)
-  (let step 1.5)
-  (let next (+ x step))
+  (local step 1.5)
+  (local next (+ x step))
   (ratio-link-51 next))
 
 (defn ratio-link-51 (x)
@@ -1887,8 +1887,8 @@
   (ratio-link-53 (+ x 0.5)))
 
 (defn ratio-link-53 (x)
-  (let step 1.5)
-  (let next (+ x step))
+  (local step 1.5)
+  (local next (+ x step))
   (ratio-link-54 next))
 
 (defn ratio-link-54 (x)
@@ -1900,8 +1900,8 @@
   (ratio-link-56 (+ x 0.5)))
 
 (defn ratio-link-56 (x)
-  (let step 1.5)
-  (let next (+ x step))
+  (local step 1.5)
+  (local next (+ x step))
   (ratio-link-57 next))
 
 (defn ratio-link-57 (x)
@@ -1913,8 +1913,8 @@
   (ratio-link-59 (+ x 0.5)))
 
 (defn ratio-link-59 (x)
-  (let step 1.5)
-  (let next (+ x step))
+  (local step 1.5)
+  (local next (+ x step))
   (ratio-link-60 next))
 
 (defn ratio-link-60 (x)
@@ -1953,67 +1953,67 @@
 (defn ratio-pin-15 () 1.5)
 
 (defn local-chain ()
-  (let total 1)
-  (let total (+ total 0))
-  (let total (+ total 1))
-  (let total (+ total 2))
-  (let total (+ total 3))
-  (let total (+ total 0))
-  (let total (+ total 1))
-  (let total (+ total 2))
-  (let total (+ total 3))
-  (let total (+ total 0))
-  (let total (+ total 1))
-  (let total (+ total 2))
-  (let total (+ total 3))
-  (let total (+ total 0))
-  (let total (+ total 1))
-  (let total (+ total 2))
-  (let total (+ total 3))
-  (let total (+ total 0))
-  (let total (+ total 1))
-  (let total (+ total 2))
-  (let total (+ total 3))
-  (let total (+ total 0))
-  (let total (+ total 1))
-  (let total (+ total 2))
-  (let total (+ total 3))
-  (let total (+ total 0))
-  (let total (+ total 1))
-  (let total (+ total 2))
-  (let total (+ total 3))
-  (let total (+ total 0))
-  (let total (+ total 1))
-  (let total (+ total 2))
-  (let total (+ total 3))
-  (let total (+ total 0))
-  (let total (+ total 1))
-  (let total (+ total 2))
-  (let total (+ total 3))
-  (let total (+ total 0))
-  (let total (+ total 1))
-  (let total (+ total 2))
-  (let total (+ total 3))
-  (let total (+ total 0))
-  (let total (+ total 1))
-  (let total (+ total 2))
-  (let total (+ total 3))
-  (let total (+ total 0))
-  (let total (+ total 1))
-  (let total (+ total 2))
-  (let total (+ total 3))
-  (let total (+ total 0))
-  (let total (+ total 1))
-  (let total (+ total 2))
-  (let total (+ total 3))
-  (let total (+ total 0))
-  (let total (+ total 1))
-  (let total (+ total 2))
-  (let total (+ total 3))
-  (let total (+ total 0))
-  (let total (+ total 1))
-  (let total (+ total 2))
-  (let total (+ total 3))
+  (local total 1)
+  (local total (+ total 0))
+  (local total (+ total 1))
+  (local total (+ total 2))
+  (local total (+ total 3))
+  (local total (+ total 0))
+  (local total (+ total 1))
+  (local total (+ total 2))
+  (local total (+ total 3))
+  (local total (+ total 0))
+  (local total (+ total 1))
+  (local total (+ total 2))
+  (local total (+ total 3))
+  (local total (+ total 0))
+  (local total (+ total 1))
+  (local total (+ total 2))
+  (local total (+ total 3))
+  (local total (+ total 0))
+  (local total (+ total 1))
+  (local total (+ total 2))
+  (local total (+ total 3))
+  (local total (+ total 0))
+  (local total (+ total 1))
+  (local total (+ total 2))
+  (local total (+ total 3))
+  (local total (+ total 0))
+  (local total (+ total 1))
+  (local total (+ total 2))
+  (local total (+ total 3))
+  (local total (+ total 0))
+  (local total (+ total 1))
+  (local total (+ total 2))
+  (local total (+ total 3))
+  (local total (+ total 0))
+  (local total (+ total 1))
+  (local total (+ total 2))
+  (local total (+ total 3))
+  (local total (+ total 0))
+  (local total (+ total 1))
+  (local total (+ total 2))
+  (local total (+ total 3))
+  (local total (+ total 0))
+  (local total (+ total 1))
+  (local total (+ total 2))
+  (local total (+ total 3))
+  (local total (+ total 0))
+  (local total (+ total 1))
+  (local total (+ total 2))
+  (local total (+ total 3))
+  (local total (+ total 0))
+  (local total (+ total 1))
+  (local total (+ total 2))
+  (local total (+ total 3))
+  (local total (+ total 0))
+  (local total (+ total 1))
+  (local total (+ total 2))
+  (local total (+ total 3))
+  (local total (+ total 0))
+  (local total (+ total 1))
+  (local total (+ total 2))
+  (local total (+ total 3))
   (keep-port total))
 
 (type checksum

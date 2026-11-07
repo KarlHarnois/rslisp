@@ -4,8 +4,8 @@
   :size u16)
 
 (defn main ()
-  (let g
+  (local g
     (->garage (str "Leaf Garage") (str "Leeds") 12))
-  (let f
+  (local f
     (fn () (assoc g :name (str "x"))))
   (println (:name (f))))

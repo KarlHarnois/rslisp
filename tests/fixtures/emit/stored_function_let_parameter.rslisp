@@ -10,12 +10,12 @@
   (:age someone))
 
 (defn by-key (key label)
-  (let a key)
-  (let b a)
+  (local a key)
+  (local b a)
   (new sorter (:key b) (:label label)))
 
 (defn main ()
-  (let ana (->user "Ana" 30))
-  (let by-age (by-key age-of "by age"))
+  (local ana (->user "Ana" 30))
+  (local by-age (by-key age-of "by age"))
   (println (:label by-age))
   (println ((:key by-age) ana)))

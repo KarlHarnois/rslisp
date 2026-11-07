@@ -6,7 +6,7 @@
   (set! (at cars 0) car))
 
 (defn main ()
-  (let cars
+  (local cars
     (vec (->car (str "Nissan Leaf") 2011)
          (->car (str "Honda Civic") 1999)))
   (replace-first! (mut cars)

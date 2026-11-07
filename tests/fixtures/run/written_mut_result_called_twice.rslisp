@@ -3,6 +3,6 @@
 (defn make () (fn () (str "Leaf")))
 
 (defn main ()
-  (let getter (make))
+  (local getter (make))
   (println (getter))
   (println (getter)))

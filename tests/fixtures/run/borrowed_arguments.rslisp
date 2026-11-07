@@ -33,7 +33,7 @@
 (defn keep-borrowed (x) (keep x))
 
 (defn main ()
-  (let three 3)
+  (local three 3)
   (println (big? (ref three)))
   (println (deep-big? (borrow-twice 1)))
   (println (root (ref 16.0)))

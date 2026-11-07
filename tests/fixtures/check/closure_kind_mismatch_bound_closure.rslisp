@@ -5,7 +5,7 @@
 (defn keep (model) model)
 
 (defn main ()
-  (let model (str "Leaf"))
-  (let getter (fn () (keep model)))
+  (local model (str "Leaf"))
+  (local getter (fn () (keep model)))
   (twice getter)
   (println "done"))

@@ -12,6 +12,6 @@
 (defn plant (make) (->factory :make make))
 
 (defn main ()
-  (let oppama (plant build-leaf))
-  (let leaf ((:make oppama)))
+  (local oppama (plant build-leaf))
+  (local leaf ((:make oppama)))
   (println (:make leaf) " " (:model leaf)))

@@ -6,8 +6,8 @@ input_file: tests/fixtures/check/closure_lends_through_some_arguments.rslisp
 error[L0512]: cannot pass a borrow of a local value to `pick`
   --> check/closure_lends_through_some_arguments.rslisp:16:18
    |
- 8 |   (let name (str "Ariya"))
-   |        ---- this local is dropped when the function returns
+ 8 |   (local name (str "Ariya"))
+   |          ---- this local is dropped when the function returns
 ...
 11 |     (fn (maybe) (unwrap-or maybe "none")))
    |          ----- `pick` ties this parameter to its result, so it needs a borrow that outlives the function
@@ -20,8 +20,8 @@ error[L0512]: cannot pass a borrow of a local value to `pick`
 error[L0512]: cannot pass a borrow of a local value to `first`
   --> check/closure_lends_through_some_arguments.rslisp:17:19
    |
- 9 |   (let years (vec 2019 2021 2024))
-   |        ----- this local is dropped when the function returns
+ 9 |   (local years (vec 2019 2021 2024))
+   |          ----- this local is dropped when the function returns
 ...
 13 |     (fn ((items (ref (vec i64))))
    |          ----------------------- `first` ties this parameter to its result, so it needs a borrow that outlives the function
@@ -34,14 +34,14 @@ error[L0512]: cannot pass a borrow of a local value to `first`
 error[L0512]: cannot pass a borrow of a local value to `again`
   --> check/closure_lends_through_some_arguments.rslisp:18:19
    |
- 9 |   (let years (vec 2019 2021 2024))
-   |        ----- this local is dropped when the function returns
+ 9 |   (local years (vec 2019 2021 2024))
+   |          ----- this local is dropped when the function returns
 ...
 13 |     (fn ((items (ref (vec i64))))
    |          ----------------------- `first` ties this parameter to its result, so it needs a borrow that outlives the function
 14 |       (at items 0)))
-15 |   (let again first)
-   |              ----- `again` is `first`
+15 |   (local again first)
+   |                ----- `again` is `first`
 ...
 18 |   (println (again years))
    |                   ^^^^^ this borrows a local value
@@ -51,17 +51,17 @@ error[L0512]: cannot pass a borrow of a local value to `again`
 error[L0512]: cannot pass a borrow of a local value to `more`
   --> check/closure_lends_through_some_arguments.rslisp:25:18
    |
- 9 |   (let years (vec 2019 2021 2024))
-   |        ----- this local is dropped when the function returns
+ 9 |   (local years (vec 2019 2021 2024))
+   |          ----- this local is dropped when the function returns
 ...
 13 |     (fn ((items (ref (vec i64))))
    |          ----------------------- `first` ties this parameter to its result, so it needs a borrow that outlives the function
 14 |       (at items 0)))
-15 |   (let again first)
-   |              ----- `again` is `first`
+15 |   (local again first)
+   |                ----- `again` is `first`
 ...
-24 |   (let more again)
-   |             ----- `more` is `again`
+24 |   (local more again)
+   |               ----- `more` is `again`
 25 |   (println (more years)))
    |                  ^^^^^ this borrows a local value
    |

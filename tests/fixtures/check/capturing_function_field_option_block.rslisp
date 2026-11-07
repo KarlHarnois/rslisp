@@ -4,8 +4,8 @@
 (defn count-doors () 4)
 
 (defn main ()
-  (let base 4)
-  (let backup
+  (local base 4)
+  (local backup
     (->spare :maker (some (do
                             (println "making")
                             (fn () (+ base 1))))))

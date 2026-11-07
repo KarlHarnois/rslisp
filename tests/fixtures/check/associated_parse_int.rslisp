@@ -1,5 +1,5 @@
 (defn read-count (text)
-  (let (count (result i64 _))
+  (local (count (result i64 _))
     (parse text))
   count)
 

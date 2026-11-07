@@ -6,9 +6,9 @@
   (println (loop ((i 0) (total 0))
              (if (< i 3)
                (do
-                 (let leaf
+                 (local leaf
                    (->car (str "Leaf") (+ 2020 i)))
-                 (let kept leaf)
+                 (local kept leaf)
                  (println (:model kept) " " (:year kept))
                  (recur (+ i 1) (+ total (:year kept))))
                total))))

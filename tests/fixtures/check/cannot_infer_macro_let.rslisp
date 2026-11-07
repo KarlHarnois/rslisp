@@ -1,5 +1,5 @@
 (defmacro bind-open ()
-  (template (let held (vec))))
+  (template (local held (vec))))
 
 (defn main ()
   (bind-open)

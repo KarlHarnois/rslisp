@@ -12,10 +12,10 @@
 
 (defn main ()
   (println (option-named? (some 1)))
-  (let run
+  (local run
     (fn (value)
       (println (mutable-named? (mut value)))
       (+ value 1)))
-  (let call-with-one
+  (local call-with-one
     (fn (function) (function (some 1))))
   (println (call-with-one option-named?)))

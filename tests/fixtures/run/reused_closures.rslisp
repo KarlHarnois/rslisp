@@ -9,17 +9,17 @@
 (defn duplicate (value) (clone value))
 
 (defn main ()
-  (let offset 5)
-  (let shift (fn (x) (+ x offset)))
+  (local offset 5)
+  (local shift (fn (x) (+ x offset)))
   (println (apply-to-ten shift))
   (println (apply-to-ten shift))
-  (let name (str "Ada"))
-  (let greet
+  (local name (str "Ada"))
+  (local greet
     (fn (greeting) (str greeting ", " name)))
   (println (greet-with greet))
   (println (greet-with greet))
   (println name)
-  (let ada (->person (duplicate name) 36))
-  (let twin (duplicate ada))
+  (local ada (->person (duplicate name) 36))
+  (local twin (duplicate ada))
   (println (:name twin))
   (println (duplicate 7)))
