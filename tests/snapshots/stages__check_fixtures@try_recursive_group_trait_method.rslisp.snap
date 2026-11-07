@@ -1,0 +1,12 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/try_recursive_group_trait_method.rslisp
+---
+error[L0429]: `try` needs a result or an option
+ --> check/try_recursive_group_trait_method.rslisp:2:7
+  |
+2 |   (ok (try (fmt text))))
+  |       ^^^^^^^^^^^^^^^^ the type of this call is not known yet
+  |
+  = help: write a `type` signature for one of: `fmt-number`, `fmt`, `fmt-expression`

@@ -29,6 +29,7 @@ mod result_printer;
 mod returned_arguments;
 mod rust_clauses;
 mod rust_type;
+mod saved_definitions;
 mod saved_notes;
 mod session;
 mod shape;
@@ -45,7 +46,7 @@ use std::rc::Rc;
 
 use rustc_hash::{FxHashMap, FxHashSet};
 
-use crate::core::{BindingArena, BindingId, CoreModule, ModuleId, ModulePath};
+use crate::core::{BindingArena, BindingId, CoreModule, ModuleId, ModulePath, References};
 use crate::diagnostic::{Diagnostic, Diagnostics};
 use crate::modules::{ModuleRegistry, ModuleSources};
 use crate::reader::Form;
@@ -65,6 +66,8 @@ pub use problems::{ExpandProblems, SetAsideInput};
 use recorded_inputs::RecordedInputs;
 pub use recorded_inputs::{BoundName, LoadedModule};
 pub use result_printer::{GeneratedFunction, ResultPrinter};
+pub use saved_definitions::PendingDefinitions;
+use saved_definitions::{DefinitionSaver, SavedDefinitions, SavedTables};
 pub use session::ExpansionSession;
 use string_view::StringViewSearch;
 
@@ -77,6 +80,7 @@ pub struct Program {
     pub macro_helpers: FxHashSet<BindingId>,
     pub string_view: Option<BindingId>,
     pub checked_roots: Vec<BindingId>,
+    pub pending_definitions: PendingDefinitions,
     pub warnings: Diagnostics,
     pub expansion: ExpansionWork,
 }
@@ -94,6 +98,22 @@ impl Program {
             .iter()
             .find(|module| module.id == self.entry)
             .expect("the entry module is expanded")
+    }
+
+    pub fn check_also(&mut self, binding: BindingId) {
+        self.checked_roots.push(binding);
+        self.pending_definitions
+            .restore(&mut self.modules, vec![binding]);
+    }
+
+    fn restore_reached(&mut self) {
+        let roots = self
+            .modules
+            .iter()
+            .flat_map(CoreModule::definitions)
+            .flat_map(|(_, value)| References::of(value, &self.bindings).into_globals())
+            .collect();
+        self.pending_definitions.restore(&mut self.modules, roots);
     }
 
     fn written_entry_function(&self) -> Option<BindingId> {
@@ -127,6 +147,7 @@ pub struct Expander<'s> {
     form_budgets: BudgetArena,
     recovered_diagnostics: Vec<Diagnostic>,
     saved_prelude: Option<PreludeState>,
+    saved_definitions: SavedDefinitions,
     expansion: ExpansionWork,
     evaluated_forms: EvaluatedForms,
     recorded_inputs: RecordedInputs,
@@ -169,6 +190,15 @@ impl ExpansionTables {
         StringViewSearch::in_modules(modules)
     }
 
+    fn save_definitions(&mut self) -> SavedTables {
+        let mut saver = DefinitionSaver::new(&self.bindings, self.string_view);
+        let modules = self.expanded.values_mut();
+        for module in modules.filter(|module| ModuleSources::is_embedded_prelude(&module.path)) {
+            saver.take_from(module);
+        }
+        saver.finish()
+    }
+
     fn take_lowered_globals(&mut self) -> LoweredGlobals {
         let definitions = self.expanded.values().flat_map(CoreModule::definitions);
         self.globals.take_lowered(definitions)
@@ -196,6 +226,7 @@ impl<'s> Expander<'s> {
             form_budgets: BudgetArena::default(),
             recovered_diagnostics: Vec::new(),
             saved_prelude: None,
+            saved_definitions: SavedDefinitions::default(),
             expansion: ExpansionWork::default(),
             evaluated_forms: EvaluatedForms::default(),
             recorded_inputs: RecordedInputs::default(),
@@ -243,10 +274,12 @@ impl<'s> Expander<'s> {
             macro_helpers: self.tables.globals.macro_helpers(),
             string_view,
             checked_roots: Vec::new(),
+            pending_definitions: PendingDefinitions::new(self.saved_definitions),
             macro_origins: self.tables.macro_origins,
             warnings: self.warnings,
             expansion: self.expansion,
         };
+        program.restore_reached();
         program.entry_function = program.written_entry_function();
         diagnostics.into_result(program)
     }

@@ -17,6 +17,16 @@ use crate::source::Span;
 )]
 pub struct BindingId(u32);
 
+impl BindingId {
+    pub fn from_index(index: u32) -> Self {
+        Self(index)
+    }
+
+    pub fn index(self) -> u32 {
+        self.0
+    }
+}
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
 pub enum Namespace {
     Value,
@@ -99,6 +109,10 @@ impl BindingArena {
         let id = BindingId(u32::try_from(self.infos.len()).expect("fewer than 2^32 bindings"));
         self.infos.push(info);
         id
+    }
+
+    pub fn iter(&self) -> impl Iterator<Item = &BindingInfo> {
+        self.infos.iter()
     }
 
     pub fn get(&self, id: BindingId) -> &BindingInfo {

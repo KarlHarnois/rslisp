@@ -178,6 +178,18 @@ pub struct CoreModule {
     pub exports: Vec<BindingId>,
 }
 
+impl ItemKind {
+    pub fn method_bodies(&self) -> Vec<BindingId> {
+        match self {
+            Self::Impl(_, _, _, methods) => methods.iter().map(|method| method.binding).collect(),
+            Self::Trait(_, _, _, _, _, methods) => {
+                methods.iter().filter_map(|method| method.default).collect()
+            }
+            _ => Vec::new(),
+        }
+    }
+}
+
 impl CoreModule {
     pub fn definitions(&self) -> impl Iterator<Item = (BindingId, &Rc<Expr>)> {
         self.items.iter().filter_map(|item| match &item.kind {

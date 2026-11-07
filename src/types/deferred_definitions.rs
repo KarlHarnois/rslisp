@@ -1,6 +1,6 @@
 use rustc_hash::FxHashSet;
 
-use crate::core::{BindingId, ItemKind};
+use crate::core::BindingId;
 use crate::expand::Program;
 use crate::modules::ModuleSources;
 
@@ -17,6 +17,7 @@ impl DeferredDefinitions {
             .flat_map(|module| module.definitions())
             .map(|(binding, _)| binding)
             .filter(|binding| !always_checked.contains(binding))
+            .chain(program.pending_definitions.undecoded())
             .collect()
     }
 
@@ -25,23 +26,11 @@ impl DeferredDefinitions {
             .modules
             .iter()
             .flat_map(|module| &module.items)
-            .flat_map(|item| Self::methods_of(&item.kind));
+            .flat_map(|item| item.kind.method_bodies());
         methods
             .chain(program.string_view)
             .chain(program.checked_roots.iter().copied())
             .collect()
-    }
-
-    fn methods_of(kind: &ItemKind) -> Vec<BindingId> {
-        match kind {
-            ItemKind::Impl(_, _, _, methods) => {
-                methods.iter().map(|method| method.binding).collect()
-            }
-            ItemKind::Trait(_, _, _, _, _, methods) => {
-                methods.iter().filter_map(|method| method.default).collect()
-            }
-            _ => Vec::new(),
-        }
     }
 }
 
@@ -112,7 +101,7 @@ mod tests {
             self.module()
                 .items
                 .iter()
-                .flat_map(|item| DeferredDefinitions::methods_of(&item.kind))
+                .flat_map(|item| item.kind.method_bodies())
                 .collect()
         }
     }

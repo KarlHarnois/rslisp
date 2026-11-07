@@ -149,6 +149,7 @@ impl Expander<'_> {
         binding: BindingId,
         span: Span,
     ) -> Result<Rc<Expr>, Diagnostic> {
+        self.decode_saved_global(binding);
         match self
             .tables
             .globals
@@ -176,6 +177,15 @@ impl Expander<'_> {
                 self.tables.bindings.get(binding).name(),
                 span,
             )),
+        }
+    }
+
+    fn decode_saved_global(&mut self, binding: BindingId) {
+        let states = &mut self.tables.globals.states;
+        if !states.contains_key(&binding)
+            && let Some(value) = self.saved_definitions.value_of(binding)
+        {
+            states.insert(binding, GlobalState::Lowered(value));
         }
     }
 

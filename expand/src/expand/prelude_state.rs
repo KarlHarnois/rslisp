@@ -1,6 +1,7 @@
 use std::fmt;
 use std::path::PathBuf;
 
+use super::saved_definitions::{SavedDefinitions, SavedTables};
 use super::{Expander, ExpansionTables, LoweredGlobals};
 use crate::core::{ModuleId, ModulePath};
 use crate::diagnostic::DiagnosticRenderer;
@@ -14,6 +15,10 @@ pub struct PreludeState {
     modules: Vec<ModuleRecord>,
     tables: ExpansionTables,
     lowered_globals: LoweredGlobals,
+    #[serde(skip)]
+    saved_tables: SavedTables,
+    #[serde(skip)]
+    saved_definitions: SavedDefinitions,
 }
 
 #[derive(Debug)]
@@ -51,11 +56,16 @@ impl PreludeState {
     }
 
     pub fn save(&self) -> Vec<u8> {
-        bincode::serialize(self).expect("every saved table serializes")
+        bincode::serialize(&(self, &self.saved_tables)).expect("every saved table serializes")
     }
 
-    pub fn load(bytes: &[u8]) -> Result<Self, UnreadablePrelude> {
-        bincode::deserialize(bytes).map_err(UnreadablePrelude)
+    pub fn load(bytes: &'static [u8]) -> Result<Self, UnreadablePrelude> {
+        let (state, saved_definitions): (Self, SavedDefinitions) =
+            bincode::deserialize(bytes).map_err(UnreadablePrelude)?;
+        Ok(Self {
+            saved_definitions,
+            ..state
+        })
     }
 
     pub(super) fn install(self, expander: &mut Expander<'_>) -> ModuleId {
@@ -65,6 +75,7 @@ impl PreludeState {
         for record in self.modules {
             expander.modules.adopt(record);
         }
+        expander.saved_definitions = self.saved_definitions;
         expander.tables = self.tables;
         expander
             .tables
@@ -87,6 +98,7 @@ impl Expander<'_> {
         self.assert_no_problems();
         self.tables.string_view = self.tables.find_string_view();
         let lowered_globals = self.tables.take_lowered_globals();
+        let saved_tables = self.tables.save_definitions();
         self.tables.module_notes = self.tables.module_notes.saved();
         PreludeState {
             first_source,
@@ -94,6 +106,8 @@ impl Expander<'_> {
             modules: self.modules.into_records_after(placeholder),
             tables: self.tables,
             lowered_globals,
+            saved_tables,
+            saved_definitions: SavedDefinitions::default(),
         }
     }
 
@@ -199,7 +213,8 @@ mod tests {
         }
 
         fn loaded_state() -> PreludeState {
-            PreludeState::load(&PreludeState::build().save()).expect("the saved prelude loads")
+            PreludeState::load(PreludeState::build().save().leak())
+                .expect("the saved prelude loads")
         }
 
         fn module_sources() -> ModuleSources {

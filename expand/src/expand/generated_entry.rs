@@ -85,5 +85,6 @@ impl Program {
         );
         module.items.extend(entry.items());
         self.entry_function = Some(entry.binding);
+        self.restore_reached();
     }
 }

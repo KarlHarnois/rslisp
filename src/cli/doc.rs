@@ -276,7 +276,9 @@ impl<'s> TypedLookup<'s> {
         let page = self.expand_page(term)?;
         let signed = self.signed_binding(term, &page)?;
         let mut program = self.session.finish()?;
-        program.checked_roots.extend(signed);
+        if let Some(binding) = signed {
+            program.check_also(binding);
+        }
         Ok(TypedPage {
             page,
             signed,

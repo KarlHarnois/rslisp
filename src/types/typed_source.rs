@@ -4,7 +4,7 @@ use rustc_hash::{FxHashMap, FxHashSet};
 
 use super::{DefinitionGraph, InferredCopies, LiteralDefaults, TypeChecker, TypedProgram};
 use crate::core::{BindingId, ModulePath};
-use crate::expand::{Expander, Program};
+use crate::expand::{Expander, PreludeState, Program};
 use crate::language::Language;
 use crate::modules::ModuleSources;
 use crate::source::SourceMap;
@@ -21,6 +21,18 @@ impl TypedSource {
         let entry = sources.add(Self::file_name(), text);
         let module_sources = ModuleSources::new(PathBuf::from("."), PathBuf::from("."));
         let program = Expander::new(&mut sources, module_sources)
+            .expand(ModulePath::new(Self::MODULE), entry)
+            .expect("the source expands");
+        Self { program }
+    }
+
+    pub fn expand_on_a_loaded_prelude(text: &str) -> Self {
+        let state = PreludeState::load(PreludeState::build().save().leak())
+            .expect("the saved prelude loads");
+        let mut sources = SourceMap::default();
+        let entry = sources.add(Self::file_name(), text);
+        let module_sources = ModuleSources::new(PathBuf::from("."), PathBuf::from("."));
+        let program = Expander::with_prelude(&mut sources, module_sources, state)
             .expand(ModulePath::new(Self::MODULE), entry)
             .expect("the source expands");
         Self { program }
@@ -51,7 +63,7 @@ impl TypedSource {
     }
 
     pub fn check_also(&mut self, binding: BindingId) {
-        self.program.checked_roots.push(binding);
+        self.program.check_also(binding);
     }
 
     pub fn program(&self) -> &Program {

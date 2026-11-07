@@ -221,7 +221,7 @@ pub struct TypeChecker {
     pub(super) recursive_group: Vec<BindingId>,
     reopened_parameters: Vec<ReopenedParameter>,
     pub(super) reported_unknown_try_groups: FxHashSet<BindingId>,
-    pub(super) prelude_value_names: FxHashSet<String>,
+    prelude_definitions: Vec<BindingId>,
     pub(super) string_view: Option<BindingId>,
     pub(super) checking: super::typed::CheckWork,
 }
@@ -318,7 +318,7 @@ impl TypeChecker {
             recursive_group: Vec::new(),
             reopened_parameters: Vec::new(),
             reported_unknown_try_groups: FxHashSet::default(),
-            prelude_value_names: FxHashSet::default(),
+            prelude_definitions: Vec::new(),
             string_view: None,
             checking: super::typed::CheckWork::default(),
         }
@@ -329,7 +329,6 @@ impl TypeChecker {
         modules: &[CoreModule],
         definitions: &[Definition],
     ) {
-        self.record_prelude_value_names(modules);
         self.record_type_arities(modules);
         self.record_projections(modules);
         self.record_trait_arguments(modules);
@@ -359,18 +358,23 @@ impl TypeChecker {
         self.record_definition_facts(definitions);
     }
 
-    fn record_prelude_value_names(&mut self, modules: &[CoreModule]) {
-        for module in modules
+    fn record_prelude_definitions(
+        &mut self,
+        modules: &[CoreModule],
+        saved: &crate::expand::PendingDefinitions,
+    ) {
+        let defined = modules
             .iter()
             .filter(|module| ModuleSources::is_prelude(&module.path))
-        {
-            for item in &module.items {
-                if let ItemKind::Def(binding, _) = &item.kind {
-                    self.prelude_value_names
-                        .insert(self.bindings.get(*binding).name().to_string());
-                }
-            }
-        }
+            .flat_map(CoreModule::definitions)
+            .map(|(binding, _)| binding);
+        self.prelude_definitions = defined.chain(saved.saved_bindings()).collect();
+    }
+
+    pub(super) fn prelude_defines_value(&self, name: &str) -> bool {
+        self.prelude_definitions
+            .iter()
+            .any(|binding| self.bindings.get(*binding).name() == name)
     }
 
     fn record_definition_facts(&mut self, definitions: &[Definition]) {
@@ -2958,6 +2962,7 @@ impl TypeChecker {
         program: &crate::expand::Program,
         graph: &DefinitionGraph,
     ) -> Result<(super::typed::TypedProgram, OpenCollections), Diagnostics> {
+        self.record_prelude_definitions(&program.modules, &program.pending_definitions);
         self.collect_declarations(&program.modules, graph.definitions());
         let mut definitions = self.check_definitions(program.entry_function, graph);
         let mut finalizer = super::finalize::Finalizer::new(&mut self);
