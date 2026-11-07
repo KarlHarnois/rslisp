@@ -18,6 +18,7 @@ use rslisp::diagnostic::{DiagnosticRenderer, Diagnostics};
 use rslisp::emit::{EmittedCrate, RustEmitter};
 use rslisp::expand::{Expander, PreludeState};
 use rslisp::format::{FormatFailure, SourceFormatter};
+use rslisp::language::Language;
 use rslisp::modules::ModuleSources;
 use rslisp::reader::Reader;
 use rslisp::source::{SourceId, SourceMap, Span};
@@ -163,7 +164,8 @@ impl Fixture {
 
     fn build_directory(&self) -> PathBuf {
         std::env::temp_dir().join(format!(
-            "rslisp-run-{}-{}-{}",
+            "{}-run-{}-{}-{}",
+            Language::NAME,
             std::process::id(),
             self.stage_name(),
             self.module_name()

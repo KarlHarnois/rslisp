@@ -19,6 +19,7 @@ use crate::core::ModulePath;
 use crate::diagnostic::{Diagnostic, Diagnostics};
 use crate::emit::{EmittedCrate, RustEmitter};
 use crate::expand::{BoundName, ClassifiedForm, Expander, ExpansionSession, PreludeState, Program};
+use crate::language::Language;
 use crate::modules::ModuleSources;
 use crate::reader::{Form, Reader};
 use crate::source::Span;
@@ -67,7 +68,7 @@ pub struct Terminal {
 }
 
 impl Terminal {
-    const BUILD_DIRECTORY: &str = "target/rslisp";
+    const BUILD_PARENT: &str = "target";
     const WORKING_DIRECTORY: &str = ".";
     const SAVED_PRELUDE: &[u8] = include_bytes!(env!("PRELUDE_STATE"));
 
@@ -425,10 +426,11 @@ impl Terminal {
     fn build_directory(path: &Path, crate_name: &str) -> Result<PathBuf, ExitStatus> {
         let working_directory = Self::canonical(Path::new(Self::WORKING_DIRECTORY))?;
         let entry_directory = Self::canonical(&Self::directory_of(path))?;
-        Ok(
-            BuildDirectory::new(PathBuf::from(Self::BUILD_DIRECTORY), working_directory)
-                .for_entry(&entry_directory, crate_name),
+        Ok(BuildDirectory::new(
+            Path::new(Self::BUILD_PARENT).join(Language::NAME),
+            working_directory,
         )
+        .for_entry(&entry_directory, crate_name))
     }
 
     fn canonical(directory: &Path) -> Result<PathBuf, ExitStatus> {

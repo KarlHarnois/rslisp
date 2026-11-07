@@ -201,10 +201,14 @@ struct Sandbox {
 
 impl Sandbox {
     const COMPILER: &str = env!("CARGO_BIN_EXE_rslisp");
+    const BUILD_PARENT: &str = "target";
 
     fn new(test_name: &str) -> Self {
-        let directory =
-            std::env::temp_dir().join(format!("rslisp-cli-{}-{test_name}", std::process::id()));
+        let directory = std::env::temp_dir().join(format!(
+            "{}-cli-{}-{test_name}",
+            Language::NAME,
+            std::process::id()
+        ));
         fs::create_dir_all(&directory).expect("the sandbox directory is writable");
         Self { directory }
     }
@@ -437,6 +441,14 @@ impl Sandbox {
         Outcome::of(&mut command)
     }
 
+    fn built_path(program: &str) -> PathBuf {
+        Self::build_directory().join(program)
+    }
+
+    fn build_directory() -> PathBuf {
+        Path::new(Self::BUILD_PARENT).join(Language::NAME)
+    }
+
     fn built_program(&self, relative_path: impl AsRef<Path>) -> Outcome {
         Outcome::of(&mut self.command(&self.directory.join(relative_path), &[]))
     }
@@ -448,12 +460,13 @@ impl Sandbox {
             .filter(|component| matches!(component, Component::Normal(_)))
             .collect();
         Path::new(working_directory)
-            .join("target/rslisp/outside")
+            .join(Self::build_directory())
+            .join("outside")
             .join(sandbox_without_root)
             .join(built_path)
     }
 
-    fn built_program_read_for_one_line(&self, relative_path: &str) -> Outcome {
+    fn built_program_read_for_one_line(&self, relative_path: impl AsRef<Path>) -> Outcome {
         let mut child = self
             .command(&self.directory.join(relative_path), &[])
             .stdout(Stdio::piped())
@@ -475,7 +488,11 @@ impl Sandbox {
         }
     }
 
-    fn built_program_output_before_its_input(&self, relative_path: &str, input: &str) -> String {
+    fn built_program_output_before_its_input(
+        &self,
+        relative_path: impl AsRef<Path>,
+        input: &str,
+    ) -> String {
         let mut child = self
             .command(&self.directory.join(relative_path), &[])
             .stdin(Stdio::piped())
@@ -496,7 +513,7 @@ impl Sandbox {
         String::from_utf8(before_input).expect("the program prints UTF-8")
     }
 
-    fn built_program_reading_its_directory(&self, relative_path: &str) -> Outcome {
+    fn built_program_reading_its_directory(&self, relative_path: impl AsRef<Path>) -> Outcome {
         let directory = fs::File::open(&self.directory).expect("the sandbox directory opens");
         Outcome::of(
             self.command(&self.directory.join(relative_path), &[])
@@ -1899,7 +1916,7 @@ fn build_writes_the_program_under_the_build_directory() {
     sandbox
         .compiler(&["build", "greeting.rslisp"])
         .assert_exit_code(0);
-    let greeting = sandbox.built_program("target/rslisp/greeting/greeting");
+    let greeting = sandbox.built_program(Sandbox::built_path("greeting/greeting"));
     assert_eq!(
         greeting.assert_exit_code(0).stdout(),
         "hello from the sandbox\n"
@@ -1917,8 +1934,8 @@ fn build_keeps_entries_with_the_same_stem_apart() {
     sandbox
         .compiler(&["build", "b/program.rslisp"])
         .assert_exit_code(0);
-    let first = sandbox.built_program("target/rslisp/a/program/program");
-    let second = sandbox.built_program("target/rslisp/b/program/program");
+    let first = sandbox.built_program(Sandbox::built_path("a/program/program"));
+    let second = sandbox.built_program(Sandbox::built_path("b/program/program"));
     assert_eq!(first.assert_exit_code(0).stdout(), "A\n");
     assert_eq!(second.assert_exit_code(0).stdout(), "B\n");
 }
@@ -1942,7 +1959,7 @@ fn built_program_stops_quietly_when_its_reader_closes_stdout() {
     sandbox
         .compiler(&["build", "count.rslisp"])
         .assert_exit_code(0);
-    let count = sandbox.built_program_read_for_one_line("target/rslisp/count/count");
+    let count = sandbox.built_program_read_for_one_line(Sandbox::built_path("count/count"));
     assert_eq!(count.assert_quiet_stop().stdout(), "0\n");
 }
 
@@ -1952,7 +1969,8 @@ fn built_program_shows_a_prompt_before_it_reads_a_line() {
     sandbox
         .compiler(&["build", "who.rslisp"])
         .assert_exit_code(0);
-    let shown = sandbox.built_program_output_before_its_input("target/rslisp/who/who", "Ada\n");
+    let shown =
+        sandbox.built_program_output_before_its_input(Sandbox::built_path("who/who"), "Ada\n");
     assert_eq!(shown, "who? ");
 }
 
@@ -1962,7 +1980,8 @@ fn built_program_shows_a_prompt_before_it_slurps_its_input() {
     sandbox
         .compiler(&["build", "who.rslisp"])
         .assert_exit_code(0);
-    let shown = sandbox.built_program_output_before_its_input("target/rslisp/who/who", "Ada\n");
+    let shown =
+        sandbox.built_program_output_before_its_input(Sandbox::built_path("who/who"), "Ada\n");
     assert_eq!(shown, "who? ");
 }
 
@@ -1973,7 +1992,8 @@ fn built_program_shows_a_prompt_before_it_slurps_any_source() {
     sandbox
         .compiler(&["build", "who.rslisp"])
         .assert_exit_code(0);
-    let shown = sandbox.built_program_output_before_its_input("target/rslisp/who/who", "Ada\n");
+    let shown =
+        sandbox.built_program_output_before_its_input(Sandbox::built_path("who/who"), "Ada\n");
     assert_eq!(shown, "who? ");
 }
 
@@ -1983,7 +2003,7 @@ fn built_program_ends_its_input_lines_after_a_failed_read() {
     sandbox
         .compiler(&["build", "lines.rslisp"])
         .assert_exit_code(0);
-    let lines = sandbox.built_program_reading_its_directory("target/rslisp/lines/lines");
+    let lines = sandbox.built_program_reading_its_directory(Sandbox::built_path("lines/lines"));
     assert_eq!(lines.assert_exit_code(0).stdout(), "1\n");
 }
 
@@ -2192,11 +2212,10 @@ fn run_reports_a_program_that_cannot_start() {
         .with_executable("tools/rustc", SILENT_RUSTC)
         .with_executable("tools/rustfmt", PASSTHROUGH_RUSTFMT);
     let run = sandbox.compiler_with_path("tools", &["run", "greeting.rslisp"]);
-    assert!(
-        run.assert_exit_code(2)
-            .stderr()
-            .starts_with("error: cannot run `target/rslisp/greeting/greeting`")
-    );
+    assert!(run.assert_exit_code(2).stderr().starts_with(&format!(
+        "error: cannot run `{}`",
+        Sandbox::built_path("greeting/greeting").display()
+    )));
 }
 
 #[test]
