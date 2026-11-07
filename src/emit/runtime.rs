@@ -11,6 +11,7 @@ enum RuntimePart {
     Sequence,
     MapSequence,
     Io,
+    Exit,
     Source,
     Lines,
     Signal,
@@ -38,7 +39,7 @@ impl RuntimePart {
         "eprintln!(",
         "std::io::stderr(",
     ];
-    const ALL: [(RuntimePart, &'static [&'static str]); 23] = [
+    const ALL: [(RuntimePart, &'static [&'static str]); 24] = [
         (RuntimePart::Number, &["crate::rt::Number"]),
         (RuntimePart::FromLiteral, &["::from_literal("]),
         (RuntimePart::FromFloatLiteral, &["::from_float_literal("]),
@@ -48,6 +49,7 @@ impl RuntimePart {
         (RuntimePart::Sequence, &["crate::rt::Sequence"]),
         (RuntimePart::MapSequence, &["std::collections::BTreeMap"]),
         (RuntimePart::Io, &["crate::rt::read_line"]),
+        (RuntimePart::Exit, &["crate::rt::exit("]),
         (RuntimePart::Source, &["crate::rt::Source"]),
         (RuntimePart::Lines, &["crate::rt::lines("]),
         (RuntimePart::Signal, Self::STANDARD_STREAM_MARKERS),
@@ -157,6 +159,7 @@ impl RuntimeModule {
     const SEQUENCE: &'static str = include_str!("../../prelude/runtime/sequence.rs");
     const MAP_SEQUENCE: &'static str = include_str!("../../prelude/runtime/map_sequence.rs");
     const IO: &'static str = include_str!("../../prelude/runtime/io.rs");
+    const EXIT: &'static str = include_str!("../../prelude/runtime/exit.rs");
     const SOURCE: &'static str = include_str!("../../prelude/runtime/source.rs");
     const LINES: &'static str = include_str!("../../prelude/runtime/lines.rs");
     const SIGNAL: &'static str = include_str!("../../prelude/runtime/signal.rs");
@@ -175,13 +178,14 @@ impl RuntimeModule {
     const TEST_RUN: &'static str = include_str!("../../prelude/runtime/test_run.rs");
     const RUN_TEST: &'static str = include_str!("../../prelude/runtime/run_test.rs");
     const START_UP_CALL: &'static str = "crate::rt::restore_default_sigpipe();";
-    const FIXED_PARTS: [(RuntimePart, &'static str); 22] = [
+    const FIXED_PARTS: [(RuntimePart, &'static str); 23] = [
         (RuntimePart::Signed, Self::SIGNED),
         (RuntimePart::Float, Self::FLOAT),
         (RuntimePart::Integer, Self::INTEGER),
         (RuntimePart::Sequence, Self::SEQUENCE),
         (RuntimePart::MapSequence, Self::MAP_SEQUENCE),
         (RuntimePart::Io, Self::IO),
+        (RuntimePart::Exit, Self::EXIT),
         (RuntimePart::Source, Self::SOURCE),
         (RuntimePart::Lines, Self::LINES),
         (RuntimePart::Signal, Self::SIGNAL),
@@ -326,5 +330,12 @@ mod tests {
             let module = RuntimeModule::of(code).expect("the code needs the runtime");
             assert!(module.start_up_call().is_some(), "{code}");
         }
+    }
+
+    #[test]
+    fn an_exit_call_brings_the_exit_function() {
+        let module =
+            RuntimeModule::of("crate::rt::exit(3_i32)").expect("the code needs the runtime");
+        assert!(module.source().contains("pub fn exit(code: i32)"));
     }
 }
