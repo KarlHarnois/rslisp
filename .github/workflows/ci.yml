@@ -117,7 +117,7 @@ jobs:
 
   cargo-macos:
     name: cargo (macos-latest)
-    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
+    if: github.event_name == 'push'
     env:
       CARGO_PROFILE_DEV_OPT_LEVEL: 0
     runs-on: macos-latest

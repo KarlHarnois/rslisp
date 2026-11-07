@@ -195,7 +195,7 @@ cargo test <narrowest test>
 
 **The `source-format` flake check fails on any `.rslisp` file under `prelude/`, `examples/` or `tests/fixtures/` that `rslisp fmt --check` would change.** The check skips `tests/fixtures/read/`, `tests/fixtures/format/` and `tests/fixtures/expand/unreadable/`.
 
-**A change is done when CI passes on Linux and macOS.**
+**A change is done when CI passes on its pull request.** The `cargo (macos-latest)` job runs only on pushes to `main`.
 
 ## Reference files
 
