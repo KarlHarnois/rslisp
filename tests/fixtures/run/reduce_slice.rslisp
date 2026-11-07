@@ -1,7 +1,7 @@
 (type total
   (fn ((ref (slice i64))) i64))
 
-(defn total (items) (reduce items 0 add))
+(defn total (items) (reduce items 0 +))
 
 (defn main ()
   (local items (vec 1 2 3))

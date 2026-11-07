@@ -7,5 +7,5 @@ input_file: tests/fixtures/expand/doc_page_body.rslisp
 (def halve (fn (x_2) (div x_2 2)))
 (def twice-body "\n\nDoubles a number.")
 (def halve-body "\n\nNo documentation.")
-(def twice-page-agrees (eq "(defn twice (x))\n\nDoubles a number." ((rust "format!(\"{{}}{{}}\", {&0}, {&1})" (where ((part-type-0 display) (part-type-1 display)) (fn ((ref part-type-0) (ref part-type-1)) string))) "(defn twice (x))" "\n\nDoubles a number.")))
+(def twice-page-agrees (equal "(defn twice (x))\n\nDoubles a number." ((rust "format!(\"{{}}{{}}\", {&0}, {&1})" (where ((part-type-0 display) (part-type-1 display)) (fn ((ref part-type-0) (ref part-type-1)) string))) "(defn twice (x))" "\n\nDoubles a number.")))
 (def main (fn () ((rust "println!(\"{{}}{{}}{{}}\", {&0}, {&1}, {&2})" (where ((part-type-0_2 display) (part-type-1_2 display) (part-type-2 display)) (fn ((ref part-type-0_2) (ref part-type-1_2) (ref part-type-2)) unit))) twice-body halve-body twice-page-agrees)))

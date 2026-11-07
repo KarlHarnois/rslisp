@@ -22,10 +22,10 @@
      (match (as-str text)
        ("+"
         (parse-sums tokens
-                    (combine left (parse-term tokens (+ next 1)) add)))
+                    (combine left (parse-term tokens (+ next 1)) +)))
        ("-"
         (parse-sums tokens
-                    (combine left (parse-term tokens (+ next 1)) sub)))
+                    (combine left (parse-term tokens (+ next 1)) -)))
        (_ left)))
     (_ left)))
 
@@ -39,10 +39,10 @@
      (match (as-str text)
        ("*"
         (parse-products tokens
-                        (combine left (parse-factor tokens (+ next 1)) mul)))
+                        (combine left (parse-factor tokens (+ next 1)) *)))
        ("/"
         (parse-products tokens
-                        (combine left (parse-factor tokens (+ next 1)) div)))
+                        (combine left (parse-factor tokens (+ next 1)) /)))
        (_ left)))
     (_ left)))
 

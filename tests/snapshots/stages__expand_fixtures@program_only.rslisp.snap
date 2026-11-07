@@ -3,18 +3,16 @@ source: tests/stages.rs
 expression: reports.report(path)
 input_file: tests/fixtures/expand/program_only.rslisp
 ---
-error[L0306]: `display-string` belongs to the program, so macro code cannot run it
+error[L0306]: `str` belongs to the program, so macro code cannot run it
    --> expand/program_only.rslisp:4:17
     |
-  4 |     (macro (form) (str 1) (list)))
-    |                   ^^^^^^^ macro code runs this
+  4 |   (macro (form) (str 1) (list)))
+    |                 ^^^^^^^ macro code runs this
     |
-   ::: prelude/text.rslisp:128:3
+   ::: prelude/text.rslisp:407:6
     |
-128 | /   (rust "{0}.to_string()"
-129 | |     (where ((a display))
-130 | |       (fn ((ref a)) string))))
-    | |_____________________________- `display-string` is Rust code that runs in the program
+407 | (def str
+    |      --- `str` expands to Rust code that runs in the program
     |
     = help: to compute this in the program, return it as code from the macro, for example with `quote`
 
@@ -26,52 +24,48 @@ error[L0319]: this Rust code belongs to the program, so macro code cannot run it
   |
   = help: to compute this in the program, return it as code from the macro, for example with `quote`
 
-error[L0306]: `add` belongs to the program, so macro code cannot run it
-  --> expand/program_only.rslisp:14:17
-   |
-14 |     (macro (form) (+ 1 2) (list)))
-   |                   ^^^^^^^ macro code runs this
-   |
-  ::: prelude/number.rslisp:74:3
-   |
-74 | /   (rust "{0} + {1}"
-75 | |     (where ((n number)) (fn (n n) n))))
-   | |______________________________________- `add` is Rust code that runs in the program
-   |
-   = help: to compute this in the program, return it as code from the macro, for example with `quote`
-   = help: in macro code, use `number-add` from `code` instead
+error[L0306]: `+` belongs to the program, so macro code cannot run it
+   --> expand/program_only.rslisp:14:17
+    |
+ 14 |   (macro (form) (+ 1 2) (list)))
+    |                 ^^^^^^^ macro code runs this
+    |
+   ::: prelude/number.rslisp:132:21
+    |
+132 | (defrule-with-value + add
+    |                     - `+` expands to Rust code that runs in the program
+    |
+    = help: to compute this in the program, return it as code from the macro, for example with `quote`
+    = help: in macro code, use `number-add` from `code` instead
 
-error[L0306]: `display-string` belongs to the program, so macro code cannot run it
+error[L0306]: `str` belongs to the program, so macro code cannot run it
    --> expand/program_only.rslisp:20:24
     |
- 20 |       (if true (quote 1) (str 1))))
-    |                          ^^^^^^^ macro code runs this
+ 20 |     (if true (quote 1) (str 1))))
+    |                        ^^^^^^^ macro code runs this
     |
-   ::: prelude/text.rslisp:128:3
+   ::: prelude/text.rslisp:407:6
     |
-128 | /   (rust "{0}.to_string()"
-129 | |     (where ((a display))
-130 | |       (fn ((ref a)) string))))
-    | |_____________________________- `display-string` is Rust code that runs in the program
+407 | (def str
+    |      --- `str` expands to Rust code that runs in the program
     |
     = help: to compute this in the program, return it as code from the macro, for example with `quote`
 
-error[L0306]: `mul` belongs to the program, so macro code cannot run it
-  --> expand/program_only.rslisp:25:25
-   |
-25 |   (def double (fn (value) (* value 2)))
-   |                           ^^^^^^^^^^^ macro code runs this
+error[L0306]: `*` belongs to the program, so macro code cannot run it
+   --> expand/program_only.rslisp:25:25
+    |
+ 25 | (def double (fn (value) (* value 2)))
+    |                         ^^^^^^^^^^^ macro code runs this
 ...
-28 |     (macro (form) (double 2) (list)))
-   |                    ------ macro code reaches it through this
-   |
-  ::: prelude/number.rslisp:82:3
-   |
-82 | /   (rust "{0} * {1}"
-83 | |     (where ((n number)) (fn (n n) n))))
-   | |______________________________________- `mul` is Rust code that runs in the program
-   |
-   = help: to compute this in the program, return it as code from the macro, for example with `quote`
+ 28 |   (macro (form) (double 2) (list)))
+    |                  ------ macro code reaches it through this
+    |
+   ::: prelude/number.rslisp:142:21
+    |
+142 | (defrule-with-value * mul
+    |                     - `*` expands to Rust code that runs in the program
+    |
+    = help: to compute this in the program, return it as code from the macro, for example with `quote`
 
 error[L0308]: `double` has errors, so macro code cannot use it
   --> expand/program_only.rslisp:33:18

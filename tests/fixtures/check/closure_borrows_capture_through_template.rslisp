@@ -5,6 +5,6 @@
 (type later (fn (string) unit))
 
 (defn later (name)
-  (twice (fn () (prn (eq name (str "x"))))))
+  (twice (fn () (prn (= name (str "x"))))))
 
 (defn main () (later (str "y")))

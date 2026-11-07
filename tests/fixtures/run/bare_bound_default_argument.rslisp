@@ -1,7 +1,7 @@
 (type same?
   (where ((a partial-eq)) (fn (a a) bool)))
 
-(defn same? (left right) (eq left right))
+(defn same? (left right) (= left right))
 
 (type same-written?
   (where ((a (partial-eq a)))

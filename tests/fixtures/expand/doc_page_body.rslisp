@@ -9,8 +9,8 @@
 (def halve-body (page-body halve))
 
 (def twice-page-agrees
-  (eq (doc-page twice)
-      (str (header twice) (page-body twice))))
+  (= (doc-page twice)
+     (str (header twice) (page-body twice))))
 
 (defn main ()
   (println twice-body halve-body twice-page-agrees))

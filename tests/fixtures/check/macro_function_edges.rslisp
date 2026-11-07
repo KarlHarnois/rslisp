@@ -1,5 +1,9 @@
 (use prelude/macros defrule)
 
+(defn add (left right) (+ left right))
+
+(defn sub (left right) (- left right))
+
 (defrule swapped
   ((left right) (add right left)))
 

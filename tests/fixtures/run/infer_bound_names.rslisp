@@ -14,10 +14,10 @@
   (where ((a (partial-eq b)) b)
     (fn (a b) bool)))
 
-(defn same? (left right) (eq left right))
+(defn same? (left right) (= left right))
 
 (defn main ()
-  (println (infer eq))
+  (println (infer =))
   (println (infer same?))
   (println (infer equal-to-another?))
   (println (infer (fn (left right) (equal-to-third? left right 1))))

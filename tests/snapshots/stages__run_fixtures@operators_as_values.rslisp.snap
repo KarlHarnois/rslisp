@@ -1,0 +1,19 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/run/operators_as_values.rslisp
+---
+6
+6
+3
+3
+3
+true
+true
+false
+false
+false
+true
+6
+true
+-5

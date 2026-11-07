@@ -4,91 +4,91 @@ expression: reports.report(path)
 input_file: tests/fixtures/check/macro_function_edges.rslisp
 ---
 error[L0304]: `swapped` is a macro, not a value
-  --> check/macro_function_edges.rslisp:30:10
+  --> check/macro_function_edges.rslisp:34:10
    |
-30 | (def one swapped)
+34 | (def one swapped)
    |          ^^^^^^^ used as a value here
    |
    = help: a macro can only be called; pass a function instead
 
 error[L0304]: `mixed` is a macro, not a value
-  --> check/macro_function_edges.rslisp:32:10
+  --> check/macro_function_edges.rslisp:36:10
    |
-32 | (def two mixed)
+36 | (def two mixed)
    |          ^^^^^ used as a value here
    |
 help: a macro can only be called; pass `add` instead
    |
-32 - (def two mixed)
-32 + (def two add)
+36 - (def two mixed)
+36 + (def two add)
    |
 
 error[L0304]: `partial` is a macro, not a value
-  --> check/macro_function_edges.rslisp:34:12
+  --> check/macro_function_edges.rslisp:38:12
    |
-34 | (def three partial)
+38 | (def three partial)
    |            ^^^^^^^ used as a value here
    |
    = help: a macro can only be called; pass a function instead
 
 error[L0304]: `unary` is a macro, not a value
-  --> check/macro_function_edges.rslisp:36:11
+  --> check/macro_function_edges.rslisp:40:11
    |
-36 | (def four unary)
+40 | (def four unary)
    |           ^^^^^ used as a value here
    |
    = help: a macro can only be called; pass a function instead
 
 error[L0304]: `conditional` is a macro, not a value
-  --> check/macro_function_edges.rslisp:38:11
+  --> check/macro_function_edges.rslisp:42:11
    |
-38 | (def five conditional)
+42 | (def five conditional)
    |           ^^^^^^^^^^^ used as a value here
    |
    = help: a macro can only be called; pass a function instead
 
 error[L0304]: `nested` is a macro, not a value
-  --> check/macro_function_edges.rslisp:40:10
+  --> check/macro_function_edges.rslisp:44:10
    |
-40 | (def six nested)
+44 | (def six nested)
    |          ^^^^^^ used as a value here
    |
    = help: a macro can only be called; pass a function instead
 
 error[L0304]: `quoted-thing` is a macro, not a value
-  --> check/macro_function_edges.rslisp:42:12
+  --> check/macro_function_edges.rslisp:46:12
    |
-42 | (def seven quoted-thing)
+46 | (def seven quoted-thing)
    |            ^^^^^^^^^^^^ used as a value here
    |
    = help: a macro can only be called; pass a function instead
 
 error[L0304]: `broken` is a macro, not a value
-  --> check/macro_function_edges.rslisp:44:12
+  --> check/macro_function_edges.rslisp:48:12
    |
-44 | (def eight broken)
+48 | (def eight broken)
    |            ^^^^^^ used as a value here
    |
    = help: a macro can only be called; pass a function instead
 
 error[L0210]: malformed `local`
-  --> check/macro_function_edges.rslisp:47:3
+  --> check/macro_function_edges.rslisp:51:3
    |
-47 |   (local bad)
+51 |   (local bad)
    |   ^^^^^^^^^^^ this does not fit the shape of `local`
    |
    = help: write it as `(local name value)`
 
 error[L0201]: cannot find `barr` in this scope
-  --> check/macro_function_edges.rslisp:48:4
+  --> check/macro_function_edges.rslisp:52:4
    |
-48 |   (barr))
+52 |   (barr))
    |    ^^^^ not found in this scope
 
 error[L0304]: `shadowed-plus` is a macro, not a value
-  --> check/macro_function_edges.rslisp:52:12
+  --> check/macro_function_edges.rslisp:56:12
    |
-52 |   (println shadowed-plus))
+56 |   (println shadowed-plus))
    |            ^^^^^^^^^^^^^ used as a value here
    |
    = help: a macro can only be called; pass a function instead

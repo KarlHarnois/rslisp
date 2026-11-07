@@ -33,10 +33,9 @@
 (use prelude/result err err? expect-ok map-err map-ok ok
                     ok-or ok? then-ok unwrap-err unwrap-ok)
 
-(use prelude/number * + - / < <= = > >= add div eq float ge
-                    gt hash integer le lt mul ne neg not=
-                    number ord partial-eq partial-ord pi rem
-                    signed sqrt sub)
+(use prelude/number * + - / < <= = > >= eq float hash
+                    integer neg not= number ord partial-eq
+                    partial-ord pi rem signed sqrt)
 
 (use prelude/text alphanumeric? as-str char chars debug
                   digit? display doc eprintln from-str
@@ -55,32 +54,31 @@
 
 (use prelude/place set!)
 
-(export * + - -> ->> / < <= = > >= _ add alphanumeric? and
-        any? as-str assoc assoc-at assoc-in at bool box char
-        char chars clone collect command-line-args comment
-        cond copied copy count debug dedup! def defmacro
-        defn defrule defstruct deref derive digit? display
-        div do doc doc-page docstring empty? enum enumerate
-        eprintln eq err err? every? exit expect expect-ok
-        export f32 f64 false field filter find first float
-        fn fn-mut fn-once for-each from-str ge get gt hash
-        hash-map header i128 i16 i32 i64 i8 if impl
-        infallible infer integer into-hash-map
-        into-sorted-map io-error isize iter iterator keys
-        last le len let let-fields let-pair let-try line-seq
-        lines local loop lower-case lt macro map map-at
-        map-err map-ok map-some match max max-by-key min
-        module mul mut ne neg new none none? not not= number
-        ok ok-or ok? option or ord page-body pair parse
-        parse-bool-error parse-char-error parse-error
-        parse-float-error parse-int-error partial-eq
-        partial-ord pi pop! pr-str print println prn push!
-        quote range read-line recur reduce ref rem
+(export * + - -> ->> / < <= = > >= _ alphanumeric? and any?
+        as-str assoc assoc-at assoc-in at bool box char char
+        chars clone collect command-line-args comment cond
+        copied copy count debug dedup! def defmacro defn
+        defrule defstruct deref derive digit? display do doc
+        doc-page docstring empty? enum enumerate eprintln eq
+        err err? every? exit expect expect-ok export f32 f64
+        false field filter find first float fn fn-mut
+        fn-once for-each from-str get hash hash-map header
+        i128 i16 i32 i64 i8 if impl infallible infer integer
+        into-hash-map into-sorted-map io-error isize iter
+        iterator keys last len let let-fields let-pair
+        let-try line-seq lines local loop lower-case macro
+        map map-at map-err map-ok map-some match max
+        max-by-key min module mut neg new none none? not
+        not= number ok ok-or ok? option or ord page-body
+        pair parse parse-bool-error parse-char-error
+        parse-error parse-float-error parse-int-error
+        partial-eq partial-ord pi pop! pr-str print println
+        prn push! quote range read-line recur reduce ref rem
         remove-at! result reverse reverse! rust rust-trait
         rust-type sequence set! set-at show signed slice
         slurp some some? sort! sort-by! sorted-map source
         split split-when sqrt stdin str str string struct
-        sub subs sum take take-while template the then-ok
+        subs sum take take-while template the then-ok
         then-some trait trim true try try-> type u128 u16
         u32 u64 u8 unit unless unwrap unwrap-err unwrap-ok
         unwrap-or update upper-case use usize vals vec when

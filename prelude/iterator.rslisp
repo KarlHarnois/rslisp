@@ -1,6 +1,6 @@
 (use prelude/types iterator option)
 (use prelude/pair pair)
-(use prelude/number add integer number ord)
+(use prelude/number + integer number ord)
 (use prelude/syntax defn)
 (use prelude/macros defrule document)
 (use prelude/vec iter)
@@ -73,10 +73,10 @@
 (defn sum (values)
   "Adds the items of an iterator from left to right.
 
-  An empty iterator gives 0. An overflow panics in a debug build, as `add`
+  An empty iterator gives 0. An overflow panics in a debug build, as `+`
   does. A vector passes and yields copies of its numbers. `(iter items)` is an
   error, as its items are borrows, and so is a map."
-  (reduce values 0 add))
+  (reduce values 0 +))
 
 (def count-items
   (rust "{0}.count()"
@@ -183,7 +183,7 @@
 
   `(reduce items initial step)` starts from `initial` and returns the value
   itself. A vector or a map passes as its `iter`. Its items are borrows, so
-  the first form takes `(copied items)` for a step such as `add`.")
+  the first form takes `(copied items)` for a step such as `+`.")
 
 (document (for-each items function)
   "Calls a function on each item, in order.
