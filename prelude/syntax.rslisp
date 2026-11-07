@@ -1,7 +1,7 @@
 (use prelude/macros defmacro defrule docstring-before-body?
-                    docstring-before-parameters header-shape
-                    map-list note-docstring template
-                    value-doc-key whole-pairs?)
+                    docstring-before-parameters document
+                    header-shape map-list note-docstring
+                    template value-doc-key whole-pairs?)
 
 (use code closest-name concat declare-definition drop empty?
           fail field-keyword first keyword-field
@@ -707,3 +707,90 @@
   ((value) value)
   ((value head) (head value))
   ((value head more ...) (try-> (try (head value)) more ...)))
+
+(document (->> value form ...)
+  "Threads a value through each form as its last argument.
+
+  `(->> 3 (- 10) (* 2))` is `(* 2 (- 10 3))`. A bare name in place of a form
+  is called with the value alone.")
+
+(document (the type value)
+  "Gives a value a written type.
+
+  It binds the value with an annotated `local` and returns it, so a literal is
+  checked against the type and a value that is not `copy` moves. A value of
+  another type is an error.")
+
+(document (loop ((name value) ...) body ...)
+  "Binds names to values and runs a body that `recur` repeats.
+
+  `(recur new-value ...)` in tail position runs the body again with each name
+  bound to its new value. The call returns the body's last value.")
+
+(document (let-try ((name value) ...) body ...)
+  "Binds each name to the value inside a `result` or an `option`, in order.
+
+  Each value goes through `try`, so the first `err` or `none` returns from the
+  enclosing function, which must return a `result` or an `option` of the same
+  kind.")
+
+(document (try-> value function ...)
+  "Calls each function on the result of the one before, through `try`.
+
+  `(try-> x f g)` is `(g (try (f x)))`, so the first `err` or `none` returns
+  from the enclosing function, and the last result is returned as it is. Each
+  step is a function, not a call form: `(try-> x (f))` is an error. With no
+  function, the call returns the value.")
+
+(document (call-signature name names defaults types)
+  "Builds the signature of a keyword function from its parts.
+
+  A prelude helper for definers such as `defstruct`.")
+
+(document (signature-name signature)
+  "Returns the name of a signature that `call-signature` built.")
+
+(document (signature-defaults signature)
+  "Returns the defaults of a signature that `call-signature` built.")
+
+(document (declared-forms forms)
+  "Returns a definer's forms without a trailing `(defaults ...)` clause.")
+
+(document (default-pairs forms)
+  "Returns the pairs of a trailing `(defaults ...)` clause.
+
+  It returns an empty list when the forms end with no such clause.")
+
+(document (defaults-clause? form)
+  "Returns whether a form is a list headed by `defaults`.")
+
+(document (declared-name keyword noun)
+  "Returns the name that a keyword such as `:email` declares.
+
+  A keyword with no name, or one that ends with `:`, is an error that names
+  the `noun`, such as `field`.")
+
+(document (default-bindings pairs owner names)
+  "Returns the bindings of a `(defaults ...)` clause, after checking it.
+
+  Each key must name one of `names`, once, and each needs a value.")
+
+(document (definition name noun spell code)
+  "Describes a name that a definer declares, for its error messages.")
+
+(document (has-argument? name keys)
+  "Returns whether a call's keys hold the keyword of a name.")
+
+(document (pair-keys arguments)
+  "Returns the keys of a list of key and value pairs.
+
+  It takes the first form and every other form after it.")
+
+(document (read-call form positional signature owner by-name)
+  "Reads a keyword function's call as a call by name or by position.
+
+  A call by position needs one argument per name of the signature, and any
+  other count is an error.")
+
+(document (type-missing? more)
+  "Returns whether the forms after a field keyword start with no type.")
