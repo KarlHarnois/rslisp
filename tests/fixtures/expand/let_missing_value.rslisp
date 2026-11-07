@@ -17,3 +17,6 @@
   (let (count 0
         (total i64))
     count))
+
+(defn three-item-binder ()
+  (let ((total 0 1)) total))

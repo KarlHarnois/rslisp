@@ -42,3 +42,11 @@ error[L0334]: a name in the binding list of `let` has no value
    |         ^^^^^^^^^^^ this name has no value
    |
    = help: write its value after it, as `(let (count 0 (total i64) value) ...)`
+
+error[L0334]: a name in the binding list of `let` has no value
+  --> expand/let_missing_value.rslisp:22:9
+   |
+22 |   (let ((total 0 1)) total))
+   |         ^^^^^^^^^^^ this name has no value
+   |
+   = help: write its value after it, as `(let ((total 0 1) value) ...)`

@@ -6,3 +6,4 @@ input_file: tests/fixtures/expand/let_scoped.rslisp
 (def total (fn () (do (local x 5) (local y (add x 2)) (add y x))))
 (def nothing-bound (fn () (do 1)))
 (def shadowed (fn () (do (local x_2 1) (local x_3 (add x_2 1)) x_3)))
+(def typed (fn () (do (local (year i64) 2025) year)))

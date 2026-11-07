@@ -9,3 +9,6 @@
   (let (x 1
         x (+ x 1))
     x))
+
+(defn typed ()
+  (let ((year i64) 2025) year))

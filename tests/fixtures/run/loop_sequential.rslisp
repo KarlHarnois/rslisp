@@ -13,6 +13,14 @@
       (recur (+ step 1) (* total 2))
       total)))
 
+(defn nested-mention (base)
+  (loop (first-step base
+         second-step 1
+         limit (* first-step 3))
+    (if (< second-step limit)
+      (recur first-step (* second-step 2) limit)
+      second-step)))
+
 (type tried-sum
   (fn ((ref str))
     (result i64 (parse-error i64))))
@@ -27,6 +35,7 @@
 (defn main ()
   (println (countdown-sum 3))
   (println (power-of-two 10))
+  (println (nested-mention 5))
   (println (unwrap-ok (tried-sum "4")))
   (println (loop (index 0)
              (if (< index 10)

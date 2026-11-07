@@ -30,6 +30,20 @@ fn power_of_two(exponent: i64) -> i64 {
     }
 }
 
+fn nested_mention(base: i64) -> i64 {
+    let first_step: i64 = base;
+    let mut second_step: i64 = 1;
+    let limit: i64 = first_step * 3;
+    loop {
+        if second_step < limit {
+            second_step *= 2;
+            continue;
+        } else {
+            break second_step;
+        }
+    }
+}
+
 fn tried_sum(text: &str) -> Result<i64, std::num::ParseIntError> {
     let step: i64 = 0;
     let total: i64 = step;
@@ -49,6 +63,7 @@ fn main() {
     crate::rt::restore_default_sigpipe();
     println!("{}", countdown_sum(3));
     println!("{}", power_of_two(10));
+    println!("{}", nested_mention(5));
     println!("{}", crate::rt::unwrap_ok(tried_sum("4")));
     println!("{}", {
         let mut index: i64 = 0;
