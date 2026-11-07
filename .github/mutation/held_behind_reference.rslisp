@@ -10,5 +10,5 @@
   (local word "a")
   (local view (ref word))
   (local deep-view (ref view))
-  (println (sample-of deep-view (ref (vec view))))
+  (println (sample-of view (ref (vec word))))
   (println (label (str "y"))))

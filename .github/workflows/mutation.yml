@@ -23,15 +23,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        pull: [340, 342, 344, 346]
-        tests: [nextest, front]
+        pull: [340, 344, 346]
+        tests: [staged]
         shards: [4]
         shard: [0, 1, 2, 3]
-        include:
-          - { pull: 351, tests: front, shards: 1, shard: 0 }
-          - { pull: 346, tests: front, shards: 1, shard: 0 }
-          - { pull: 346, tests: front, shards: 2, shard: 0 }
-          - { pull: 346, tests: front, shards: 2, shard: 1 }
     runs-on: ubuntu-latest
     timeout-minutes: 120
     steps:
@@ -59,7 +54,6 @@ jobs:
       - name: Test the mutants
         env:
           SHARD: ${{ matrix.shard }}/${{ matrix.shards }}
-          TESTS: ${{ matrix.tests }}
         run: nix develop .#mutation -c bash .github/mutation/run.sh
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: ${{ !cancelled() }}
@@ -68,7 +62,8 @@ jobs:
           path: |
             pull/mutants.out/outcomes.json
             pull/mutants.out/*.txt
-            pull/mutants.out/log/
+            pull/mutants.out.old/outcomes.json
+            pull/mutants.out.old/*.txt
 
   moved:
     runs-on: ubuntu-latest
