@@ -4,8 +4,8 @@ expression: reports.report(path)
 input_file: tests/fixtures/emit/function_parameter_local_call_only.rslisp
 ---
 fn apply(mut pick: impl FnMut(&str) -> &str) -> &'static str {
-    let local = "Leaf".to_string();
-    if pick(local.as_str()) == "Leaf" {
+    let owned = "Leaf".to_string();
+    if pick(owned.as_str()) == "Leaf" {
         pick("Nissan")
     } else {
         "none"

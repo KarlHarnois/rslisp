@@ -19,10 +19,10 @@ fn build_with<'a>(constructor: impl FnOnce(&'a str, u16) -> Car<'a>) -> Car<'a> 
 
 fn build_twice(mut constructor: impl FnMut(&str, u16) -> Car<'_>) -> u16 {
     let make = "Nissan".to_string();
-    let local = constructor(make.as_str(), 2011);
+    let owned = constructor(make.as_str(), 2011);
     let built = build_with(constructor);
     println!("{}", built.make);
-    local.year + built.year
+    owned.year + built.year
 }
 
 fn main() {

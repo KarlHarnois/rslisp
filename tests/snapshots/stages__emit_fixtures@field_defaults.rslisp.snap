@@ -43,7 +43,7 @@ fn main() {
         is_admin: true,
     };
     let sam = make_user("sam", "sam@example.org", false);
-    let local = Client {
+    let owned = Client {
         host: "localhost",
         retries: 3,
     };
@@ -59,7 +59,7 @@ fn main() {
     println!("{}", ana.is_admin);
     println!("{}", root.is_admin);
     println!("{}", sam.name);
-    println!("{}", local.retries);
+    println!("{}", owned.retries);
     println!("{}", first_basket.items.len());
     println!("{}", second_basket.items.len())
 }
