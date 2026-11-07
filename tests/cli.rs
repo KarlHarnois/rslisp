@@ -81,6 +81,9 @@ const MACRO_STRUCT_BESIDE_A_DEF: &str = "(defrule my-struct ((n) (do (defstruct 
 const THREADING_HEADER: &str = "(-> value form ...)";
 const THREAD_LAST_HEADER: &str = "(->> value form ...)";
 const MINUS_HEADER: &str = "(- number more ...)";
+const FLAG_NAMED_DEF: &str = "(def --verbose 1)\n\n(defn main () (println --verbose))\n";
+const FLAG_NAMED_DEF_PAGE: &str = "(def --verbose)\n\nNo documentation.\n";
+const DEFN_HEADER: &str = "(defmacro defn (name parameters body ...))";
 const UNKNOWN_FLAG_ERROR: &str = "error: unexpected argument '--typo' found";
 const ARITHMETIC: &str = include_str!("fixtures/emit/arithmetic.rslisp");
 const EMPTY_MAIN: &str = "(def main (fn () (do)))\n";
@@ -1348,6 +1351,30 @@ fn doc_takes_the_minus_term() {
     let doc = sandbox.compiler(&["doc", "-"]);
     let page = doc.assert_exit_code(0).stdout();
     assert_eq!(page.lines().next(), Some(MINUS_HEADER));
+}
+
+#[test]
+fn doc_takes_a_program_term_that_starts_with_two_hyphens_after_the_separator() {
+    let sandbox =
+        Sandbox::new("doc_separated_program_term").with_file("main.rslisp", FLAG_NAMED_DEF);
+    let doc = sandbox.compiler(&["doc", "--file", "main.rslisp", "--", "--verbose"]);
+    assert_eq!(doc.assert_exit_code(0).stdout(), FLAG_NAMED_DEF_PAGE);
+}
+
+#[test]
+fn doc_takes_a_prelude_term_after_the_separator() {
+    let sandbox = Sandbox::new("doc_separated_prelude_term");
+    let doc = sandbox.compiler(&["doc", "--", "defn"]);
+    let page = doc.assert_exit_code(0).stdout();
+    assert_eq!(page.lines().next(), Some(DEFN_HEADER));
+}
+
+#[test]
+fn doc_reports_a_term_before_and_after_the_separator() {
+    let sandbox = Sandbox::new("doc_term_on_both_sides");
+    sandbox
+        .compiler(&["doc", "defn", "--", "if"])
+        .assert_exit_code(2);
 }
 
 #[test]
