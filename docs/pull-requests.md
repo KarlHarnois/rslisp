@@ -50,13 +50,13 @@
 ## The check on `main`
 
 1. Run `gh run list --branch main --workflow CI --status completed --limit 5`.
-2. Take the newest run whose conclusion is not `cancelled`. If all five are cancelled, treat `main` as passing.
+2. Take the newest run whose conclusion is not `cancelled` and whose title does not start with `Release v`: CI skips every job of a release commit. If no run qualifies, treat `main` as passing.
 3. Run `gh run view <id> --json jobs --jq '.jobs[] | {name, conclusion}'` on that run.
 4. If the job that failed on the pull request shows `failure` there, `main` fails the same check.
 
 ## Probe binaries
 
-**The `flake` job pushes the compiler of each ready pull request and each `main` commit to the project's Cachix.** A pull request's binary holds the pull request merged into its base.
+**The `flake` job pushes the compiler of each ready pull request and each `main` commit except a release commit to the project's Cachix.** A pull request's binary holds the pull request merged into its base. A release commit changes only the version, so the block below takes a release's first parent as the base.
 
 **If you probe a pull request's unedited code, download the binaries of the pull request and its base with this block:**
 
@@ -64,6 +64,7 @@
 git fetch origin refs/pull/<number>/merge
 merge=$(git rev-parse FETCH_HEAD)
 base=$(git rev-parse "$merge^1")
+[[ $(git log -1 --format=%s "$base") == "Release v"* ]] && base=$(git rev-parse "$base^1")
 merge_path=$(nix eval --raw "git+file://$PWD?rev=$merge#default")
 base_path=$(nix eval --raw "git+file://$PWD?rev=$base#default")
 nix-store --realise "$merge_path" "$base_path"
