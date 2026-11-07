@@ -57,6 +57,23 @@ impl Expander<'_> {
             .then(|| Expr::new(ExprKind::Leaf(Leaf::Var(binding)), form.span()))
     }
 
+    pub(super) fn bind_failed_call_names(&mut self, call: &Form, context: &DefinitionContext) {
+        let module = self
+            .current_module
+            .expect("a top-level call expands inside a module");
+        let arguments = call.as_list().into_iter().flatten().skip(1);
+        for argument in arguments {
+            if self.is_unbound_name(argument) {
+                self.bind_failed_name(argument, Declaration::Value, module, context);
+            }
+        }
+    }
+
+    fn is_unbound_name(&self, form: &Form) -> bool {
+        form.as_symbol()
+            .is_some_and(|symbol| self.try_resolve(symbol, Namespace::Value).is_none())
+    }
+
     pub(super) fn bind_over_failed(
         &mut self,
         symbol: &Symbol,
