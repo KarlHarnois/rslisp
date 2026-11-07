@@ -50,7 +50,7 @@
 ## The check on `main`
 
 1. Run `gh run list --branch main --workflow CI --status completed --limit 5`.
-2. Take the newest run whose conclusion is not `cancelled` and whose title does not start with `Release v`: CI skips every job of a release commit. If no run qualifies, treat `main` as passing.
+2. Take the newest run whose conclusion is not `cancelled` and whose title is not a release subject such as `Release v0.8.22`: CI skips every job of a release commit. If no run qualifies, treat `main` as passing.
 3. Run `gh run view <id> --json jobs --jq '.jobs[] | {name, conclusion}'` on that run.
 4. If the job that failed on the pull request shows `failure` there, `main` fails the same check.
 
@@ -64,7 +64,7 @@
 git fetch origin refs/pull/<number>/merge
 merge=$(git rev-parse FETCH_HEAD)
 base=$(git rev-parse "$merge^1")
-[[ $(git log -1 --format=%s "$base") == "Release v"* ]] && base=$(git rev-parse "$base^1")
+[[ $(git log -1 --format=%s "$base") =~ ^Release\ v[0-9]+\.[0-9]+\.[0-9]+$ ]] && base=$(git rev-parse "$base^1")
 merge_path=$(nix eval --raw "git+file://$PWD?rev=$merge#default")
 base_path=$(nix eval --raw "git+file://$PWD?rev=$base#default")
 nix-store --realise "$merge_path" "$base_path"
