@@ -459,7 +459,7 @@ impl Expander<'_> {
     ) -> Result<Vec<BodyItem>, Diagnostic> {
         let mut items = Vec::new();
         while let Some(form) = rest_of_body.next() {
-            items.push(self.lower_body_item(form, rest_of_body, context)?);
+            items.extend(self.lower_body_item(form, rest_of_body, context)?);
         }
         Ok(items)
     }
@@ -469,14 +469,14 @@ impl Expander<'_> {
         form: Cow<Form>,
         rest_of_body: &mut RestOfBody,
         context: &mut DefinitionContext,
-    ) -> Result<BodyItem, Diagnostic> {
+    ) -> Result<Vec<BodyItem>, Diagnostic> {
         let span = form.span();
         self.declared_definitions.clear();
         match self.expand_body_head(form, context) {
-            Ok(form) => self.lower_body_form(&form, rest_of_body, context),
+            Ok(form) => Ok(vec![self.lower_body_form(&form, rest_of_body, context)?]),
             Err(diagnostic) => {
                 let failure = self.recover(diagnostic, span)?;
-                self.bind_failed_body_name(failure, rest_of_body, context)
+                Ok(self.bind_failed_body_names(&failure, rest_of_body, context))
             }
         }
     }

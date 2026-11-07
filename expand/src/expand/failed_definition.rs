@@ -2,7 +2,8 @@ use super::Expander;
 use super::context::DefinitionContext;
 use super::rest_of_body::RestOfBody;
 use crate::core::{
-    BindingId, BindingKind, BodyItem, Declaration, Expr, ExprKind, Leaf, ModuleId, Namespace,
+    Binder, BindingId, BindingKind, BodyItem, Declaration, Expr, ExprKind, Leaf, ModuleId,
+    Namespace,
 };
 use crate::diagnostic::Diagnostic;
 use crate::reader::{Form, Symbol};
@@ -95,25 +96,39 @@ impl Expander<'_> {
         self.tables.globals.forget_failed_definition(failed);
     }
 
-    pub(super) fn bind_failed_body_name(
+    pub(super) fn bind_failed_body_names(
         &mut self,
-        failure: Expr,
+        failure: &Expr,
         rest_of_body: &mut RestOfBody,
         context: &DefinitionContext,
-    ) -> Result<BodyItem, Diagnostic> {
-        let Some((name, declaration)) = self.declared_value_name() else {
-            return Ok(BodyItem::Expr(failure));
-        };
+    ) -> Vec<BodyItem> {
+        let names = self.declared_value_names();
+        if names.is_empty() {
+            return vec![BodyItem::Expr(failure.clone())];
+        }
         let scope = self.fresh_local_scope();
         rest_of_body.add_scope(scope);
-        let Ok(binder) = self.lower_binder(&Self::scoped(&name, scope), Some(context)) else {
-            return Ok(BodyItem::Expr(failure));
-        };
+        names
+            .into_iter()
+            .filter_map(|(name, declaration)| {
+                self.bind_failed_body_name(&Self::scoped(&name, scope), declaration, context)
+            })
+            .map(|binder| BodyItem::Let(binder, failure.clone()))
+            .collect()
+    }
+
+    fn bind_failed_body_name(
+        &mut self,
+        name: &Form,
+        declaration: Declaration,
+        context: &DefinitionContext,
+    ) -> Option<Binder> {
+        let binder = self.lower_binder(name, Some(context)).ok()?;
         self.tables
             .globals
             .record_failed_definition(binder.binding, declaration);
         self.failed_body_definitions.push(binder.binding);
-        Ok(BodyItem::Let(binder, failure))
+        Some(binder)
     }
 
     pub(super) fn forget_failed_body_definitions(&mut self, from: usize) {
@@ -122,12 +137,12 @@ impl Expander<'_> {
         }
     }
 
-    fn declared_value_name(&self) -> Option<(Form, Declaration)> {
+    fn declared_value_names(&self) -> Vec<(Form, Declaration)> {
         self.declared_definitions
             .iter()
             .filter(|declared| declared.declaration.namespace() == Namespace::Value)
             .map(|declared| (declared.binder(), declared.declaration))
-            .find(|(binder, _)| binder.as_symbol().is_some())
+            .collect()
     }
 
     fn bind_failed_names(&mut self, context: &DefinitionContext) {
