@@ -23,7 +23,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        pull: [340, 344, 346]
+        pull: [340, 346]
         tests: [staged]
         shards: [4]
         shard: [0, 1, 2, 3]

@@ -9,13 +9,21 @@ test_mutants() {
   shift
   local exit_code=0
   cargo mutants --workspace --in-place --no-shuffle --cap-lints=true --baseline=skip \
-    --timeout "$timeout" --in-diff "$DIFF" --shard "$SHARD" -vV "$@" || exit_code=$?
+    --timeout "$timeout" --in-diff "$DIFF" -vV "$@" || exit_code=$?
   case "$exit_code" in
     0 | 2 | 3) ;;
     *) exit "$exit_code" ;;
   esac
 }
 
+survivor_patterns() {
+  cat mutants.out/missed.txt mutants.out/timeout.txt |
+    sed -e 's/[][\\.*^$+?(){}|]/\\&/g' -e 's/^/--re=^/' -e 's/$/$/'
+}
+
 cd pull
-test_mutants 240 "${fixture_tests[@]}"
-test_mutants 600 --iterate "${every_test[@]}"
+test_mutants 240 --shard "$SHARD" "${fixture_tests[@]}"
+mapfile -t survivors < <(survivor_patterns)
+if ((${#survivors[@]} > 0)); then
+  test_mutants 600 "${survivors[@]}" "${every_test[@]}"
+fi
