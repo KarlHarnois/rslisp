@@ -1,7 +1,7 @@
 ---
 source: tests/stages.rs
-expression: "Fixture::load(path).expand_report()"
+expression: reports.report(path)
 input_file: tests/fixtures/expand/let_shadowing.rslisp
 ---
 (def total 10)
-(def shadow (fn (total_2) (let total_3 (do total_2)) (let total_4 (do total_3)) total_4))
+(def shadow (fn (total_2) (local total_3 (do total_2)) (local total_4 (do total_3)) total_4))

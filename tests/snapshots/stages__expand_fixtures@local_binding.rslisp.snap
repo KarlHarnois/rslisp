@@ -4,4 +4,4 @@ expression: reports.report(path)
 input_file: tests/fixtures/expand/local_binding.rslisp
 ---
 (def rate 3)
-(def scale (fn (n) (let doubled (mul n 2)) (let (factor i64) rate) (mul doubled factor)))
+(def scale (fn (n) (local doubled (mul n 2)) (local (factor i64) rate) (mul doubled factor)))
