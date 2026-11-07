@@ -1,17 +1,17 @@
-# rslisp
+# Knave
 
-[![CI](https://github.com/KarlHarnois/rslisp/actions/workflows/ci.yml/badge.svg)](https://github.com/KarlHarnois/rslisp/actions/workflows/ci.yml)
-[![release](https://img.shields.io/github/v/release/KarlHarnois/rslisp)](https://github.com/KarlHarnois/rslisp/releases/latest)
+[![CI](https://github.com/knave-lang/knave/actions/workflows/ci.yml/badge.svg)](https://github.com/knave-lang/knave/actions/workflows/ci.yml)
+[![release](https://img.shields.io/github/v/release/knave-lang/knave)](https://github.com/knave-lang/knave/releases/latest)
 ![line coverage](https://img.shields.io/badge/line%20coverage-99%25-brightgreen)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 [![Nix flake](https://img.shields.io/badge/nix-flake-5277C3?logo=nixos&logoColor=white)](#set-up)
 [![Rust 2024](https://img.shields.io/badge/rust-2024-B7410E?logo=rust&logoColor=white)](https://doc.rust-lang.org/edition-guide/rust-2024/)
 
 > [!WARNING]
-> **`rslisp` is a placeholder name.** The language has no name yet. The name `rslisp` and the `.rslisp` extension will change. The language is experimental: expect breaking changes to the syntax, the prelude and the command line in any commit.
+> **Knave is experimental.** Expect breaking changes to the syntax, the prelude and the command line in any commit. The command and the source extension are still `rslisp` and `.rslisp`. They become `knave` and `.knv` soon.
 
 ```clojure
-(def rslisp
+(def knave
   "A small Lisp for humans and agents
   that infers types and ownership
   and compiles to readable Rust.")
