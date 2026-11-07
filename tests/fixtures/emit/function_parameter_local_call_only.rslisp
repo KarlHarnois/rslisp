@@ -3,8 +3,8 @@
     (ref str)))
 
 (defn apply (pick)
-  (let local (str "Leaf"))
-  (if (= (pick (as-str local)) "Leaf")
+  (let owned (str "Leaf"))
+  (if (= (pick (as-str owned)) "Leaf")
     (pick "Nissan")
     "none"))
 

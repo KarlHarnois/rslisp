@@ -9,10 +9,10 @@
 
 (defn build-twice (constructor)
   (let make (str "Nissan"))
-  (let local (constructor (as-str make) 2011))
+  (let owned (constructor (as-str make) 2011))
   (let built (build-with constructor))
   (println (:make built))
-  (+ (:year local) (:year built)))
+  (+ (:year owned) (:year built)))
 
 (defn main ()
   (println (build-twice ->car)))
