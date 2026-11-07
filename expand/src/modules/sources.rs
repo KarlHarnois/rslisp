@@ -98,6 +98,12 @@ impl ModuleSources {
         path.as_str() == Self::PRELUDE || path.as_str().starts_with(Self::PRELUDE_DIRECTORY)
     }
 
+    pub fn is_embedded_prelude(path: &ModulePath) -> bool {
+        Self::PRELUDE_FILES
+            .iter()
+            .any(|(module, _)| *module == path.as_str())
+    }
+
     pub fn is_written(path: &ModulePath) -> bool {
         !Self::is_prelude(path) && ![Self::KERNEL, Self::CODE].contains(&path.as_str())
     }
