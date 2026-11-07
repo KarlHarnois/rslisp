@@ -1,0 +1,76 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/expand/partly_labeled_call.rslisp
+---
+error[L0338]: `->point` takes a label on every argument or on none
+  --> expand/partly_labeled_call.rslisp:12:46
+   |
+12 | (defn unlabeled-after-label () (->point :x 1 2))
+   |                                              ^ this argument has no label
+   |
+   = help: a keyword argument is always a label: write `:x value :y value`
+
+error[L0338]: `->point` takes a label on every argument or on none
+  --> expand/partly_labeled_call.rslisp:14:37
+   |
+14 | (defn label-after-value () (->point 1 :y 2))
+   |                                     ^ this argument has no label
+   |
+   = help: a keyword argument is always a label: write `:x value :y value`
+
+error[L0338]: `->point` takes a label on every argument or on none
+  --> expand/partly_labeled_call.rslisp:16:39
+   |
+16 | (defn label-without-value () (->point :x))
+   |                                       ^^ this label has no value
+   |
+   = help: a keyword argument is always a label: write `:x value :y value`
+
+error[L0338]: `->point` takes a label on every argument or on none
+  --> expand/partly_labeled_call.rslisp:18:47
+   |
+18 | (defn value-after-pairs () (->point :x 1 :y 2 3))
+   |                                               ^ this argument has no label
+   |
+   = help: a keyword argument is always a label: write `:x value :y value`
+
+error[L0338]: `->marker` takes a label on every argument or on none
+  --> expand/partly_labeled_call.rslisp:20:41
+   |
+20 | (defn keyword-on-no-fields () (->marker :x))
+   |                                         ^^ this label has no value
+   |
+   = help: remove the arguments
+
+error[L0338]: `->wrapper` takes a label on every argument or on none
+  --> expand/partly_labeled_call.rslisp:22:42
+   |
+22 | (defn reader-without-label () (->wrapper :y))
+   |                                          ^^ this label has no value
+   |
+   = help: a keyword argument is always a label: write `:value value`
+
+error[L0338]: `->point` takes a label on every argument or on none
+  --> expand/partly_labeled_call.rslisp:24:38
+   |
+24 | (defn reader-after-value () (->point 1 :y))
+   |                                      ^ this argument has no label
+   |
+   = help: a keyword argument is always a label: write `:x value :y value`
+
+error[L0338]: `add` takes a label on every argument or on none
+  --> expand/partly_labeled_call.rslisp:26:39
+   |
+26 | (defn parameter-without-value () (add 6 :y))
+   |                                       ^ this argument has no label
+   |
+   = help: a keyword argument is always a label: write `:x value :y value`
+
+error[L0338]: `add` takes a label on every argument or on none
+  --> expand/partly_labeled_call.rslisp:28:42
+   |
+28 | (defn parameter-after-label () (add :x 6 7))
+   |                                          ^ this argument has no label
+   |
+   = help: a keyword argument is always a label: write `:x value :y value`

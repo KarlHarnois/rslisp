@@ -1,0 +1,28 @@
+(defstruct point
+  :x i64
+  :y i64)
+
+(defstruct wrapper
+  :value (fn (point) i64))
+
+(defstruct marker)
+
+(defn add (:x i64 :y i64) (+ x y))
+
+(defn unlabeled-after-label () (->point :x 1 2))
+
+(defn label-after-value () (->point 1 :y 2))
+
+(defn label-without-value () (->point :x))
+
+(defn value-after-pairs () (->point :x 1 :y 2 3))
+
+(defn keyword-on-no-fields () (->marker :x))
+
+(defn reader-without-label () (->wrapper :y))
+
+(defn reader-after-value () (->point 1 :y))
+
+(defn parameter-without-value () (add 6 :y))
+
+(defn parameter-after-label () (add :x 6 7))

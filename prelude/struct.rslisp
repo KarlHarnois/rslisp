@@ -20,9 +20,6 @@
   (fn (head)
     (if (list? head) (first head) head)))
 
-(def field-type-form
-  (fn (field) (nth field 1)))
-
 (def field-initializer
   (fn (field)
     (list (first field) (first field))))
@@ -132,14 +129,12 @@
     (local name (head-name head))
     (local fields (field-groups (declared-forms body)))
     (local field-names (map-list first fields))
-    (local field-types (map-list field-type-form fields))
     (local defaults
       (default-bindings (default-pairs body)
                         (field-definition name)
                         field-names))
     (local hidden (symbol (quote make) "make-" name))
-    (local signature
-      (call-signature name field-names defaults field-types))
+    (local signature (call-signature name field-names defaults))
     (template (do
                 (struct (unquote head) (splice fields))
                 (defn (unquote hidden) (unquote field-names)

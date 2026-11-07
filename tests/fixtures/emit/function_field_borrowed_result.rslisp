@@ -16,7 +16,7 @@
 (defn apply-key (key someone) (key someone))
 
 (defn main ()
-  (local by-name (->sorter :name "by name"))
+  (local by-name (->sorter :key :name :label "by name"))
   (local by-name-again (->sorter name-of "by name again"))
   (local ana (->user :name "ana" :age 34))
   (println (:label by-name)
