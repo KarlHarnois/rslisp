@@ -1,0 +1,14 @@
+(type sample-of
+  (where (a) (fn ((ref a) (ref (vec a))) usize)))
+
+(defn sample-of (sample items) (len items))
+
+(defn label (name)
+  (sample-of name (ref (vec (str "x")))))
+
+(defn main ()
+  (local word "a")
+  (local view (ref word))
+  (local deep-view (ref view))
+  (println (sample-of view (ref (vec word))))
+  (println (label (str "y"))))

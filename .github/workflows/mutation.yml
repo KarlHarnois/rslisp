@@ -1,0 +1,94 @@
+name: Mutation
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ci-mutation]
+
+concurrency:
+  group: mutation-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  CACHIX_CACHE: rslisp
+  DIFF: git.diff
+  INSTA_UPDATE: "no"
+
+jobs:
+  mutants:
+    name: mutants (#${{ matrix.pull }}, ${{ matrix.tests }}, ${{ matrix.shard }}/${{ matrix.shards }})
+    strategy:
+      fail-fast: false
+      matrix:
+        pull: [340, 346]
+        tests: [staged]
+        shards: [4]
+        shard: [0, 1, 2, 3]
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+          ref: refs/pull/${{ matrix.pull }}/head
+          path: pull
+          fetch-depth: 0
+      - uses: DeterminateSystems/nix-installer-action@3138316df39ed29be04236d7ffc686fa525866aa # v23
+      - uses: cachix/cachix-action@38b082610b782e7e93e209c35fd730d399dee866 # v17
+        with:
+          name: ${{ env.CACHIX_CACHE }}
+          skipPush: true
+      - name: Write the pull request's diff
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PULL: ${{ matrix.pull }}
+        run: |
+          base=$(gh pr view "$PULL" --json baseRefOid --jq .baseRefOid)
+          git -C pull diff "$base...HEAD" > "pull/$DIFF"
+      - name: Test the mutants
+        env:
+          SHARD: ${{ matrix.shard }}/${{ matrix.shards }}
+        run: nix develop .#mutation -c bash .github/mutation/run.sh
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: ${{ !cancelled() }}
+        with:
+          name: mutants-${{ matrix.pull }}-${{ matrix.tests }}-${{ matrix.shard }}-of-${{ matrix.shards }}
+          path: |
+            pull/mutants.out/outcomes.json
+            pull/mutants.out/*.txt
+            pull/mutants.out.old/outcomes.json
+            pull/mutants.out.old/*.txt
+
+  moved:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: DeterminateSystems/nix-installer-action@3138316df39ed29be04236d7ffc686fa525866aa # v23
+      - uses: cachix/cachix-action@38b082610b782e7e93e209c35fd730d399dee866 # v17
+        with:
+          name: ${{ env.CACHIX_CACHE }}
+          skipPush: true
+      - run: nix develop .#mutation -c bash .github/mutation/moved.sh
+
+  survivor:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: DeterminateSystems/nix-installer-action@3138316df39ed29be04236d7ffc686fa525866aa # v23
+      - uses: cachix/cachix-action@38b082610b782e7e93e209c35fd730d399dee866 # v17
+        with:
+          name: ${{ env.CACHIX_CACHE }}
+          skipPush: true
+      - run: nix develop .#mutation -c bash .github/mutation/survivor.sh
