@@ -1468,6 +1468,7 @@ impl<'a> ExpressionEmitter<'a> {
     }
 
     fn let_statement(&mut self, binder: &TypedBinder, value: &TypedExpr) -> Code {
+        let binder = &Self::with_written_type(binder, value);
         let value = self.let_value(binder, value);
         let name = self.locals.bind(
             binder.binding,
@@ -1489,6 +1490,14 @@ impl<'a> ExpressionEmitter<'a> {
             ],
             Precedence::Block,
         )
+    }
+
+    fn with_written_type(binder: &TypedBinder, value: &TypedExpr) -> TypedBinder {
+        let written = value.holds_written_type() && !binder.ty.holds_function();
+        TypedBinder {
+            annotated: binder.annotated || written,
+            ..binder.clone()
+        }
     }
 
     fn let_value(&mut self, binder: &TypedBinder, value: &TypedExpr) -> Code {

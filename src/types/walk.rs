@@ -9,6 +9,14 @@ use super::typed::{
 
 impl TypedExpr {
     pub fn let_block_value(&self) -> Option<&TypedExpr> {
+        self.let_block().map(|(_, value)| value)
+    }
+
+    pub fn holds_written_type(&self) -> bool {
+        self.let_block().is_some_and(|(binder, _)| binder.annotated)
+    }
+
+    fn let_block(&self) -> Option<(&TypedBinder, &TypedExpr)> {
         let TypedExprKind::Control(TypedControl::Block(block)) = &self.kind else {
             return None;
         };
@@ -22,7 +30,7 @@ impl TypedExpr {
         let TypedExprKind::Leaf(TypedLeaf::Local(result)) = &result.kind else {
             return None;
         };
-        (*result == binder.binding).then_some(inner)
+        (*result == binder.binding).then_some((binder, inner))
     }
 
     pub fn lambda_value(&self) -> Option<&TypedLambda> {
