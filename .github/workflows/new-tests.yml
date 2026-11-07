@@ -1,0 +1,69 @@
+name: New tests against the base
+
+on:
+  workflow_dispatch:
+    inputs:
+      pull_request:
+        description: Number of the pull request whose tests run on its merge base
+        required: true
+        type: number
+
+permissions:
+  contents: read
+
+env:
+  CACHIX_CACHE: rslisp
+
+jobs:
+  new-tests-against-base:
+    name: new tests against the base
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+          ref: refs/pull/${{ inputs.pull_request }}/merge
+      - uses: DeterminateSystems/nix-installer-action@3138316df39ed29be04236d7ffc686fa525866aa # v23
+      - uses: cachix/cachix-action@38b082610b782e7e93e209c35fd730d399dee866 # v17
+        with:
+          name: ${{ env.CACHIX_CACHE }}
+      - name: Put the pull request's tests on its merge base
+        id: overlay
+        shell: bash
+        run: |
+          head=$(git rev-parse HEAD^2)
+          merge_base=$(git merge-base HEAD^1 HEAD^2)
+          targets=$(git diff --name-only --diff-filter=d "$merge_base" "$head" -- tests |
+            sed -E 's#^tests/([^/]+)\.rs$#\1#; s#^tests/snapshots/([^/]+)__.*#\1#; s#^tests/(fixtures|support)/.*#stages#' |
+            sort -u | tr '\n' ' ')
+          git checkout --quiet "$merge_base"
+          git checkout --quiet "$head" -- tests
+          echo "targets=$targets" >> "$GITHUB_OUTPUT"
+      - name: Report which tests fail on the merge base
+        shell: bash
+        env:
+          TARGETS: ${{ steps.overlay.outputs.targets }}
+        run: |
+          report() {
+            echo "::notice::$1"
+            echo "$1" >> "$GITHUB_STEP_SUMMARY"
+          }
+          read -ra targets <<< "$TARGETS"
+          if [ "${#targets[@]}" -eq 0 ]; then
+            report "The pull request changes no test target under tests/."
+            exit 0
+          fi
+          selection=("${targets[@]/#/--test=}")
+          if ! nix develop .#ci -c cargo test --no-run "${selection[@]}"; then
+            report "The tests do not compile on the merge base, which says nothing about whether they fail there."
+            exit 0
+          fi
+          nix develop .#ci -c cargo test --no-fail-fast "${selection[@]}" 2>&1 | tee test.log || true
+          failed=$(sed -En 's/^test (.*) \.\.\. FAILED$/\1/p' test.log | tr '\n' ' ')
+          if [ -n "$failed" ]; then
+            report "Failed on the merge base in ${targets[*]}: $failed"
+          else
+            report "Every test in ${targets[*]} passes on the merge base. A test that pins existing behavior passes there."
+          fi

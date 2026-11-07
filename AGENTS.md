@@ -114,6 +114,8 @@ The exceptions are:
 - If a change fixes a bug, add a regression test.
 - A regression test MAY be a fixture, a `tests/cli.rs` test, or a unit test.
 - Before you commit a fix, revert the fix alone and run its regression test. If the test passes, change the test until it fails without the fix.
+- You MAY run `gh workflow run new-tests.yml -f pull_request=<number>` to learn which of a pull request's tests fail on its merge base. `gh run view <run id>` shows the result.
+- That workflow does not replace the revert: a test that pins existing behavior passes on the merge base, and the workflow skips unit tests.
 - A test MUST reach every condition and match arm that a change adds.
 - Before you commit, negate each new condition and empty each new match arm, one at a time. Run the tests after each change. If every test still passes, add a test that fails on that change.
 - A slow input is an input that runs longer than one second in a debug build.
