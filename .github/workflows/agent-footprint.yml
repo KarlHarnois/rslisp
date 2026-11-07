@@ -9,109 +9,52 @@ permissions:
 
 env:
   CACHIX_CACHE: rslisp
-  RANGE_START: e8057210
-  RANGE_END: 1f957311
-  FIX_COMMIT: 5f1b3f95
-  PIN_COMMIT: 1f957311
 
 jobs:
-  commit-builds:
+  copied-target:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           persist-credentials: false
-          fetch-depth: 0
       - uses: DeterminateSystems/nix-installer-action@3138316df39ed29be04236d7ffc686fa525866aa # v23
       - uses: cachix/cachix-action@38b082610b782e7e93e209c35fd730d399dee866 # v17
         with:
           name: ${{ env.CACHIX_CACHE }}
-      - name: Check each commit
+      - name: Build a cold worktree, then one seeded with its target
         shell: bash
         run: |
-          for commit in $(git rev-list --reverse "$RANGE_START..$RANGE_END"); do
-            git checkout --quiet "$commit"
-            started=$SECONDS
-            nix develop .#ci -c cargo check --workspace --all-targets
-            echo "::notice::$commit checked in $((SECONDS - started))s"
-          done
+          timed_build() {
+            local started=$SECONDS
+            nix develop "$GITHUB_WORKSPACE#ci" -c cargo test --no-run --test cli -v 2>&1 | tee build.log | tail -1
+            echo "$1: $((SECONDS - started))s, fresh $(grep -c '^ *Fresh' build.log), dirty $(grep -c '^ *Dirty' build.log), compiled $(grep -c '^ *Compiling' build.log)"
+            grep '^ *Dirty' build.log | cut -c1-160 | head -5
+          }
+          timed_build cold
+          git worktree add --quiet ../seeded HEAD
+          cp -a target ../seeded/target
+          cd ../seeded
+          timed_build seeded
+          git worktree add --quiet ../unseeded HEAD
+          cd ../unseeded
+          timed_build cold-second-path
 
-  probe-binaries:
+  branch-binary:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           persist-credentials: false
-          fetch-depth: 0
       - uses: DeterminateSystems/nix-installer-action@3138316df39ed29be04236d7ffc686fa525866aa # v23
       - uses: cachix/cachix-action@38b082610b782e7e93e209c35fd730d399dee866 # v17
         with:
           name: ${{ env.CACHIX_CACHE }}
-      - name: Build the head and the merge base
+          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+      - name: Build the branch's installed package
         shell: bash
         run: |
-          mkdir probes
-          for commit in "$FIX_COMMIT^" "$FIX_COMMIT"; do
-            git checkout --quiet "$commit"
-            started=$SECONDS
-            nix develop .#ci -c cargo build --release --package rslisp
-            cp target/release/rslisp "probes/rslisp-$(git rev-parse --short=8 HEAD)"
-            echo "::notice::$commit built in $((SECONDS - started))s"
-          done
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
-        with:
-          name: probe-binaries
-          path: probes/
-          retention-days: 1
-
-  new-tests-against-base:
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    strategy:
-      fail-fast: false
-      matrix:
-        commit_variable: [FIX_COMMIT, PIN_COMMIT]
-    steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
-        with:
-          persist-credentials: false
-          fetch-depth: 0
-      - uses: DeterminateSystems/nix-installer-action@3138316df39ed29be04236d7ffc686fa525866aa # v23
-      - uses: cachix/cachix-action@38b082610b782e7e93e209c35fd730d399dee866 # v17
-        with:
-          name: ${{ env.CACHIX_CACHE }}
-      - name: Run the head's tests on the base's sources
-        shell: bash
-        env:
-          COMMIT_VARIABLE: ${{ matrix.commit_variable }}
-        run: |
-          commit=${!COMMIT_VARIABLE}
-          git checkout --quiet "$commit^"
-          git checkout --quiet "$commit" -- tests
           started=$SECONDS
-          nix develop .#ci -c cargo test --no-fail-fast --test cli --test stages 2>&1 | tee test.log || true
-          echo "::notice::$commit tests ran in $((SECONDS - started))s"
-          echo "::notice::$commit failed: $(grep -E '^test .* FAILED$' test.log | tr '\n' ' ')"
-
-  profiles:
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
-        with:
-          persist-credentials: false
-      - uses: DeterminateSystems/nix-installer-action@3138316df39ed29be04236d7ffc686fa525866aa # v23
-      - uses: cachix/cachix-action@38b082610b782e7e93e209c35fd730d399dee866 # v17
-        with:
-          name: ${{ env.CACHIX_CACHE }}
-      - name: Measure
-        run: nix develop .#ci -c cargo xtask bench measure --save target/bench/candidate.tsv
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
-        with:
-          name: callgrind-profiles
-          path: |
-            target/bench/**/*.callgrind
-            target/bench/candidate.tsv
-          retention-days: 1
+          nix build --no-link --print-out-paths .#default
+          echo "built in $((SECONDS - started))s"
