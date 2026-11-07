@@ -1950,10 +1950,12 @@ impl<'a> ExpressionEmitter<'a> {
     }
 
     fn generic_declares(&self, generic: GenericId, required: &Bound) -> bool {
-        self.program
-            .generics
-            .get(&generic)
-            .is_some_and(|param| param.bounds.contains(required))
+        self.program.generics.get(&generic).is_some_and(|param| {
+            param
+                .bounds
+                .iter()
+                .any(|declared| self.program.traits.implies(declared, required, generic))
+        })
     }
 
     fn callee_type_arguments(&self, callee: &TypedExpr) -> Vec<(String, Code)> {

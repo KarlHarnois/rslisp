@@ -16,6 +16,18 @@
     (ord "first({0})")
     (ord "second({0})")))
 
+(def implied-trait
+  (rust "measure({0})"
+    (where (a) (fn (a) a))
+    (partial-ord "first({0})")
+    (ord "second({0})")))
+
+(def wider-trait-after
+  (rust "measure({0})"
+    (where (a) (fn (a) a))
+    (ord "first({0})")
+    (partial-ord "second({0})")))
+
 (defstruct ticket :number i64)
 (derive ticket partial-eq eq partial-ord ord)
 

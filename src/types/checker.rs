@@ -2351,13 +2351,18 @@ impl TypeChecker {
         declaration: &crate::core::RustTraitDeclaration,
     ) -> Result<(), Diagnostic> {
         let implementors = self.lower_rust_trait_implementors(declaration)?;
+        let supertraits = declaration
+            .requires
+            .iter()
+            .map(|bound| self.lower_type_bound(bound, &FxHashMap::default()))
+            .collect::<Result<Vec<_>, Diagnostic>>()?;
         self.traits.add(
             declaration.binding,
             RustTrait {
                 path: declaration.path.clone(),
                 implementors,
                 help: declaration.help.clone(),
-                supertraits: Vec::new(),
+                supertraits,
                 associated: None,
             },
         );
@@ -2520,20 +2525,7 @@ impl TypeChecker {
         self.unifier
             .generic_bounds(generic)
             .iter()
-            .any(|declared| self.bound_implies(declared, bound))
-    }
-
-    fn bound_implies(&self, declared: &Bound, required: &Bound) -> bool {
-        if declared == required {
-            return true;
-        }
-        let Some(rust_trait) = self.traits.get(declared.binding) else {
-            return false;
-        };
-        rust_trait
-            .supertraits
-            .iter()
-            .any(|supertrait| self.bound_implies(supertrait, required))
+            .any(|declared| self.traits.implies(declared, bound, generic))
     }
 
     pub(super) fn report_missing_trait(&mut self, bound: &Bound, implementor: &Type, span: Span) {

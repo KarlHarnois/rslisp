@@ -1,0 +1,5 @@
+(rust-trait marked "crate::marks::Marked"
+  (requires ord (partial-eq string))
+  i64)
+
+(defn main () (println "marked"))

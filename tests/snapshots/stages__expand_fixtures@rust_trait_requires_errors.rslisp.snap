@@ -1,0 +1,16 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/expand/rust_trait_requires_errors.rslisp
+---
+error[L0201]: cannot find type `nosuch` in this scope
+ --> expand/rust_trait_requires_errors.rslisp:2:13
+  |
+2 |   (requires nosuch)
+  |             ^^^^^^ not found in this scope
+
+error[L0212]: expected a trait, found `i64`
+ --> expand/rust_trait_requires_errors.rslisp:5:48
+  |
+5 | (rust-trait type-requirement "Typed" (requires i64) i64)
+  |                                                ^^^ not a trait

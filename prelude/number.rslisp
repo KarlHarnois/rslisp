@@ -39,6 +39,7 @@
     (pair a b)))
 
 (rust-trait eq "Eq"
+  (requires partial-eq)
   bool char str string
   (ref str)
   i8 i16 i32 i64 i128 isize u8 u16 u32 u64 u128 usize
@@ -59,6 +60,7 @@
   (where ((a hash) (b hash)) (pair a b)))
 
 (rust-trait partial-ord "PartialOrd"
+  (requires partial-eq)
   char str string
   (ref str)
   i8 i16 i32 i64 i128 isize u8 u16 u32 u64 u128 usize f32
@@ -189,6 +191,7 @@
 (defrule not= ((a b) (ne a b)))
 
 (rust-trait ord "Ord"
+  (requires eq partial-ord)
   char string
   (ref str)
   i8 i16 i32 i64 i128 isize u8 u16 u32 u64 u128 usize

@@ -1,0 +1,15 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/run/ord_bound_meets_partial_ord.rslisp
+---
+1
+a
+partial-ord
+true
+true
+true
+true
+true
+2
+1

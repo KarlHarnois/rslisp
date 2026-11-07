@@ -32,10 +32,10 @@ error[L0306]: `add` belongs to the program, so macro code cannot run it
 14 |     (macro (form) (+ 1 2) (list)))
    |                   ^^^^^^^ macro code runs this
    |
-  ::: prelude/number.rslisp:72:3
+  ::: prelude/number.rslisp:74:3
    |
-72 | /   (rust "{0} + {1}"
-73 | |     (where ((n number)) (fn (n n) n))))
+74 | /   (rust "{0} + {1}"
+75 | |     (where ((n number)) (fn (n n) n))))
    | |______________________________________- `add` is Rust code that runs in the program
    |
    = help: to compute this in the program, return it as code from the macro, for example with `quote`
@@ -65,10 +65,10 @@ error[L0306]: `mul` belongs to the program, so macro code cannot run it
 28 |     (macro (form) (double 2) (list)))
    |                    ------ macro code reaches it through this
    |
-  ::: prelude/number.rslisp:80:3
+  ::: prelude/number.rslisp:82:3
    |
-80 | /   (rust "{0} * {1}"
-81 | |     (where ((n number)) (fn (n n) n))))
+82 | /   (rust "{0} * {1}"
+83 | |     (where ((n number)) (fn (n n) n))))
    | |______________________________________- `mul` is Rust code that runs in the program
    |
    = help: to compute this in the program, return it as code from the macro, for example with `quote`

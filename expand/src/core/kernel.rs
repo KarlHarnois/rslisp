@@ -180,7 +180,7 @@ impl KernelForm {
         KernelFormRow {
             form: KernelForm::Definition(DefinitionForm::RustTrait),
             name: "rust-trait",
-            shape: "(rust-trait name \"Path\" (method name type)? (help \"text\")? type ...)",
+            shape: "(rust-trait name \"Path\" (requires trait ...)? (method name type)? (help \"text\")? type ...)",
         },
         KernelFormRow {
             form: KernelForm::Definition(DefinitionForm::RustType),

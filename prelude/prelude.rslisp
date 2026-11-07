@@ -256,9 +256,9 @@
 (document (rust-trait name "Path" type ...)
   "Names a Rust trait and the types that implement it.
 
-  Optional parts after the path declare a method, the impl text that the
-  compiler writes for program types, and the help line that a missing
-  implementor shows.")
+  Optional parts after the path declare the traits Rust requires of it, a
+  method, the impl text that the compiler writes for program types, and the
+  help line that a missing implementor shows.")
 
 (document (rust-type (name parameter ...)
             "template"

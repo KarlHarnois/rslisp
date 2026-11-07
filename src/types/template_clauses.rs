@@ -18,7 +18,9 @@ impl ClauseTarget {
             (Self::Trait(earlier), Self::Type(later)) => {
                 traits.satisfies(earlier, later, &|_, _| false)
             }
-            (Self::Trait(earlier), Self::Trait(later)) => earlier == later,
+            (Self::Trait(earlier), Self::Trait(later)) => {
+                traits.brings(later, &|brought| brought == earlier)
+            }
             (Self::Type(_), Self::Trait(_)) => false,
         }
     }

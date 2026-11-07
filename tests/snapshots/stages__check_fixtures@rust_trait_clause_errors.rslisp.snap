@@ -34,19 +34,29 @@ error[L0464]: this clause can never be chosen
    = help: move the narrower clause first, or remove a repeated one
 
 error[L0464]: this clause can never be chosen
-  --> check/rust_trait_clause_errors.rslisp:26:6
+  --> check/rust_trait_clause_errors.rslisp:23:6
    |
-25 |     (ord "first({0})")
+22 |     (partial-ord "first({0})")
+   |      ----------- this clause comes first
+23 |     (ord "second({0})")))
+   |      ^^^ an earlier clause covers this target
+   |
+   = help: move the narrower clause first, or remove a repeated one
+
+error[L0464]: this clause can never be chosen
+  --> check/rust_trait_clause_errors.rslisp:38:6
+   |
+37 |     (ord "first({0})")
    |      --- this clause comes first
-26 |     (ticket "second({0})")))
+38 |     (ticket "second({0})")))
    |      ^^^^^^ an earlier clause covers this target
    |
    = help: move the narrower clause first, or remove a repeated one
 
 error[L0449]: a trait is a type only inside `(box ...)`
-  --> check/rust_trait_clause_errors.rslisp:30:4
+  --> check/rust_trait_clause_errors.rslisp:42:4
    |
-30 |   (ord "Vec<{0}>"))
+42 |   (ord "Vec<{0}>"))
    |    ^^^ `ord` is a trait
    |
    = help: write `(box ord)` to box it as a trait object

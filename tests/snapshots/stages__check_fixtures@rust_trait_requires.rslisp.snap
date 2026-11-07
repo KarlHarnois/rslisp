@@ -1,0 +1,12 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/rust_trait_requires.rslisp
+---
+error[L0446]: `unmarked` does not implement `base-mark`, a supertrait of `marked`
+  --> check/rust_trait_requires.rslisp:11:14
+   |
+11 | (impl marked unmarked (mark (value) 1))
+   |              ^^^^^^^^ `unmarked` does not implement `base-mark`
+   |
+   = help: implement `base-mark` for `unmarked`
