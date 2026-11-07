@@ -144,7 +144,7 @@ The exceptions are:
 ### Commits
 
 - Make each commit one logical change.
-- Each commit MUST build.
+- Each commit MUST build. The `commit builds` job in CI checks every commit of a ready pull request.
 - Commit only the paths of that change: name the paths in `git commit`, because the index can hold other staged files.
 
 ## Commands
@@ -179,9 +179,10 @@ cargo test <narrowest test>
 
 **CI posts the front end's instruction counts on each ready pull request and uploads its callgrind profiles.** If a ready pull request carries the change, read them from CI as `docs/pull-requests.md` says, and NEVER run `cargo xtask bench measure`. Otherwise, you MAY measure them on Linux with `cargo xtask bench measure`. To compare two checkouts, measure each with `--workspace <checkout> --save <file>`, then run `cargo xtask bench compare <before> <after>`.
 
-**NEVER run these commands locally:** each compiles the whole suite or rebuilds everything on all cores, and CI runs them.
+**NEVER run these commands locally:** CI does the same work.
 
 - `cargo test` without a test target
+- `git rebase -x` with a build command, or another loop that builds each commit
 - `cargo xtask coverage`
 - `nix flake check`
 - `nix build`, except the command below
