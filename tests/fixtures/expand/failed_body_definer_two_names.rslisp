@@ -1,0 +1,12 @@
+(use code declare-definition fail)
+(use prelude/macros defmacro)
+
+(defmacro two-names (first-name second-name)
+  (declare-definition first-name)
+  (declare-definition second-name)
+  (fail "no names today" first-name))
+
+(defn main ()
+  (two-names left right)
+  (println left)
+  (println right))

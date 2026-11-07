@@ -1,0 +1,11 @@
+(defn main ()
+  (defn (inner i64) "doc"
+    (x)
+    x)
+  (defn (other no-such-type) "doc"
+    (x)
+    x)
+  (defn 5 "doc"
+    (x)
+    x)
+  (inner 1))

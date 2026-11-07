@@ -1,0 +1,10 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/expand/failed_body_definer_two_names.rslisp
+---
+error[L0301]: no names today
+  --> expand/failed_body_definer_two_names.rslisp:10:14
+   |
+10 |   (two-names left right)
+   |              ^^^^ here
