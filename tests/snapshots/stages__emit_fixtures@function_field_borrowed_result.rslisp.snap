@@ -29,7 +29,10 @@ fn apply_key<'a>(key: impl FnOnce(&'a User<'a>) -> &'a str, someone: &'a User<'a
 
 fn main() {
     crate::rt::restore_default_sigpipe();
-    let by_name = make_sorter(|value: &User<'_>| value.name, "by name");
+    let by_name = Sorter {
+        key: |value: &User<'_>| value.name,
+        label: "by name",
+    };
     let by_name_again = make_sorter(name_of, "by name again");
     let ana = User {
         name: "ana",

@@ -272,10 +272,9 @@ Programs write structs with the prelude's `defstruct`, which takes flat fields. 
 
 The constructor `->point` is a macro, and it reads a call in this order:
 
-1. If the arguments are `:field value` pairs that name distinct fields and every field without a default, the call is by name. `(->point :y 2.0 :x 1.0)` expands to `(new point (:y 2.0) (:x 1.0))`, in the order written.
-2. Otherwise, if the arguments are `:key value` pairs, the call is positional only when it has one argument per field and every keyword at an even position lands on a field whose written type is a function type, `fn`, `fn-mut` or `fn-once`. With `(defstruct sorter :key (fn ((ref user)) (ref str)) :label str)`, `(->sorter :name "by name")` is positional. A type parameter does not count as a function type.
-3. Otherwise, `:key value` pairs are a call by name. The call expands to `new` with the defaults of the omitted fields, and `new` reports an unknown key in the user's spelling with the closest field, as `(->car :mak "Nissan")` suggests `:make`, a repeated key, or the missing fields that have no default.
-4. Any other call with exactly one argument per field is positional. `(->point 1.0 2.0)` calls a positional function that `defstruct` defines under a hygienic name, which no source code can refer to. It emits as `make_point(1.0, 2.0)`. Any other call is an error that names the field count.
+1. `:field value` pairs are a call by name, and a keyword argument is always a label. `(->point :y 2.0 :x 1.0)` expands to `(new point (:y 2.0) (:x 1.0))`, in the order written, with the defaults of the omitted fields. `new` reports an unknown key in the user's spelling with the closest field, as `(->car :mak "Nissan")` suggests `:make`, a repeated key, or the missing fields that have no default. With `(defstruct sorter :key (fn ((ref user)) (ref str)) :label str)`, `(->sorter :key :name :label "by name")` passes the `:name` reader after its label, and `(->sorter :name "by name")` is the error that `sorter` has no field `:name`.
+2. Any other call that holds a keyword is `L0338`, with the label on the first argument that no pair holds, as in `(->point 1 :y 2)`, `(->point :x)` and `(->wrapper :name)`.
+3. Any other call with exactly one argument per field is positional. `(->point 1.0 2.0)` calls a positional function that `defstruct` defines under a hygienic name, which no source code can refer to. It emits as `make_point(1.0, 2.0)`. Any other call is an error that names the field count.
 
 In value position, `->point` expands to the positional function, so `(local build ->point)` emits `let build = make_point;`. A program may define its own `make-point`, because no source name refers to the positional function.
 
@@ -360,10 +359,9 @@ fn add(x: i64, y: i64) -> i64 {
 
 `defn` defines a positional function under a hygienic name, and a macro `add` that reads each call with the constructor's rule, with parameters in place of fields:
 
-1. `:key value` pairs that name distinct parameters and every parameter without a default are a call by name. `(add :y 7 :x 6)` emits `add(6, 7)`, and `(greet :name "ana")` emits `greet("ana", "hello")`.
-2. Other `:key value` pairs are positional only when the call has one argument per parameter and every keyword at an even position lands on a parameter whose written type is a function type. With `(defn sort-users (:key (fn ((ref user)) (ref str)) :label str) ...)`, `(sort-users :name "by name")` passes the `:name` closure as `key`. A parameter with no written type does not count as a function type.
-3. Any other `:key value` pairs are a call by name, and the call is an error that names the missing, unknown or repeated parameter: `(add :x 6)` is "missing parameter `y` in `add`", `(add :z 6 :y 7)` is "`add` has no parameter `:z`", and `(add :x 6 :x 7)` is "`:x` is given twice in `add`".
-4. Any other call with exactly one argument per parameter is positional. `(add 6 7)` emits `add(6, 7)`. Any other call is an error that names the parameter count.
+1. `:key value` pairs are a call by name. `(add :y 7 :x 6)` emits `add(6, 7)`, and `(greet :name "ana")` emits `greet("ana", "hello")`. An error names the missing, unknown or repeated parameter: `(add :x 6)` is "missing parameter `y` in `add`", `(add :z 6 :y 7)` is "`add` has no parameter `:z`", and `(add :x 6 :x 7)` is "`:x` is given twice in `add`". With `(defn sort-users (:key (fn ((ref user)) (ref str)) :label str) ...)`, `(sort-users :key :name :label "by name")` passes the `:name` closure as `key`.
+2. Any other call that holds a keyword is `L0338`, as `(add 6 :y)` is.
+3. Any other call with exactly one argument per parameter is positional. `(add 6 7)` emits `add(6, 7)`. Any other call is an error that names the parameter count.
 
 A call by name always passes the arguments in parameter order. When it reorders the arguments, each argument that is a list binds to a temporary first, in the order written, so `(add :y (next-y) :x (next-x))` emits `{ let y: i64 = next_y(); let x: i64 = next_x(); add(x, y) }`. A literal or a name passes as written. A default is inlined at each call that omits it.
 

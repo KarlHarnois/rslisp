@@ -3,8 +3,8 @@
                     map-list note-docstring template
                     value-doc-key whole-pairs?)
 
-(use code bool-not closest-name concat declare-definition
-          drop empty? fail field-keyword first keyword-field
+(use code closest-name concat declare-definition drop empty?
+          fail field-keyword first keyword-field
           keyword-name keyword-trim-end keyword? len list
           list? nth number-sub prepend rest string string?
           symbol symbol-name symbol? take value-eq)
@@ -55,9 +55,7 @@
       (default-bindings (default-pairs parameters)
                         (parameter-definition name)
                         names))
-    (local signature
-      (call-signature name names defaults
-                      (map-list binder-type binders)))
+    (local signature (call-signature name names defaults))
     (local positional
       (symbol (quote function) (symbol-name name)))
     (template (do
@@ -95,8 +93,7 @@
                 (quote unknown-parameter))))
 
 (def call-signature
-  (fn (name names defaults types)
-    (list name names defaults types)))
+  (fn (name names defaults) (list name names defaults)))
 
 (def signature-name
   (fn (signature) (first signature)))
@@ -106,9 +103,6 @@
 
 (def signature-defaults
   (fn (signature) (nth signature 2)))
-
-(def signature-types
-  (fn (signature) (nth signature 3)))
 
 (def ends-with-defaults?
   (fn (forms)
@@ -209,12 +203,6 @@
 (def binder-name
   (fn (binder)
     (if (list? binder) (first binder) binder)))
-
-(def binder-type
-  (fn (binder)
-    (if (list? binder)
-      (nth binder 1)
-      (quote _))))
 
 (def parameter-keywords
   (fn (forms)
@@ -391,15 +379,6 @@
         true
         (has-argument? name (rest keys))))))
 
-(def reads-by-name?
-  (fn (arguments signature)
-    (if (keyword-pairs? arguments)
-      (if (valid-call-by-name? arguments signature)
-        true
-        (bool-not (keywords-land-on-functions? arguments
-                                               (signature-types signature))))
-      false)))
-
 (def keyword-pairs?
   (fn (arguments)
     (if (whole-pairs? arguments)
@@ -413,69 +392,6 @@
       (if (keyword? (first forms))
         (every-keyword? (rest forms))
         false))))
-
-(def valid-call-by-name?
-  (fn (arguments signature)
-    (local keys (pair-keys arguments))
-    (if (keys-name-distinct? keys (signature-names signature))
-      (empty? (names-without-argument (required-names signature) keys))
-      false)))
-
-(def keys-name-distinct?
-  (fn (keys names)
-    (if (every-key-names-one-of? keys names)
-      (distinct-keys? keys)
-      false)))
-
-(def every-key-names-one-of?
-  (fn (keys names)
-    (if (empty? keys)
-      true
-      (if (key-names-one-of? (first keys) names)
-        (every-key-names-one-of? (rest keys) names)
-        false))))
-
-(def distinct-keys?
-  (fn (keys)
-    (if (empty? keys)
-      true
-      (if (empty? (find-keyword (first keys) (rest keys)))
-        (distinct-keys? (rest keys))
-        false))))
-
-(def keywords-land-on-functions?
-  (fn (arguments types)
-    (if (value-eq (len arguments) (len types))
-      (every-function-type? (pair-keys types))
-      false)))
-
-(def every-function-type?
-  (fn (types)
-    (if (empty? types)
-      true
-      (if (function-type? (first types))
-        (every-function-type? (rest types))
-        false))))
-
-(def function-type?
-  (fn (type)
-    (if (list? type)
-      (if (empty? type)
-        false
-        (function-type-head? (first type)))
-      false)))
-
-(def function-type-head?
-  (fn (head)
-    (if (symbol? head)
-      (function-kind? (symbol-name head))
-      false)))
-
-(def function-kind?
-  (fn (name)
-    (if (value-eq name "fn")
-      true
-      (if (value-eq name "fn-mut") true (value-eq name "fn-once")))))
 
 (def required-names
   (fn (signature)
@@ -525,12 +441,64 @@
 (def read-call
   (fn (form positional signature owner by-name)
     (local arguments (rest form))
-    (if (reads-by-name? arguments signature)
+    (if (keyword-pairs? arguments)
       (by-name form)
-      (if (value-eq (len arguments)
-                    (len (signature-names signature)))
-        (prepend positional arguments)
-        (call-arity-error form signature owner)))))
+      (if (any-keyword? arguments)
+        (partly-labeled-error form signature)
+        (if (value-eq (len arguments)
+                      (len (signature-names signature)))
+          (prepend positional arguments)
+          (call-arity-error form signature owner))))))
+
+(def any-keyword?
+  (fn (forms)
+    (if (empty? forms)
+      false
+      (if (keyword? (first forms))
+        true
+        (any-keyword? (rest forms))))))
+
+(def partly-labeled-error
+  (fn (form signature)
+    (local unpaired (first-unpaired (rest form)))
+    (fail (string "`"
+                  (symbol-name (first form))
+                  "` takes a label on every argument or on none")
+      unpaired
+      (labeled-call-help (signature-names signature))
+      (template (:code partly-labeled-call
+                       :label (unquote (unpaired-label unpaired)))))))
+
+(def labeled-call-help
+  (fn (names)
+    (if (empty? names)
+      "remove the arguments"
+      (string "a keyword argument is always a label: write `"
+              (labeled-values names)
+              "`"))))
+
+(def labeled-values
+  (fn (names)
+    (local labeled
+      (string (symbol-name (field-keyword (first names)))
+              " value"))
+    (if (empty? (rest names))
+      labeled
+      (string labeled " " (labeled-values (rest names))))))
+
+(def first-unpaired
+  (fn (arguments)
+    (if (empty? (rest arguments))
+      (first arguments)
+      (if (keyword? (first arguments))
+        (first-unpaired (drop 2 arguments))
+        (first arguments)))))
+
+(def unpaired-label
+  (fn (argument)
+    (if (keyword? argument)
+      "this label has no value"
+      "this argument has no label")))
 
 (def call-arity-error
   (fn (form signature owner)
