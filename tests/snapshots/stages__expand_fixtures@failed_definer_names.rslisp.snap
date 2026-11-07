@@ -1,0 +1,44 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/expand/failed_definer_names.rslisp
+---
+error[L0349]: this field has no type
+ --> expand/failed_definer_names.rslisp:3:25
+  |
+3 |   (labeled :text string :size)
+  |                         ^^^^^ here
+  |
+  = help: write a type after it, as in :size i64
+
+error[L0342]: a `deftrait` method is a name and a type, as `(area (fn ((ref self)) f64))`
+  --> expand/failed_definer_names.rslisp:22:3
+   |
+22 |   3)
+   |   ^ here
+   |
+   = help: to name a Rust trait, write `(rust "Path")` after the name
+
+error[L0341]: a `rust` clause on `deftrait` holds one string
+  --> expand/failed_definer_names.rslisp:25:3
+   |
+25 |   (rust "Copy" "Clone")
+   |   ^^^^^^^^^^^^^^^^^^^^^ here
+   |
+   = help: write it as `(rust "Path")`
+
+error[L0342]: a `deftrait` method is a name and a type, as `(area (fn ((ref self)) f64))`
+  --> expand/failed_definer_names.rslisp:32:3
+   |
+32 |   3)
+   |   ^ here
+   |
+   = help: to name a Rust trait, write `(rust "Path")` after the name
+
+error[L0345]: `deftype` names a Rust type
+  --> expand/failed_definer_names.rslisp:34:17
+   |
+34 | (deftype meters f64)
+   |                 ^^^ here
+   |
+   = help: write `(deftype name (rust "Path"))`

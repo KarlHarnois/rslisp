@@ -801,7 +801,8 @@ impl Expander<'_> {
 
     fn variant_pattern_head(&self, head: &Symbol) -> Option<BindingId> {
         let binding = self.try_resolve(head, Namespace::Value)?;
-        matches!(self.kind(binding), BindingKind::Variant(_, _)).then_some(binding)
+        let is_variant = matches!(self.kind(binding), BindingKind::Variant(_, _));
+        (is_variant || self.tables.globals.is_failed_definition(binding)).then_some(binding)
     }
 
     fn struct_pattern_head(&self, head: &Symbol) -> Option<BindingId> {
