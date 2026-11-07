@@ -1,6 +1,6 @@
 # RFC 0061: Project file, crate dependencies and libraries
 
-**Status:** Proposed
+**Status:** Accepted
 **Date:** 2026-11-07
 
 ## Problem
@@ -13,7 +13,7 @@ Two later RFCs build on this one: a program interpreter, and compiled crate bind
 
 ## Decision
 
-The project owner decided these 12 points on 2026-11-07, and they are fixed. The questions under [Options](#options) are open, and each has a recommendation.
+The project owner decided these 12 points on 2026-11-07. The owner decided the 12 questions under [Options](#options) on the same date, as [Decided questions](#decided-questions) records.
 
 1. **A project is a directory with a `project.rslisp` file.**
 2. **The file is data in the language's syntax, read without expansion.** Nothing in it expands or runs. An unknown key is an error that suggests the closest key. The reasons: TOML adds a second syntax, and a hand-written `Cargo.toml` exposes Cargo's whole surface.
@@ -28,9 +28,26 @@ The project owner decided these 12 points on 2026-11-07, and they are fixed. The
 11. **A crate dependency adds no names.** A program reaches a crate only through forms with a `rust` clause or template. Binding a crate's API is library work in the language, not compiler work.
 12. **Dependencies are visible to program code only, never to macro code,** so a macro's output depends only on its input forms, the prelude and libraries. This keeps expansion deterministic and lets [#326](https://github.com/KarlHarnois/rslisp/issues/326) cache expanded modules. Macros that run crate code, as Rust's procedural macros do, are out of scope.
 
+### Decided questions
+
+The project owner took option A of questions 1 to 12 on 2026-11-07.
+
+1. **A dependency entry.** A dependency is a list: the name first, an optional version string, then keyword pairs, as `(serde "1.0" :features ("derive"))` and `(hints :path "../hints")`.
+2. **Features.** Feature names are strings.
+3. **A crate's name.** A crate's name stays as crates.io writes it, and this is the one recorded exception to the kebab-case rule.
+4. **The two build paths.** Both paths read one plan, the Cargo path runs `cargo rustc -- --cap-lints allow`, and a test in `tests/cli.rs` compares the two on one program.
+5. **`check`.** `check` reads the project file and not the crate graph.
+6. **`rslisp test`.** `rslisp test` builds one crate, as a `[[test]]` target with `harness = false` and no bin.
+7. **The build directory.** In every project, on both paths, the build directory is `<root>/target/rslisp/<name>/`, and each generated manifest holds an empty `[workspace]` table.
+8. **The shared target directory.** The binary's name holds a hash of the project root, and the manifest's package name is a constant. The owner accepts that one user's Cargo builds run one at a time.
+9. **The dev shell's cargo wrapper.** `rslisp` runs `cargo` from `PATH` and knows nothing of build slots.
+10. **What `use` resolves from.** The project root is where the file lives, and `use` resolves from the source root, the directory of `:entry`, or of `:lib` inside a library.
+11. **`--root`.** `--root` stays on `eval` and `repl` and names the source root. Other commands walk up from their file, and in a project they take their file as optional and default to `:entry`.
+12. **`rslisp test` and the project file.** `rslisp test` skips the project file, searches a test directory before the source root, and the runner calls only the tests of the project's own modules.
+
 ### The file
 
-This example applies the recommendations of questions 1 to 3 and the full `:rev` of the smaller details.
+This example applies decisions 1 to 3 of the questions and the full `:rev` of the smaller details.
 
 ```lisp
 (project browser
