@@ -793,13 +793,19 @@
 (document (the type value)
   "Gives a value a written type.
 
-  It binds the value with an annotated `local` and returns it, so a literal is
+  It binds the value with an annotated `let` and returns it, so a literal is
   checked against the type and a value that is not `copy` moves. A value of
   another type is an error, except that a borrowed `string`, `(ref name)`,
   passes as a `(ref str)`.")
 
-(document (loop ((name value) ...) body ...)
+(document (loop (name value
+                 ...)
+            body ...)
   "Binds names to values and runs a body that `recur` repeats.
+
+  The list is the binding list of `let`, so each value sees the names bound
+  before it. A name given twice is an error, because `recur` passes one value
+  per name.
 
   `(recur new-value ...)` in tail position runs the body again with each name
   bound to its new value. The call returns the body's last value.
@@ -807,8 +813,12 @@
   The body is a function, so `try`, `let-try` and `try->` in it leave the loop
   with the failure, not the enclosing function.")
 
-(document (let-try ((name value) ...) body ...)
+(document (let-try (name value
+                    ...)
+            body ...)
   "Binds each name to the value inside a `result` or an `option`, in order.
+
+  The list is the binding list of `let`.
 
   Each value goes through `try`, so the first `err` or `none` returns from the
   enclosing function, or leaves the enclosing `loop`. That function must
