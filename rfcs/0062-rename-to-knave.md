@@ -159,4 +159,4 @@ None of these is in the repository, so the owner makes each one.
 
 ## Rule
 
-[docs/language.md: The rslisp language](../docs/language.md#the-rslisp-language)
+[docs/language.md: The knave language](../docs/language.md#the-knave-language)

@@ -1,6 +1,6 @@
-# The rslisp language
+# The knave language
 
-`rslisp` is a placeholder name. Source files use the `.rslisp` extension. A source file may start with a UTF-8 byte-order mark, which the compiler skips, as rustc does.
+The language is named knave. Before [RFC 0062](../rfcs/0062-rename-to-knave.md), it was named `rslisp`. Source files use the `.rslisp` extension. A source file may start with a UTF-8 byte-order mark, which the compiler skips, as rustc does.
 
 The language is a Lisp that compiles to Rust. Its design follows five principles:
 
@@ -19,7 +19,7 @@ The reader knows four rules:
 3. An atom is a string, a number or a symbol.
 4. `;` starts a comment that runs to the end of the line.
 
-`(comment form ...)` is the prelude's comment block, as in Clojure. Its forms must read, so their parentheses balance and their strings close, and `rslisp fmt` lays them out as code, but they never expand, check or run, so a `defn` inside one defines nothing. A file keeps scratch expressions in a `comment` to send one at a time to `rslisp eval` or the prompt. The call is `unit` at top level and in expression position, as Clojure's is `nil`, so `(+ 1 (comment 2))` is a type error. There is no `#_` form discard, because it would make `#` a character that the reader treats specially.
+`(comment form ...)` is the prelude's comment block, as in Clojure. Its forms must read, so their parentheses balance and their strings close, and `knave fmt` lays them out as code, but they never expand, check or run, so a `defn` inside one defines nothing. A file keeps scratch expressions in a `comment` to send one at a time to `knave eval` or the prompt. The call is `unit` at top level and in expression position, as Clojure's is `nil`, so `(+ 1 (comment 2))` is a type error. There is no `#_` form discard, because it would make `#` a character that the reader treats specially.
 
 ### Atoms
 
@@ -410,7 +410,7 @@ The prelude's string lookups, `docstring`, `header`, `page-body` and `doc-page`,
 | `(page-body term)` | The page after its header: a blank line, then the docstring, or `No documentation.` for a term without a docstring. |
 | `(doc-page term)` | The page: the text of `(header term)` followed by the text of `(page-body term)`. |
 
-`(doc term)` prints the page to standard output, as `rslisp doc` prints it, and returns `unit`: it expands to `(println (doc-page term))`, so `(doc twice)` at the prompt prints the page as text, and `(def p (doc twice))` binds `unit` and prints the page when a form first reads `p`. Write `(doc-page term)` to keep the page as a string.
+`(doc term)` prints the page to standard output, as `knave doc` prints it, and returns `unit`: it expands to `(println (doc-page term))`, so `(doc twice)` at the prompt prints the page as text, and `(def p (doc twice))` binds `unit` and prints the page when a form first reads `p`. Write `(doc-page term)` to keep the page as a string.
 
 A lookup finds the docstring in the module that defines the binding `term` refers to, so an imported or re-exported term needs no other export. Each definer stores the docstring of a documented definition as a note under `docstrings` in its module's notes, with `add-module-note`, and defines no other name, so a program may define `doc/twice` beside a documented `twice`. An undocumented definition stores nothing. A lookup reads the notes of the defining module with `module-notes` and takes the note whose name refers to the same binding as `term`, so a documented name that a macro introduces never answers for a user's name of the same spelling. A lookup reads the docstring of the type binding only when the value binding has none, so a documented struct keeps its page beside an undocumented function of the same name.
 
@@ -431,9 +431,9 @@ A docstring is Markdown. A lookup removes the indentation that every written con
 - Continuation lines are indented to the body.
 - Markdown conventions apply.
 
-`rslisp doc [--types] [--file <entry>] <term>` prints the page that `(doc-page <term>)` returns, for a prelude term or, with `--file`, for a term the entry module defines or imports. `<term>` is one form, so `rslisp doc --file main.rslisp '(module geometry)'` prints a module's page. A term that starts with `--` reads as a flag, so it goes after the end-of-options separator: `rslisp doc --file main.rslisp -- --verbose`. An unknown flag in place of the term is exit 2, and its error names that form. It expands `(header <term>)` and `(page-body <term>)` and prints the first followed by the second, so it can color the header apart from the docstring, as [Colors](#colors) states.
+`knave doc [--types] [--file <entry>] <term>` prints the page that `(doc-page <term>)` returns, for a prelude term or, with `--file`, for a term the entry module defines or imports. `<term>` is one form, so `knave doc --file main.rslisp '(module geometry)'` prints a module's page. A term that starts with `--` reads as a flag, so it goes after the end-of-options separator: `knave doc --file main.rslisp -- --verbose`. An unknown flag in place of the term is exit 2, and its error names that form. It expands `(header <term>)` and `(page-body <term>)` and prints the first followed by the second, so it can color the header apart from the docstring, as [Colors](#colors) states.
 
-`--types` also type checks the program and prints the inferred type of the definition that the page describes above the page, as the line that `rslisp types` prints: `--types twice` prints `(type twice (fn (i64) i64))`, then the page. A macro that answers for a function, such as `->point` or a `defn` with keyword parameters, gets that function's type under the macro's name. A term with no type of its own, such as a struct, another macro or a kernel form, gets the page alone. A documented struct `point` beside an undocumented function `point` gets the struct's page, so it gets no type line. When the program does not type check, `--types` prints the page with no type line, the errors on stderr, and exits 1. `(doc term)` and `(doc-page term)` never show a type, because a lookup expands before the type checker runs.
+`--types` also type checks the program and prints the inferred type of the definition that the page describes above the page, as the line that `knave types` prints: `--types twice` prints `(type twice (fn (i64) i64))`, then the page. A macro that answers for a function, such as `->point` or a `defn` with keyword parameters, gets that function's type under the macro's name. A term with no type of its own, such as a struct, another macro or a kernel form, gets the page alone. A documented struct `point` beside an undocumented function `point` gets the struct's page, so it gets no type line. When the program does not type check, `--types` prints the page with no type line, the errors on stderr, and exits 1. `(doc term)` and `(doc-page term)` never show a type, because a lookup expands before the type checker runs.
 
 ### Module docstrings
 
@@ -455,11 +455,11 @@ Shapes on a grid.
 
 An entry is the name's header, then, for a name with a summary, the first line of its docstring indented four spaces. A re-exported name shows the header and the docstring of the module that defines it. Names with one header and one docstring share one entry, the entry of the last name in name order. A name without a docstring also joins the entry of a later name with the same header, so a struct exported as `->point` and `point` lists its `defstruct` header once, with the struct's summary. A blank module docstring counts as none. `(docstring (module path))` of a module without a docstring is `L0327`.
 
-A module's `export` lists expand after its `def` values, because exporting a trait needs the trait's methods. So a lookup of a module written in that module's own body lists no exports. `rslisp doc` looks up after the entry module has expanded, so `rslisp doc --file main.rslisp '(module main)'` lists them.
+A module's `export` lists expand after its `def` values, because exporting a trait needs the trait's methods. So a lookup of a module written in that module's own body lists no exports. `knave doc` looks up after the entry module has expanded, so `knave doc --file main.rslisp '(module main)'` lists them.
 
 ### Header shapes
 
-`(header-shape (form name ...))` states the header of a form's calls: the leading forms that belong with the form's name, before its body. `(header-shape (defn name parameters))` says that the header of a `defn` call is its name and its parameter list. `doc` shows the header of an undocumented definition (see Docstrings), and `rslisp fmt` reads the same shapes to keep a header on a call's first line (see Source formatting).
+`(header-shape (form name ...))` states the header of a form's calls: the leading forms that belong with the form's name, before its body. `(header-shape (defn name parameters))` says that the header of a `defn` call is its name and its parameter list. `doc` shows the header of an undocumented definition (see Docstrings), and `knave fmt` reads the same shapes to keep a header on a call's first line (see Source formatting).
 
 A `:docstring` after the shape states that the form takes a docstring as the first form after its header, when another form follows it: `(header-shape (defn name parameters) :docstring)`. A shape adds itself, such as `(defn name parameters)`, to its module's notes under `header-shapes`, and a `:docstring` adds the form's name under `docstring-forms`, so macro code reads both with `module-notes`. A `:one-per-line` after the shape states that the formatter does not fill runs of atoms in a broken call, so each later form takes its own line apart from keyword pairs, as the prelude states for `enum`. An `:arms` after the shape states that each list after the header, other than a keyword's value, is an arm, which stays on one line when it is at most as long as the fill width, whatever the number of lists inside it (see Source formatting): `(header-shape (match value) :arms)`, `(header-shape (cond) :arms)` and `(header-shape (defrule name) :docstring :arms)`. A user macro with arms opts in the same way. The formatter does not expand, so it reads the `header-shape` forms themselves.
 
@@ -542,10 +542,10 @@ Field names are not hygienic. They are looked up through the struct type.
 
 ## Evaluation
 
-`rslisp eval <file> <forms>` checks a module, then runs forms once in its scope ([RFC 0047](../rfcs/0047-first-repl.md)). `<forms>` is one argument that holds one or more forms.
+`knave eval <file> <forms>` checks a module, then runs forms once in its scope ([RFC 0047](../rfcs/0047-first-repl.md)). `<forms>` is one argument that holds one or more forms.
 
 - `eval` reads the module's text from `<file>`. With `--stdin`, it reads the text from standard input, and `<file>` still names the module.
-- `eval` checks the text as `rslisp check` does, so a module with no `main` checks. It resolves `use` from `--root <directory>`, which defaults to the directory of `<file>`.
+- `eval` checks the text as `knave check` does, so a module with no `main` checks. It resolves `use` from `--root <directory>`, which defaults to the directory of `<file>`.
 - The forms are the body of a generated `main` in the module's scope. That `main` ends with `(do)`, so every form is a statement.
 - The generated `main` is the program's entry. No source name refers to it, and it takes the Rust name `main`. A module's own `main` is checked as `check` checks it, does not run, and becomes `main_2` in Rust if a form calls it.
 - A form sees every definition of the module and of the prelude. Every rule of a body holds, so `(local x 5) (* x 2)` prints `10` and a definition as a form is `L0208`.
@@ -601,7 +601,7 @@ Field names are not hygienic. They are looked up through the struct type.
 
 ### The prompt
 
-`rslisp repl` reads inputs from standard input. `rslisp` with no command starts the same prompt, and takes the global arguments such as `--color`. Its only state is a buffer of the definitions entered so far, as text. Each form is one input, so a line of three forms is three inputs, and each input is its own source, named `<input N>`.
+`knave repl` reads inputs from standard input. `knave` with no command starts the same prompt, and takes the global arguments such as `--color`. Its only state is a buffer of the definitions entered so far, as text. Each form is one input, so a line of three forms is three inputs, and each input is its own source, named `<input N>`.
 
 - The expander classifies each input. An input that a file accepts at its top level, `use` included, is a definition. Any other input is an expression.
 - A definition replaces every earlier input that defines or imports a name it defines or imports, and takes the place of the first one. The redefinition takes effect, even when it drops a name ([RFC 0051](../rfcs/0051-repl-redefinition.md)).
@@ -688,10 +688,10 @@ An expression never changes the buffer. After a module file changes on disk, an 
 **The prompt and `eval` without `--json` color each printed value with the same token colors, by standard output's decision.** `true`, `none` and every other symbol print plain, because the colors key only on the reader's tokens.
 
 - When standard output decides to color, the program's standard output goes through a pipe. The CLI finds each value by the marker of `eval --json`, colors the value, and writes every other byte of the program's output unchanged, as it arrives, so a program's own escape codes and a line it prints before it reads input reach the terminal at once.
-- When standard output decides not to color, the program keeps standard output, as under `run`, and each value prints plain. So `rslisp eval f '(g)' | less` prints the value plain, and a diagnostic on a terminal stays colored.
+- When standard output decides not to color, the program keeps standard output, as under `run`, and each value prints plain. So `knave eval f '(g)' | less` prints the value plain, and a diagnostic on a terminal stays colored.
 - The program's standard error never goes through a pipe and never takes a color.
 
-**`rslisp doc` colors the header and the `--types` line with the token colors, by standard output's decision.** The docstring is Markdown and stays plain. At the prompt, `(doc term)` is the program's output, so the whole page prints plain.
+**`knave doc` colors the header and the `--types` line with the token colors, by standard output's decision.** The docstring is Markdown and stays plain. At the prompt, `(doc term)` is the program's output, so the whole page prints plain.
 
 ## Tests
 
@@ -711,8 +711,8 @@ An expression never changes the buffer. After a module file changes on disk, an 
 - A test's name is a symbol that is not a keyword. A string before at least one more body form is the docstring, as for `defn`, and a failure prints its first line.
 - A test's function ends with a unit form, so a test's value is dropped and a test passes when it returns. A test that returns an `err` passes: `assert` is what fails a test. An open type in a test's last form is `L0407` at the innermost open value of that form under every command.
 - A test sits at the top level of any module, beside the code it tests or in a module of its own. A `deftest` in a body is `L0208`.
-- `deftest` defines the test's function under an introduced name, `test-` and the written name, so no name of the program collides with it, `rslisp check` and `rslisp types` leave it out, and its Rust name yields to an item the program wrote. A test name is not a binding, so `(doc pads-left)` finds only a binding the program wrote.
-- Every command expands and type checks every test. A test emits Rust only under `rslisp test`, because the emitter writes only what `main` reaches.
+- `deftest` defines the test's function under an introduced name, `test-` and the written name, so no name of the program collides with it, `knave check` and `knave types` leave it out, and its Rust name yields to an item the program wrote. A test name is not a binding, so `(doc pads-left)` finds only a binding the program wrote.
+- Every command expands and type checks every test. A test emits Rust only under `knave test`, because the emitter writes only what `main` reaches.
 - A second test of one name in one module is `L0333`, at the second test, with the first marked.
 - A test's full name is its module's path, `/`, and its name, such as `text/format/pads-left`.
 
@@ -735,17 +735,17 @@ right: "007"
 
 Each check takes the `assert`'s location, from `form-location`, and its written text first. A failed check stores its record in a static of the runtime, where the runner finds it, then panics.
 
-`(run-tests :marker "<marker>")` expands to the program's test runner: one call per test of every module that `(program-modules)` returns, in load order and then source order, between a start and a finish. `:untested <module>` adds the list of names that `<module>` exports and no test writes. The checks and the runner are `rust` templates over runtime parts in `prelude/runtime/`, one per marker, so the emitted Rust holds a function only when it calls that function. The runner runs each test under `std::panic::catch_unwind` and writes the records that `rslisp test` reads.
+`(run-tests :marker "<marker>")` expands to the program's test runner: one call per test of every module that `(program-modules)` returns, in load order and then source order, between a start and a finish. `:untested <module>` adds the list of names that `<module>` exports and no test writes. The checks and the runner are `rust` templates over runtime parts in `prelude/runtime/`, one per marker, so the emitted Rust holds a function only when it calls that function. The runner runs each test under `std::panic::catch_unwind` and writes the records that `knave test` reads.
 
-**`rslisp test <path> [filter]` builds one program that runs the tests, and runs it.**
+**`knave test <path> [filter]` builds one program that runs the tests, and runs it.**
 
 - A file is an entry: its module and every module it reaches through `use` run their tests. A directory makes every `.rslisp` file under it an entry, with the directory as the root of `use`.
-- The program's `main` is `(run-tests :marker "<marker>")`, resolved in the scope of `prelude/test`, which `rslisp test` loads, and expanded after every module. An entry's own `main` is checked and does not run, and a test that calls it calls `main_2` in Rust.
-- `filter` runs the tests whose full name contains it, and `--exact <name>` runs the test of that full name. `rslisp test` passes either to the program as its arguments, and the runner applies it. When no test is selected, a filter adds ``note: no test name contains `<filter>` `` and `--exact` adds ``note: no test is named `<name>` `` on standard error.
+- The program's `main` is `(run-tests :marker "<marker>")`, resolved in the scope of `prelude/test`, which `knave test` loads, and expanded after every module. An entry's own `main` is checked and does not run, and a test that calls it calls `main_2` in Rust.
+- `filter` runs the tests whose full name contains it, and `--exact <name>` runs the test of that full name. `knave test` passes either to the program as its arguments, and the runner applies it. When no test is selected, a filter adds ``note: no test name contains `<filter>` `` and `--exact` adds ``note: no test is named `<name>` `` on standard error.
 - `--untested <module>` adds `:untested <module>` to the call. A module that the program does not load is a usage error before the build, ``error: the program does not load module `<module>` ``.
-- Tests run one at a time, in the order `run-tests` calls them, and read the standard input of `rslisp test`. The program's standard error passes through.
+- Tests run one at a time, in the order `run-tests` calls them, and read the standard input of `knave test`. The program's standard error passes through.
 
-**The runner writes a record for each event: the marker, a printed form in the printed form of [RFC 0048](../rfcs/0048-printing-values.md), and a newline.** `rslisp test` finds a record anywhere in the program's standard output, as `eval` finds its marker, strips it, and passes the rest of the output through where the program wrote it.
+**The runner writes a record for each event: the marker, a printed form in the printed form of [RFC 0048](../rfcs/0048-printing-values.md), and a newline.** `knave test` finds a record anywhere in the program's standard output, as `eval` finds its marker, strips it, and passes the rest of the output through where the program wrote it.
 
 | Record | Written |
 | --- | --- |
@@ -758,7 +758,7 @@ Each check takes the `assert`'s location, from `form-location`, and its written 
 | `(panic "<location of the deftest>" "<message>")` | after any other panic |
 | `(done)` | after the last test |
 
-**`rslisp test` prints every line of the report from the records:**
+**`knave test` prints every line of the report from the records:**
 
 ```text
 untested in text/format (1 of 3): trim-right
@@ -772,11 +772,11 @@ FAIL text/format/trims-right: Removes trailing spaces, not inner ones. (text/for
 1 passed, 1 failed
 ```
 
-- A test's own output follows `test <name> ... ` on the same line, and the result starts the next line. `rslisp test` adds a newline before the result when that output does not end with one.
+- A test's own output follows `test <name> ... ` on the same line, and the result starts the next line. `knave test` adds a newline before the result when that output does not end with one.
 - A failure prints the test's full name, the first line of its docstring after a colon, and the location of the failed `assert`, or of the `deftest` for any other panic. The written `assert`, both sides of `=`, the message and a panic's message follow, each indented 4 columns.
 - The untested line prints no names when every export is written: `untested in text/format (0 of 3)`.
 
-**A test that ends the process, through `exit`, an abort or a stack overflow, crashes the run.** Its record of `(test ...)` has no result after it and the program writes no `(done)`. `rslisp test` then prints `CRASH` as the test's result, the reason, the number of tests not run when it is not 0, and a count line that names `crashed` and `not run`:
+**A test that ends the process, through `exit`, an abort or a stack overflow, crashes the run.** Its record of `(test ...)` has no result after it and the program writes no `(done)`. `knave test` then prints `CRASH` as the test's result, the reason, the number of tests not run when it is not 0, and a count line that names `crashed` and `not run`:
 
 ```text
 running 3 tests
@@ -799,7 +799,7 @@ CRASH crash/crashes: the program exited with code 3
 | 1 | a test fails or crashes, whatever the program's own exit code or signal, or the program has errors |
 | 2 | a usage error |
 
-A non-empty untested list does not change the exit code. `prelude/tests/` holds the prelude's own tests, one module per prelude module, outside the embedded prelude, and a test in `tests/cli.rs` runs `rslisp test prelude/tests --untested prelude` and records the report.
+A non-empty untested list does not change the exit code. `prelude/tests/` holds the prelude's own tests, one module per prelude module, outside the embedded prelude, and a test in `tests/cli.rs` runs `knave test prelude/tests --untested prelude` and records the report.
 
 ## Rust interop
 
@@ -884,11 +884,11 @@ The associated type is a type constructor of one argument, the implementor: `(pa
 
 ### Formatting
 
-The emitted Rust is formatted by `rustfmt` when `rslisp emit`, `rslisp build` or `rslisp run` writes it, not by a compiler stage. `rustfmt` reads the nearest `rustfmt.toml`, so the program's directory chooses the layout. If `rustfmt` is missing or fails, or runs past `EmittedFormatting::TIME_LIMIT` and the command stops it, the command prints one note and writes the unformatted Rust.
+The emitted Rust is formatted by `rustfmt` when `knave emit`, `knave build` or `knave run` writes it, not by a compiler stage. `rustfmt` reads the nearest `rustfmt.toml`, so the program's directory chooses the layout. If `rustfmt` is missing or fails, or runs past `EmittedFormatting::TIME_LIMIT` and the command stops it, the command prints one note and writes the unformatted Rust.
 
 ## Source formatting
 
-`rslisp fmt <path>...` lays out each file in place, and each `.rslisp` file under a directory, and prints nothing when it succeeds. `rslisp fmt --check <path>...` writes nothing, prints the path of each file that would change, and exits 1 if any would. `rslisp fmt -` reads standard input and writes the laid-out text to standard output, and `--stdin-path <file>` names the file that the text comes from. The command exits 0 when every file is laid out, 1 when a file does not read or would change under `--check`, and 2 for a usage error or a file it cannot read or write. The layout has no options: 2 columns of indentation within an 80-column width.
+`knave fmt <path>...` lays out each file in place, and each `.rslisp` file under a directory, and prints nothing when it succeeds. `knave fmt --check <path>...` writes nothing, prints the path of each file that would change, and exits 1 if any would. `knave fmt -` reads standard input and writes the laid-out text to standard output, and `--stdin-path <file>` names the file that the text comes from. The command exits 0 when every file is laid out, 1 when a file does not read or would change under `--check`, and 2 for a usage error or a file it cannot read or write. The layout has no options: 2 columns of indentation within an 80-column width.
 
 The formatter owns every line break. A list stays on one line when it fits in the width and either is at most 40 columns long, or is at most 60 columns long and holds at most two lists at any depth inside it, or is an arm of at most 60 columns, the fill width, whatever the number of lists inside it, except that a form whose header shape carries `:docstring`, a definer such as `defn`, stays on one line only when its body is one form. A docstring counts as a body form, so a documented definition always puts its docstring on its own line. An arm is a list after the header, other than a keyword's value, of a form whose shape carries `:arms`, and each arm decides alone, so one long arm does not break a short one. A list that breaks lays out by the head's header shape (see Header shapes). A shaped list keeps its header on its first line and indents each later form 2 columns. A `use` keeps its module path and first name on its first line, and an `export` keeps its first name there; both then fill each line with names up to the 60-column fill width, and each later line starts under the first name. Any other call aligns its arguments under the first argument, or puts every argument on its own line 2 columns in when that takes fewer lines or the aligned layout does not fit, except that an atom too long to fit, with the parentheses that close after it, even 2 columns past its list's `(` counts as fitting when the formatter compares the layouts, and a list whose head is not a symbol lines up its forms under its head. A keyword and the form after it share a line. In a list that breaks, a run of two or more atoms in a row fills lines up to the fill width in the same way, unless the head's shape carries `:one-per-line`. A list, a keyword pair, a docstring and a multi-line string each end a run. The formatter sorts the names of each `use`, after its module path, and of each `export` in byte order of their text, and keeps the forms themselves in their written order. A `use` or `export` whose names carry a comment, or a blank line between them, keeps its written order. [RFC 0053](../rfcs/0053-source-formatter.md#recommendation) states the rules with examples, and [RFC 0057](../rfcs/0057-one-line-arms.md) amends them for arms.
 
@@ -911,11 +911,11 @@ Every prelude name follows five rules ([RFC 0046](../rfcs/0046-names.md)):
 These names break a rule:
 
 - `(str ...)` builds a `string`, an exception to rule 4.
-- `then-some` and `then-ok` break rule 5 until one `then` replaces them, which needs type-checker work that [issue #280](https://github.com/KarlHarnois/rslisp/issues/280) tracks.
+- `then-some` and `then-ok` break rule 5 until one `then` replaces them, which needs type-checker work that [issue #280](https://github.com/knave-lang/knave/issues/280) tracks.
 
 ## Names in Rust
 
-| rslisp | Rust |
+| knave | Rust |
 |---|---|
 | `make-point` | `make_point` |
 | type `point` | `Point` |
@@ -939,7 +939,7 @@ scope takes the suffix `2`, so the emitted name never hides `Sized`, `Clone`,
 `Iterator`, `Vec` or another prelude name. A `rust-type` or `rust-trait` path is
 never renamed.
 
-An item a macro introduced yields its Rust name to an item the program wrote, whatever the order of their uses. The introduced item takes the next number that no other item of its module takes. `rslisp check` and `rslisp types` print an introduced function under the name of the macro whose value position expands to it, so the positional function of `car` prints as `->car`. They leave out an introduced function that no such macro names.
+An item a macro introduced yields its Rust name to an item the program wrote, whatever the order of their uses. The introduced item takes the next number that no other item of its module takes. `knave check` and `knave types` print an introduced function under the name of the macro whose value position expands to it, so the positional function of `car` prints as `->car`. They leave out an introduced function that no such macro names.
 
 ## Status
 
@@ -990,7 +990,7 @@ At each of them, the compiler adds one borrow, removes borrows, or copies a Copy
 - `deref` copies a Copy value out of a borrow. A `deref` whose result is still a borrow, as `(deref y)` on a `(ref (ref i64))` is, removes its one borrow and leaves the rest to the rule. A `deref` whose result type is still unknown at the call, as in a closure bound by `local` before its use, waits for that type, so `(local recent? (fn (y) (> (deref y) 2020)))` passed to `filter` emits `|y: &&i64| **y > 2020`.
 - A command prints each function's inferred signature, so that a `type` form can pin it.
 
-Rust adjusts a receiver's references automatically, but rslisp has no receivers, so the rule covers every call. A Copy value of 16 bytes or less travels in registers, so copying it costs no more than borrowing it.
+Rust adjusts a receiver's references automatically, but knave has no receivers, so the rule covers every call. A Copy value of 16 bytes or less travels in registers, so copying it costs no more than borrowing it.
 
 ### 8.2 Struct traits
 

@@ -1,6 +1,6 @@
-use rslisp::diagnostic::{Diagnostic, DiagnosticRenderer, Diagnostics};
-use rslisp::expand::ExpandProblems;
-use rslisp::source::{SourceId, SourceMap, Span};
+use knave::diagnostic::{Diagnostic, DiagnosticRenderer, Diagnostics};
+use knave::expand::ExpandProblems;
+use knave::source::{SourceId, SourceMap, Span};
 
 struct DiagnosticFixture {
     sources: SourceMap,

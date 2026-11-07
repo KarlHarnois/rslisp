@@ -7,10 +7,10 @@ use std::process::{Command, Output, Stdio};
 use std::sync::mpsc::{self, Receiver, Sender};
 use std::time::{Duration, Instant};
 
-use rslisp::build::EmittedFormatting;
-use rslisp::diagnostic::DiagnosticRenderer;
-use rslisp::language::Language;
-use rslisp::source::SourceMap;
+use knave::build::EmittedFormatting;
+use knave::diagnostic::DiagnosticRenderer;
+use knave::language::Language;
+use knave::source::SourceMap;
 use serde_json::{Map, Value, json};
 
 const GREETING: &str = "(defn main ()\n  (println \"hello from the sandbox\"))\n";
@@ -84,7 +84,7 @@ const MINUS_HEADER: &str = "(- number more ...)";
 const FLAG_NAMED_DEF: &str = "(def --verbose 1)\n\n(defn main () (println --verbose))\n";
 const FLAG_NAMED_DEF_PAGE: &str = "(def --verbose)\n\nNo documentation.\n";
 const DEFN_HEADER: &str = "(defmacro defn (name parameters body ...))";
-const SEPARATOR_TIP: &str = "write `rslisp doc -- <term>`";
+const SEPARATOR_TIP: &str = "write `knave doc -- <term>`";
 const UNKNOWN_FLAG_ERROR: &str = "error: unexpected argument '--typo' found";
 const ARITHMETIC: &str = include_str!("fixtures/emit/arithmetic.rslisp");
 const EMPTY_MAIN: &str = "(def main (fn () (do)))\n";
@@ -200,7 +200,7 @@ struct Sandbox {
 }
 
 impl Sandbox {
-    const COMPILER: &str = env!("CARGO_BIN_EXE_rslisp");
+    const COMPILER: &str = env!("CARGO_BIN_EXE_knave");
     const BUILD_PARENT: &str = "target";
 
     fn new(test_name: &str) -> Self {

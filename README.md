@@ -8,7 +8,7 @@
 [![Rust 2024](https://img.shields.io/badge/rust-2024-B7410E?logo=rust&logoColor=white)](https://doc.rust-lang.org/edition-guide/rust-2024/)
 
 > [!WARNING]
-> **Knave is experimental.** Expect breaking changes to the syntax, the prelude and the command line in any commit. The command and the source extension are still `rslisp` and `.rslisp`. They become `knave` and `.knv` soon.
+> **Knave is experimental.** Expect breaking changes to the syntax, the prelude and the command line in any commit. The source extension is still `.rslisp`. It becomes `.knv` soon.
 
 ```clojure
 (def knave
@@ -52,7 +52,7 @@ The project uses a [Nix](https://nixos.org/download/) flake.
    nix build
    ```
 
-   The binary is `result/bin/rslisp`.
+   The binary is `result/bin/knave`.
 
    If you build without Nix, install the compiler with Cargo:
 
@@ -73,13 +73,13 @@ A program starts at `main`, as `examples/hello.rslisp` shows:
   (println (str "hello" " " "world")))
 ```
 
-Run `rslisp` alone to start the prompt, as `rslisp repl` does. Run `rslisp --help` to list the commands. Each command except `doc` and `repl` takes a source file, and `fmt` and `test` also take a directory:
+Run `knave` alone to start the prompt, as `knave repl` does. Run `knave --help` to list the commands. Each command except `doc` and `repl` takes a source file, and `fmt` and `test` also take a directory:
 
 ```sh
-rslisp run examples/hello.rslisp
-rslisp emit examples/geometry/main.rslisp
-rslisp fmt src/
-rslisp test tests/
+knave run examples/hello.rslisp
+knave emit examples/geometry/main.rslisp
+knave fmt src/
+knave test tests/
 ```
 
 ## Contribute

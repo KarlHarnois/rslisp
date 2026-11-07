@@ -1,5 +1,5 @@
 {
-  description = "rslisp (placeholder name), a small Lisp for humans and agents that infers types and ownership and compiles to readable Rust";
+  description = "knave, a small Lisp for humans and agents that infers types and ownership and compiles to readable Rust";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-26.05";
@@ -306,7 +306,7 @@
               -not -path "$fixtures/expand/unreadable/*" | sort
           )
           ${pkgs.lib.getExe package} fmt --check ${./prelude} ${./examples} "''${fixture_files[@]}" ||
-            { echo "run rslisp fmt on the files above to lay them out" >&2; exit 1; }
+            { echo "run knave fmt on the files above to lay them out" >&2; exit 1; }
           touch $out
         '';
 
@@ -352,10 +352,10 @@
               pkgs.rustfmt
             ];
             buildArgs = {
-              pname = "rslisp";
+              pname = "knave";
               version = crateVersion;
               src = self;
-              cargoExtraArgs = "--locked --package rslisp";
+              cargoExtraArgs = "--locked --package knave";
               CARGO_PROFILE = installedProfileName;
               doCheck = false;
             };
@@ -366,11 +366,11 @@
               cargoArtifacts = craneLib.buildDepsOnly (buildArgs // { cargoCheckCommand = "true"; });
               nativeBuildInputs = [ pkgs.makeWrapper ];
               postInstall = ''
-                wrapProgram $out/bin/rslisp --prefix PATH : ${emittedRustTools}
+                wrapProgram $out/bin/knave --prefix PATH : ${emittedRustTools}
               '';
               meta = {
                 description = cratePackage.description;
-                mainProgram = "rslisp";
+                mainProgram = "knave";
                 license = pkgs.lib.getLicenseFromSpdxId cratePackage.license;
                 platforms = supportedSystems;
               };

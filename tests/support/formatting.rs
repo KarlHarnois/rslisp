@@ -2,9 +2,9 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::time::{Duration, Instant};
 
-use rslisp::format::{FormatFailure, ModuleLookup, SourceFormatter};
-use rslisp::language::Language;
-use rslisp::source::SourceMap;
+use knave::format::{FormatFailure, ModuleLookup, SourceFormatter};
+use knave::language::Language;
+use knave::source::SourceMap;
 
 pub struct ShapeLookup;
 

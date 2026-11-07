@@ -1,7 +1,7 @@
 use std::process::ExitCode;
 
-use rslisp::cli::Cli;
-use rslisp::counters::CountingAllocator;
+use knave::cli::Cli;
+use knave::counters::CountingAllocator;
 
 #[cfg(feature = "counters")]
 #[global_allocator]

@@ -1,4 +1,4 @@
-# rslisp RFCs
+# knave RFCs
 
 **An RFC records one design.** The RFC holds the problem, the options, the decision and the reasons. `docs/language.md` states the current rule, and the RFC links to it. **NEVER let an RFC be the only statement of a current rule.**
 

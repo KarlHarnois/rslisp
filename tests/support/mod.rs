@@ -10,19 +10,17 @@ use std::process::{Child, ChildStdin, Command, ExitStatus, Output, Stdio};
 use std::thread::{self, JoinHandle};
 use std::time::{Duration, Instant};
 
-use rslisp::build::{BuildError, BuildProfile, EmittedFormatting, RustCompiler};
-use rslisp::core::{
-    BindingArena, CorePrinter, ExprKind, Item, ItemKind, Leaf, Literal, ModulePath,
-};
-use rslisp::diagnostic::{DiagnosticRenderer, Diagnostics};
-use rslisp::emit::{EmittedCrate, RustEmitter};
-use rslisp::expand::{Expander, PreludeState};
-use rslisp::format::{FormatFailure, SourceFormatter};
-use rslisp::language::Language;
-use rslisp::modules::ModuleSources;
-use rslisp::reader::Reader;
-use rslisp::source::{SourceId, SourceMap, Span};
-use rslisp::types::TypedProgram;
+use knave::build::{BuildError, BuildProfile, EmittedFormatting, RustCompiler};
+use knave::core::{BindingArena, CorePrinter, ExprKind, Item, ItemKind, Leaf, Literal, ModulePath};
+use knave::diagnostic::{DiagnosticRenderer, Diagnostics};
+use knave::emit::{EmittedCrate, RustEmitter};
+use knave::expand::{Expander, PreludeState};
+use knave::format::{FormatFailure, SourceFormatter};
+use knave::language::Language;
+use knave::modules::ModuleSources;
+use knave::reader::Reader;
+use knave::source::{SourceId, SourceMap, Span};
+use knave::types::TypedProgram;
 use rustc_hash::FxHashMap;
 
 pub use formatting::{FormatFailures, ShapeLookup};
@@ -198,7 +196,7 @@ impl Fixture {
 
     fn checked(&mut self) -> Result<TypedProgram, Diagnostics> {
         let program = self.expand()?;
-        rslisp::check::ProgramChecker::check(&program)
+        knave::check::ProgramChecker::check(&program)
     }
 
     fn entry_span(&self) -> Span {
@@ -303,7 +301,7 @@ impl Fixture {
         })
     }
 
-    fn expand(&mut self) -> Result<rslisp::expand::Program, Diagnostics> {
+    fn expand(&mut self) -> Result<knave::expand::Program, Diagnostics> {
         let module_sources = ModuleSources::new(self.directory(), self.display_directory());
         let module_path = ModulePath::new(self.module_name());
         let expander = match self.prelude.take() {
