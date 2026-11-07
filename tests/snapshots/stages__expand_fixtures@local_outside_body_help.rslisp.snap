@@ -1,0 +1,20 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/expand/local_outside_body_help.rslisp
+---
+error[L0227]: `local` can only appear directly in a body
+ --> expand/local_outside_body_help.rslisp:2:12
+  |
+2 |   (println (local total (+ 1 2))))
+  |            ^^^^^^^^^^^^^^^^^^^^^ not allowed here
+  |
+  = help: wrap the code that uses it in `(let (total (+ 1 2)) ...)`
+
+error[L0227]: `local` can only appear directly in a body
+ --> expand/local_outside_body_help.rslisp:5:12
+  |
+5 |   (println (local total)))
+  |            ^^^^^^^^^^^^^ not allowed here
+  |
+  = help: wrap the code that uses it in `(let (name value) ...)`

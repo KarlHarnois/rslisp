@@ -17,6 +17,7 @@ error[L0201]: cannot find `point` in this scope
 5 | (defn origin () (point 0 0))
   |                  ^^^^^ not found in this scope
   |
+  = note: `point` is a type; a type goes beside a name in a binding, as in `(local (year i64) 2025)`, or in a `type` signature
 help: a name with a similar spelling exists
   |
 5 - (defn origin () (point 0 0))

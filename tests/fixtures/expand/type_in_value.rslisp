@@ -1,0 +1,25 @@
+(defn typed-old-form ()
+  (let (year i64) 2025))
+
+(defn applied-type ()
+  (let (parsed (option i64)) parsed))
+
+(defn type-in-argument (text) (parse text i64))
+
+(defn two-forms ()
+  (local year i64)
+  (local count string)
+  year)
+
+(defn macro-name (numbers) (map char numbers))
+
+(defn resolves (left right)
+  (let (make pair) (make left right)))
+
+(defn misspelled ()
+  (local total 1)
+  (+ totl i64))
+
+(def first-module-value i64)
+
+(def second-module-value string)

@@ -1,0 +1,5 @@
+(defn written ()
+  (println (local total (+ 1 2))))
+
+(defn malformed ()
+  (println (local total)))

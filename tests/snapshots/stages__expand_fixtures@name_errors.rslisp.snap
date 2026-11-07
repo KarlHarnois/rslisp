@@ -40,7 +40,7 @@ error[L0227]: `local` can only appear directly in a body
 9 | (def loose (local x 1))
   |            ^^^^^^^^^^^ not allowed here
   |
-  = help: wrap the `local` and the code that uses it in `(do ...)`
+  = help: wrap the code that uses it in `(let (x 1) ...)`
 
 error[L0210]: malformed `if`
   --> expand/name_errors.rslisp:11:14

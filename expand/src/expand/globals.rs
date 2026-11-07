@@ -205,7 +205,7 @@ impl Expander<'_> {
     fn lower_global(&mut self, binding: BindingId, form: &Form) -> Result<Rc<Expr>, Diagnostic> {
         let outer_phase = std::mem::replace(&mut self.phase, Phase::Runtime);
         let errors_before = self.recovered_diagnostics.len();
-        let lowered = self.lower_expr(form);
+        let lowered = self.with_fresh_type_note(|expander| expander.lower_expr(form));
         self.phase = outer_phase;
         match lowered {
             Ok(expr) => {
