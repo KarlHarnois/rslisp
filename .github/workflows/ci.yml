@@ -31,10 +31,14 @@ jobs:
           - os: ubuntu-latest
             tests: cargo xtask coverage
             build: coverage
+            workspace-opt-level: 1
           - os: macos-latest
             tests: cargo test --workspace
             build: test
+            workspace-opt-level: 0
     runs-on: ${{ matrix.os }}
+    env:
+      CARGO_PROFILE_DEV_OPT_LEVEL: ${{ matrix.workspace-opt-level }}
     timeout-minutes: ${{ matrix.os == 'macos-latest' && 25 || 15 }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
