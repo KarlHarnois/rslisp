@@ -589,6 +589,19 @@ mod tests {
     }
 
     #[test]
+    fn the_graph_names_a_definition_left_undecoded_as_unreached() {
+        let source = TypedSource::expand_on_a_loaded_prelude(PreludeFixture::EMPTY_PROGRAM);
+        let program = source.program();
+        let undecoded = program.pending_definitions.undecoded().next();
+        let undecoded = undecoded.expect("an empty program leaves definitions undecoded");
+        assert!(
+            DefinitionGraph::of(program)
+                .unreached()
+                .contains(&undecoded)
+        );
+    }
+
+    #[test]
     fn the_graph_names_what_it_left_unreached() {
         let source = TypedSource::expand(PreludeFixture::EMPTY_PROGRAM);
         let sum = PreludeFixture::prelude_definition(source.program(), "sum");

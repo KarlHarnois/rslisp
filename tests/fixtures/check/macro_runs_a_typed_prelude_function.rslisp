@@ -1,0 +1,4 @@
+(def total
+  (macro (form) (do (sum (vec 1 2)) 1)))
+
+(defn main () (println (total)))

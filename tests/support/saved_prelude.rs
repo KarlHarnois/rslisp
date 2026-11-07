@@ -14,12 +14,12 @@ impl SavedPreludeAgreement {
     }
 
     pub fn assert_loaded_prelude_agrees(&self) {
-        let saved = PreludeState::build().save();
+        let saved: &'static [u8] = PreludeState::build().save().leak();
         let built = FixtureReports::compute(self.paths.clone(), |path| {
             Fixture::load(path).stage_report()
         });
         let loaded = FixtureReports::compute(self.paths.clone(), |path| {
-            let prelude = PreludeState::load(&saved).expect("the saved prelude loads");
+            let prelude = PreludeState::load(saved).expect("the saved prelude loads");
             Fixture::load(path)
                 .with_saved_prelude(prelude)
                 .stage_report()

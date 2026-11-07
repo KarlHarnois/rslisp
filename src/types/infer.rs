@@ -1646,7 +1646,7 @@ impl TypeChecker {
             .iter()
             .map(|binding| self.bindings.get(*binding).name().to_string())
             .collect();
-        let hides_prelude = self.prelude_value_names.contains(called_name);
+        let hides_prelude = self.prelude_defines_value(called_name);
         Some(Err(TypeProblems::try_needs_unknown_recursive(
             called_name,
             &names,

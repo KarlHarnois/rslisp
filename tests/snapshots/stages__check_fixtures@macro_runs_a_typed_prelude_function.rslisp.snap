@@ -1,0 +1,22 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/macro_runs_a_typed_prelude_function.rslisp
+---
+error[L0306]: `fold-items` belongs to the program, so macro code cannot run it
+  --> prelude/iterator.rslisp:79:3
+   |
+43 | /   (rust "{0}.fold({1}, {2})"
+44 | |     (where (a b)
+45 | |       (fn ((iterator a) b (fn-mut (b a) b)) b))))
+   | |________________________________________________- `fold-items` is Rust code that runs in the program
+...
+79 |     (reduce values 0 add))
+   |     ^^^^^^^^^^^^^^^^^^^^^ macro code runs this
+   |
+  ::: check/macro_runs_a_typed_prelude_function.rslisp:2:22
+   |
+ 2 |     (macro (form) (do (sum (vec 1 2)) 1)))
+   |                        --- macro code reaches it through this
+   |
+   = help: to compute this in the program, return it as code from the macro, for example with `quote`

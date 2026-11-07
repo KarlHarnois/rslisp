@@ -337,7 +337,7 @@ impl ExpandedEvaluation {
     ) -> Result<CheckedEvaluation, ExitStatus> {
         let mut program = self.program;
         program.enter(entry);
-        program.checked_roots.push(self.printer.bound_holder());
+        program.check_also(self.printer.bound_holder());
         let results = ProgramChecker::form_results(&program, self.printer.bound_holder())
             .map_err(|diagnostics| terminal.report(&diagnostics))?;
         terminal.print_diagnostics(&Self::result_notes(&results));

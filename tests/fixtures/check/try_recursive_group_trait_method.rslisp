@@ -1,0 +1,12 @@
+(defn fmt-number (text)
+  (ok (try (fmt text))))
+
+(defn fmt-expression (text)
+  (local parsed (try (fmt-number text)))
+  (ok (pair parsed 0)))
+
+(defn fmt (text)
+  (ok (try (fmt-expression text))))
+
+(defn main ()
+  (println (unwrap-ok (fmt "42"))))
