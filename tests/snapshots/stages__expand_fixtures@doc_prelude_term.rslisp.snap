@@ -4,5 +4,5 @@ expression: reports.report(path)
 input_file: tests/fixtures/expand/doc_prelude_term.rslisp
 ---
 (def defn-page "(defmacro defn (name parameters body ...))\n\nDefines a function: (defn name (parameter ...) body ...).\n\nA string before at least one more body form is the docstring.")
-(def threading-docstring "Threads a value through each form as its first argument.\n\nWrite (-> value form ...).")
+(def threading-docstring "Threads a value through each form as its first argument.\n\n`(-> 3 (- 10) (* 2))` is `(* (- 3 10) 2)`. A bare name in place of a form is\ncalled with the value alone.")
 (def doc-header "(defmacro doc (term))")
