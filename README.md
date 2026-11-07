@@ -73,12 +73,13 @@ A program starts at `main`, as `examples/hello.rslisp` shows:
   (println (str "hello" " " "world")))
 ```
 
-Run `rslisp` alone to start the prompt, as `rslisp repl` does. Run `rslisp --help` to list the commands. Each command except `doc` and `repl` takes a source file, and `test` also takes a directory:
+Run `rslisp` alone to start the prompt, as `rslisp repl` does. Run `rslisp --help` to list the commands. Each command except `doc` and `repl` takes a source file, and `fmt` and `test` also take a directory:
 
 ```sh
 rslisp run examples/hello.rslisp
 rslisp emit examples/geometry/main.rslisp
-rslisp test prelude/tests
+rslisp fmt src/
+rslisp test tests/
 ```
 
 ## Contribute
