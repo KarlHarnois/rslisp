@@ -1,0 +1,13 @@
+(use code first)
+
+(def first-item
+  (fn (value) (first value)))
+
+(def left (macro (form) (first-item 1)))
+
+(def right
+  (macro (form) (first-item 2)))
+
+(left)
+
+(right)

@@ -1,0 +1,31 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/expand/wrong_depth_defrule_calls.rslisp
+---
+error[L0301]: this pattern variable needs `...` after it
+ --> expand/wrong_depth_defrule_calls.rslisp:1:33
+  |
+1 | (defrule spread (((a ...)) (vec a)))
+  |                                 ^ here
+...
+5 |   (spread (2))
+  |   ------------ in this macro call
+
+error[L0301]: this pattern variable needs `...` after it
+ --> expand/wrong_depth_defrule_calls.rslisp:1:33
+  |
+1 | (defrule spread (((a ...)) (vec a)))
+  |                                 ^ here
+...
+6 |   (spread (3)))
+  |   ------------ in this macro call
+
+error[L0301]: this pattern variable needs `...` after it
+ --> expand/wrong_depth_defrule_calls.rslisp:1:33
+  |
+1 | (defrule spread (((a ...)) (vec a)))
+  |                                 ^ here
+...
+4 |   (spread (1))
+  |   ------------ in this macro call

@@ -391,7 +391,6 @@
 (def defrule
   (macro (form)
     (local name (nth form 1))
-    (declare-macro-definition name)
     (local body (drop 2 form))
     (if (documented-body? body)
       (do
