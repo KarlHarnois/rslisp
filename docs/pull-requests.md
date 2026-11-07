@@ -43,6 +43,8 @@
 
 **If the `source-format` flake check fails, lay out each file it names with `cargo run --quiet -- fmt <file>`.** The check names each file by its Nix store path. Run the command on the same path in the repository.
 
+**If the `commit builds` job fails, rewrite the commit that its error names:** a later fix commit leaves that commit broken.
+
 **If the same failure survives three fixes, stop and show the failing output to the project owner.**
 
 ## The check on `main`

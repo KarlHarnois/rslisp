@@ -102,6 +102,29 @@ jobs:
       - name: Check flake
         run: nix flake check
 
+  commit-builds:
+    name: commit builds
+    if: github.event_name == 'pull_request' && github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: DeterminateSystems/nix-installer-action@3138316df39ed29be04236d7ffc686fa525866aa # v23
+      - uses: cachix/cachix-action@38b082610b782e7e93e209c35fd730d399dee866 # v17
+        with:
+          name: ${{ env.CACHIX_CACHE }}
+      - name: Check each commit of the pull request
+        shell: bash
+        run: |
+          for commit in $(git rev-list --reverse HEAD^1..HEAD^2); do
+            git checkout --quiet "$commit"
+            nix develop .#ci -c cargo check --workspace --all-targets ||
+              { echo "::error::$commit does not build"; exit 1; }
+          done
+
   bench:
     name: front-end instruction counts
     if: github.event_name == 'pull_request' && github.event.pull_request.draft == false
