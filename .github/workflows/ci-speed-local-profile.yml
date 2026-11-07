@@ -1,0 +1,40 @@
+name: CI speed local profile trial
+
+on:
+  push:
+    branches: [research-ci-speed]
+
+permissions:
+  contents: read
+
+jobs:
+  dependency-opt-level:
+    name: dependency opt-level ${{ matrix.level }}
+    strategy:
+      fail-fast: false
+      matrix:
+        level: [0, 2]
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: DeterminateSystems/nix-installer-action@3138316df39ed29be04236d7ffc686fa525866aa # v23
+      - uses: cachix/cachix-action@38b082610b782e7e93e209c35fd730d399dee866 # v17
+        with:
+          name: rslisp
+      - name: Set the dependency opt-level
+        run: sed -i '/^\[profile.dev.package."\*"\]/a opt-level = ${{ matrix.level }}' Cargo.toml
+      - name: Load the dev shell
+        run: nix develop .#ci -c true
+      - name: Cold debug test build
+        run: time nix develop .#ci -c cargo test --workspace --no-run
+      - name: Debug stage tests
+        run: time nix develop .#ci -c cargo test --test stages
+      - name: Debug cli tests
+        run: time nix develop .#ci -c cargo test --test cli
+      - name: Rebuild after touching the workspace
+        run: |
+          touch src/lib.rs expand/src/lib.rs
+          time nix develop .#ci -c cargo test --workspace --no-run
